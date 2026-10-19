@@ -19,6 +19,7 @@ const archive = resolve(
   process.env.DSG_PLUGIN_PACKAGE ||
     `release/dsh-girl-${pkg.version}-${process.platform}-${process.arch}.tgz`,
 );
+const installSpec = process.env.DSG_PLUGIN_SPEC || archive;
 const home = await mkdtemp(join(tmpdir(), "dsg-desktop-install-"));
 const profile = join(home, "profiles/desktop");
 await mkdir(profile, { recursive: true });
@@ -90,7 +91,7 @@ try {
   await boot();
   await page.getByText("插件", { exact: true }).first().click();
   await page.getByText("添加插件", { exact: true }).first().click();
-  await page.getByPlaceholder("例如 dsh-plugin-whale-pet").fill(archive);
+  await page.getByPlaceholder("例如 dsh-plugin-whale-pet").fill(installSpec);
   await page.getByRole("button", { name: "安装", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "立即启用", exact: true }),
@@ -111,7 +112,8 @@ try {
     )
     .toBe(true);
   console.log(
-    "Official Desktop plugin UI installed the complete local archive.",
+    "Official Desktop plugin UI installed the complete plugin:",
+    installSpec,
   );
   // Host restart reloads the shell's startup injection snapshot as in normal use.
   await app.close();
@@ -185,7 +187,8 @@ try {
       {
         desktop: "0.2.1-rc.2",
         plugin: pkg.version,
-        install: "official Desktop plugin UI / local archive",
+        install: "official Desktop plugin UI",
+        installSpec,
         connection: "connected",
         sessionCreationAndHistory: true,
         management: true,

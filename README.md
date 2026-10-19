@@ -10,12 +10,14 @@ Electron 提供单一透明置顶窗口，React 构建 DSG 和身旁的内容气
 
 完整插件包包含桌宠组件，支持 macOS 和 Windows 构建。在 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择与系统和架构匹配的 `.tgz` 文件：
 
-| 系统                | 插件包                             |
-| ------------------- | ---------------------------------- |
-| Windows x64         | `dsh-girl-0.12.0-win32-x64.tgz`    |
-| macOS Apple Silicon | `dsh-girl-0.12.0-darwin-arm64.tgz` |
+| 系统                | 插件包                                                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows x64         | [dsh-girl-0.12.0-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.0/dsh-girl-0.12.0-win32-x64.tgz)       |
+| macOS Apple Silicon | [dsh-girl-0.12.0-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.0/dsh-girl-0.12.0-darwin-arm64.tgz) |
 
 官方 DSH Desktop 用户在左侧“插件”中添加插件，粘贴 Release 附件的下载链接或已下载文件的绝对路径，安装后点击“立即启用”，再重启 Desktop，即可自动连接；无需另外启动 Web 服务。GitHub 仓库首页和自动生成的 Source code 压缩包不包含桌宠组件，不能作为完整插件安装。
+
+若提示“这个包没有声明组合包，不能作为插件管理”，先核对安装来源：`https://github.com/moutsea/dsh-desk-buddy`、`github:moutsea/dsh-desk-buddy` 和源码压缩包读取的是应用源码根目录，其 `package.json` 没有 `dsh.bundle`。请复制上表对应附件的完整链接（含 `/releases/download/` 和 `.tgz`），或下载附件后填写文件的绝对路径。完整插件包的包名为 `dsh-girl`，声明了 `dsh.bundle.patch`。
 
 DSH Web 用户可通过命令安装，无需另装 App、Electron 或手填地址：
 
