@@ -17,7 +17,7 @@ export function PetSizeSetting({
     <section className="settings-card pet-size-setting">
       <div className="pet-size-heading">
         <h2>
-          <label htmlFor="pet-size">DSG 大小</label>
+          <label htmlFor="pet-size">桌宠大小</label>
           <output htmlFor="pet-size">{value}%</output>
         </h2>
         <button

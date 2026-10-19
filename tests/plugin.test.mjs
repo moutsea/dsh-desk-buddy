@@ -352,7 +352,7 @@ test("plugin serves a discoverable manager and rejects cross-origin, remote and 
     assert.match(inject("<html><body></body></html>"), /dsh-girl\/launcher.js/);
     const page = await fetch(base + "/dsh-girl/");
     assert.equal(page.status, 200);
-    assert.match(await page.text(), /启动 DSG/);
+    assert.match(await page.text(), /启动桌宠/);
     assert.match(
       page.headers.get("content-security-policy"),
       /frame-ancestors 'self'/,

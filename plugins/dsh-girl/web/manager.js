@@ -1,10 +1,10 @@
 const labels = {
-  stopped: "DSG 正在休息",
+  stopped: "桌宠正在休息",
   installing: "正在准备桌宠组件…",
-  starting: "正在唤醒 DSG…",
-  running: "DSG 已启动",
-  stopping: "正在关闭 DSG…",
-  error: "DSG 暂时没有启动",
+  starting: "正在唤醒桌宠…",
+  running: "桌宠已启动",
+  stopping: "正在关闭桌宠…",
+  error: "桌宠暂时没有启动",
 };
 let busy = false;
 let current = null;
@@ -54,7 +54,7 @@ async function request(action, value) {
       body: JSON.stringify({ action, value }),
     });
     const body = await response.json();
-    if (!response.ok) throw new Error(body.error || "暂时无法操作 DSG");
+    if (!response.ok) throw new Error(body.error || "暂时无法操作桌宠");
     render(body);
   } catch (error) {
     if (previous) render({ ...previous, error: error.message });
@@ -78,7 +78,7 @@ async function refresh() {
   const expectedRevision = revision;
   try {
     const response = await fetch("/dsh-girl/status.json");
-    if (!response.ok) throw new Error("暂时无法读取 DSG 状态");
+    if (!response.ok) throw new Error("暂时无法读取桌宠状态");
     const state = await response.json();
     if (!busy && revision === expectedRevision) render(state);
   } catch {

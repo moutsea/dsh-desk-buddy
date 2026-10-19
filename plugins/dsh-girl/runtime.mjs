@@ -36,7 +36,7 @@ export async function prepareRuntime(root, cache) {
   }
   if (manifest.platform !== process.platform || manifest.arch !== process.arch)
     throw new Error(
-      `此插件包适用于 ${manifest.platform}/${manifest.arch}，请安装适合当前电脑的 DSG 插件包`,
+      `此插件包适用于 ${manifest.platform}/${manifest.arch}，请安装适合当前电脑的桌宠插件包`,
     );
   if (!["darwin", "win32"].includes(process.platform))
     throw new Error("此版本的插件安装器目前支持 macOS 和 Windows");
@@ -63,7 +63,7 @@ export async function prepareRuntime(root, cache) {
     }
   } catch {}
   if ((await fileHash(archive)) !== manifest.sha256)
-    throw new Error("桌宠组件校验失败，请重新安装 DSG 插件包");
+    throw new Error("桌宠组件校验失败，请重新安装桌宠插件包");
   await mkdir(cache, { recursive: true });
   const staging = await mkdtemp(join(cache, ".install-"));
   try {
@@ -85,7 +85,7 @@ export async function prepareRuntime(root, cache) {
         manifest.sha256
       )
         throw new Error(
-          "桌宠组件缓存不完整，请清理 DSG 的 runtime 缓存后重新启动",
+          "桌宠组件缓存不完整，请清理桌宠的 runtime 缓存后重新启动",
         );
       await access(executable, executableMode);
     }

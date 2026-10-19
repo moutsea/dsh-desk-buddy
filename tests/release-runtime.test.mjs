@@ -24,7 +24,7 @@ async function fixture(run) {
   await mkdir(join(source, "package/runtime"), { recursive: true });
   await writeFile(
     join(source, "package/package.json"),
-    JSON.stringify({ name: "dsh-girl", version }),
+    JSON.stringify({ name: "dsh-desk-buddy", version }),
   );
   await writeFile(
     join(source, "package/runtime.json"),
@@ -40,8 +40,12 @@ async function fixture(run) {
   const bytes = await readFile(archive);
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   const url =
-    "https://github.com/moutsea/dsh-desk-buddy/releases/download/vtest/dsh-girl-test-darwin-arm64.tgz";
-  const manifest = { version, packages: { "darwin-arm64": { url, sha256 } } };
+    "https://github.com/moutsea/dsh-desk-buddy/releases/download/vtest/dsh-desk-buddy-test-darwin-arm64.tgz";
+  const manifest = {
+    version,
+    packageName: "dsh-desk-buddy",
+    packages: { "darwin-arm64": { url, sha256 } },
+  };
   const save = () =>
     writeFile(join(root, "release-runtime.json"), JSON.stringify(manifest));
   await save();

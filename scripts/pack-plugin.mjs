@@ -20,7 +20,10 @@ const app = join(
   "release",
   ...(windows
     ? [process.arch === "x64" ? "win-unpacked" : `win-${process.arch}-unpacked`]
-    : [process.arch === "arm64" ? "mac-arm64" : "mac", "DeepSeek Girl.app"]),
+    : [
+        process.arch === "arm64" ? "mac-arm64" : "mac",
+        `${pkg.build.productName}.app`,
+      ]),
 );
 const packaged = JSON.parse(
   extractFile(
@@ -34,7 +37,7 @@ const source = join(root, "plugins/dsh-girl");
 const output = join(
   root,
   "release",
-  `dsh-girl-plugin-${pkg.version}-${process.platform}-${process.arch}`,
+  `${pkg.name}-plugin-${pkg.version}-${process.platform}-${process.arch}`,
 );
 await rm(output, { recursive: true, force: true });
 await mkdir(join(output, "runtime"), { recursive: true });
@@ -69,8 +72,8 @@ await writeFile(
       archive: "runtime/dsg.zip",
       sha256: await fileHash(archive),
       executable: windows
-        ? `${process.arch === "x64" ? "win-unpacked" : `win-${process.arch}-unpacked`}/DeepSeek Girl.exe`
-        : "DeepSeek Girl.app/Contents/MacOS/DeepSeek Girl",
+        ? `${process.arch === "x64" ? "win-unpacked" : `win-${process.arch}-unpacked`}/${pkg.build.productName}.exe`
+        : `${pkg.build.productName}.app/Contents/MacOS/${pkg.build.productName}`,
     },
     null,
     2,
@@ -93,7 +96,7 @@ const [result] = JSON.parse(packed.stdout);
 const packagePath = join(
   root,
   "release",
-  `dsh-girl-${pkg.version}-${process.platform}-${process.arch}.tgz`,
+  `${pkg.name}-${pkg.version}-${process.platform}-${process.arch}.tgz`,
 );
 await rename(join(root, "release", result.filename), packagePath);
 console.log(

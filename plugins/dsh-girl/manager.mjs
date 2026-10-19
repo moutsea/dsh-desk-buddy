@@ -81,7 +81,7 @@ export class DesktopManager {
   }
   start() {
     return this.exclusive(async () => {
-      if (this.disposed) throw new Error("DSG 插件已停用");
+      if (this.disposed) throw new Error("桌宠插件已停用");
       if (this.child) return this.snapshot();
       this.phase = "installing";
       this.error = "";
@@ -90,7 +90,7 @@ export class DesktopManager {
           this.root,
           join(this.storage, "runtime"),
         );
-        if (this.disposed) throw new Error("DSG 插件已停用");
+        if (this.disposed) throw new Error("桌宠插件已停用");
         this.version = runtime.version;
         this.phase = "starting";
         let pipe;
@@ -128,7 +128,7 @@ export class DesktopManager {
         });
         const timeout = setTimeout(
           () =>
-            fail(new Error("DSG 启动超时，请重试或检查系统是否允许打开桌宠")),
+            fail(new Error("桌宠启动超时，请重试或检查系统是否允许打开桌宠")),
           20000,
         );
         const receive = (line) => {
@@ -161,7 +161,7 @@ export class DesktopManager {
           lines.on("line", receive);
         }
         child.on("error", () =>
-          fail(new Error("无法启动 DSG 桌宠组件，请检查安装是否完整")),
+          fail(new Error("无法启动 dsh-desk-buddy 组件，请检查安装是否完整")),
         );
         child.on("exit", () => {
           lines?.close();
@@ -172,7 +172,7 @@ export class DesktopManager {
             this.connection = "offline";
             if (this.phase !== "error") this.phase = "stopped";
           }
-          fail(new Error("DSG 在启动完成前退出，可能已有同一插件实例正在运行"));
+          fail(new Error("桌宠在启动完成前退出，可能已有同一插件实例正在运行"));
         });
         try {
           await started;
@@ -191,7 +191,7 @@ export class DesktopManager {
   }
   send(action) {
     if (!this.child || this.phase !== "running")
-      throw new Error("请先启动 DSG");
+      throw new Error("请先启动桌宠");
     this.controlStream?.write(JSON.stringify({ action }) + "\n");
   }
   closeControl() {
@@ -229,7 +229,7 @@ export class DesktopManager {
     });
   }
   async control(action, value) {
-    if (this.disposed) throw new Error("DSG 插件已停用");
+    if (this.disposed) throw new Error("桌宠插件已停用");
     if (action === "start") return this.start();
     if (action === "stop") return this.stop();
     if (["show", "hide", "chat"].includes(action)) {
@@ -247,7 +247,7 @@ export class DesktopManager {
         this.autoStart = value;
         return this.snapshot();
       });
-    throw new Error("未知的 DSG 管理操作");
+    throw new Error("未知的桌宠管理操作");
   }
   dispose() {
     this.disposed = true;

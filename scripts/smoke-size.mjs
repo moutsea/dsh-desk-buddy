@@ -34,7 +34,7 @@ try {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.evaluate(() => window.desktop.invoke("section", "settings"));
-  const range = page.getByRole("slider", { name: "DSG 大小" }),
+  const range = page.getByRole("slider", { name: "桌宠大小" }),
     stage = page.locator(".pet-stage"),
     character = page.locator(".pet-character");
   await expect(range).toHaveValue("100");
@@ -159,11 +159,11 @@ try {
   );
   await assert.rejects(
     page.evaluate(() => window.desktop.invoke("petScale", 500)),
-    /DSG 大小/,
+    /桌宠大小/,
   );
   await assert.rejects(
     page.evaluate(() => window.desktop.invoke("petScale", "50")),
-    /DSG 大小/,
+    /桌宠大小/,
   );
   await page.evaluate(() => window.desktop.invoke("petScale", 75));
   await app.close();
@@ -182,7 +182,7 @@ try {
   assert.equal(bounds.width, petSize(75).width);
   assert.equal(bounds.height, petSize(75).height);
   await restored.evaluate(() => window.desktop.invoke("section", "settings"));
-  await expect(restored.getByRole("slider", { name: "DSG 大小" })).toHaveValue(
+  await expect(restored.getByRole("slider", { name: "桌宠大小" })).toHaveValue(
     "75",
   );
   assert.deepEqual(errors, []);

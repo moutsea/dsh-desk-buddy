@@ -1,7 +1,7 @@
 {
-  "name": "dsh-girl",
-  "version": "0.12.0",
-  "description": "DeepSeek Girl：安装、启动和管理完整 DSG 桌宠，并自动连接当前 DSH",
+  "name": "dsh-desk-buddy",
+  "version": "0.12.1",
+  "description": "dsh-desk-buddy：安装、启动和管理桌宠，并自动连接当前 DSH",
   "type": "module",
   "main": "index.mjs",
   "exports": {

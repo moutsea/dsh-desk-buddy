@@ -10,7 +10,7 @@ const exec = promisify(execFile);
 const pkg = JSON.parse(await readFile("package.json", "utf8"));
 const archive = resolve(
   process.env.DSG_PLUGIN_PACKAGE ||
-    `release/dsh-girl-${pkg.version}-${process.platform}-${process.arch}.tgz`,
+    `release/${pkg.name}-${pkg.version}-${process.platform}-${process.arch}.tgz`,
 );
 const home = await mkdtemp(join(tmpdir(), "dsg-plugin-install-"));
 const env = {
@@ -93,7 +93,7 @@ try {
   const manifestPath = join(home, "profiles/web/package.json");
   let manifest = JSON.parse(await readFile(manifestPath, "utf8"));
   assert.ok(
-    manifest.dsh.profile.bundles.includes("dsh-girl"),
+    manifest.dsh.profile.bundles.includes(pkg.name),
     "standard plugin install activates the bundle",
   );
   console.log(
@@ -121,9 +121,11 @@ try {
     env,
   });
   const page = await browser.firstWindow();
-  await page.getByRole("button", { name: "DSG 桌宠", exact: true }).click();
-  const panel = page.frameLocator('iframe[title="DeepSeek Girl 桌宠管理"]');
-  await panel.getByText("DSG 已启动", { exact: true }).waitFor();
+  await page
+    .getByRole("button", { name: "dsh-desk-buddy", exact: true })
+    .click();
+  const panel = page.frameLocator('iframe[title="dsh-desk-buddy 桌宠管理"]');
+  await panel.getByText("桌宠已启动", { exact: true }).waitFor();
   await panel.getByText("已连接当前 DSH", { exact: true }).waitFor();
   await panel.getByRole("button", { name: "暂时隐藏", exact: true }).click();
   await expect.poll(async () => (await status()).visible).toBe(false);
@@ -137,8 +139,8 @@ try {
     .screenshot({ path: "artifacts/plugin-management.png" });
   await panel.getByRole("switch", { name: "随 DSH 启动" }).uncheck();
   await expect.poll(async () => (await status()).autoStart).toBe(false);
-  await panel.getByRole("button", { name: "关闭 DSG", exact: true }).click();
-  await panel.getByText("DSG 正在休息", { exact: true }).waitFor();
+  await panel.getByRole("button", { name: "关闭桌宠", exact: true }).click();
+  await panel.getByText("桌宠正在休息", { exact: true }).waitFor();
   assert.equal(alive(desktopPid), false);
   const response = await fetch(base + "/api/host.describe", {
     method: "POST",
@@ -175,13 +177,13 @@ try {
   desktopPid = (await status()).pid;
   await stopHost("SIGKILL");
   await expect.poll(() => alive(desktopPid), { timeout: 15000 }).toBe(false);
-  await exec("dsh", ["plugin", "--profile", "web", "remove", "dsh-girl"], {
+  await exec("dsh", ["plugin", "--profile", "web", "remove", pkg.name], {
     env,
     timeout: 180000,
     maxBuffer: 1024 * 1024,
   });
   manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-  assert.ok(!manifest.dsh.profile.bundles.includes("dsh-girl"));
+  assert.ok(!manifest.dsh.profile.bundles.includes(pkg.name));
   await boot();
   assert.equal((await fetch(base + "/dsh-girl/status.json")).status, 404);
   assert.ok(

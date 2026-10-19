@@ -60,7 +60,7 @@ try {
         ctx.fillRect(0, 0, 1280, 640);
         ctx.fillStyle = "#344761";
         ctx.font = "600 36px 'PingFang SC',sans-serif";
-        ctx.fillText("DeepSeek Girl", 42, 66);
+        ctx.fillText("dsh-desk-buddy", 42, 66);
         ctx.fillStyle = "#7c90b2";
         ctx.font = "20px 'PingFang SC',sans-serif";
         ctx.fillText("一点陪伴，一起完成。", 43, 108);

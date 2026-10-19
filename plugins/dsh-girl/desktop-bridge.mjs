@@ -122,7 +122,7 @@ export async function desktopBridge(ctx) {
       res.end(JSON.stringify(body));
     };
     if (!authorized(req))
-      return reply(403, { error: "DSG private connection required" });
+      return reply(403, { error: "桌宠 private connection required" });
     if (req.method === "GET" && req.url === "/dsh-girl/balance.json")
       return reply(200, await readBalance());
     if (req.method !== "POST" || !req.url?.startsWith("/api/"))
@@ -164,7 +164,7 @@ export async function desktopBridge(ctx) {
             ? { ...payload, requestId: rpcId }
             : payload,
         );
-      else throw new Error("DSG 不支持此 Desktop 操作");
+      else throw new Error("桌宠不支持此 Desktop 操作");
       reply(200, {
         type: "server-response",
         rpcId,

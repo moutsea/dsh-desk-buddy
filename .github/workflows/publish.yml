@@ -38,13 +38,13 @@ jobs:
         with:
           run-id: ${{ inputs.run_id }}
           github-token: ${{ github.token }}
-          pattern: dsh-girl-*
+          pattern: dsh-desk-buddy-*
           merge-multiple: true
           path: release
       - name: Publish tested artifacts
         run: |
           cd release
-          test -f "dsh-girl-${RELEASE_TAG#v}-win32-x64.tgz"
-          test -f "dsh-girl-${RELEASE_TAG#v}-darwin-arm64.tgz"
+          test -f "dsh-desk-buddy-${RELEASE_TAG#v}-win32-x64.tgz"
+          test -f "dsh-desk-buddy-${RELEASE_TAG#v}-darwin-arm64.tgz"
           sha256sum *.tgz > SHA256SUMS.txt
-          gh release create "$RELEASE_TAG" *.tgz SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --verify-tag --title "DeepSeek Girl $RELEASE_TAG" --notes-file ../docs/release-notes.md
+          gh release create "$RELEASE_TAG" *.tgz SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --verify-tag --title "dsh-desk-buddy $RELEASE_TAG" --notes-file ../docs/release-notes.md

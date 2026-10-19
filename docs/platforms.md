@@ -30,15 +30,15 @@ npm run test:desktop
 
 `DSG_PLUGIN_PACKAGE` 可指定完整插件包路径。此检查使用独立 DSH_HOME，不覆盖日常使用的配置。macOS 默认使用 `/Applications/DeepSeek Harness.app`。
 
-`DSG_PLUGIN_SPEC` 可直接指定安装框中的来源，包括 GitHub 仓库地址和 Release 下载链接；测试会在官方 Desktop 界面填写原始地址并验证安装、启用、重启及连接，避免仅测试下载后的本地文件。仓库安装时同时指定 `DSG_PLUGIN_NAME=deepseek-girl`，完整包默认名称为 `dsh-girl`。例如 macOS：
+`DSG_PLUGIN_SPEC` 可直接指定安装框中的来源，包括 GitHub 仓库地址和 Release 下载链接；测试会在官方 Desktop 界面填写原始地址并验证安装、启用、重启及连接，避免仅测试下载后的本地文件。仓库和完整包默认名称均为 `dsh-desk-buddy`，`DSG_PLUGIN_NAME` 仅用于覆盖测试目标包名。例如 macOS：
 
 ```sh
-DSG_PLUGIN_SPEC=https://github.com/moutsea/dsh-desk-buddy DSG_PLUGIN_NAME=deepseek-girl npm run test:desktop
+DSG_PLUGIN_SPEC=https://github.com/moutsea/dsh-desk-buddy npm run test:desktop
 ```
 
 ## 构建与安装
 
-在对应系统、架构的 Node.js 22.12+ 环境运行 `npm ci` 和 `npm run pack:plugin`，不要使用跨架构 Electron 输出冒充当前架构。Windows x64 组件目录为 `release/win-unpacked`，完整保留其中的 EXE、DLL、资源和 locales；macOS ARM64 为 `release/mac-arm64/DeepSeek Girl.app`。
+在对应系统、架构的 Node.js 22.12+ 环境运行 `npm ci` 和 `npm run pack:plugin`，不要使用跨架构 Electron 输出冒充当前架构。Windows x64 组件目录为 `release/win-unpacked`，完整保留其中的 EXE、DLL、资源和 locales；macOS ARM64 为 `release/mac-arm64/dsh-desk-buddy.app`。
 
 Windows 解压使用系统 Windows PowerShell 与 .NET，支持当前 Electron 支持的 Windows 10/11 环境。成品未签名；macOS 未公证。多显示器、不同 DPI、系统托盘菜单与不同 Windows 安全软件的兼容性仍需实际设备覆盖，CI 只提供单显示器自动验证。
 

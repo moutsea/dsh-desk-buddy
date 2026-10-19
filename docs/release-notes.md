@@ -1,4 +1,4 @@
-Windows x64 和 macOS Apple Silicon 的完整 DSH 桌宠插件。
+dsh-desk-buddy 0.12.1：统一应用名称、DSH 插件名称和安装包名称，保留已有用户设置、桌宠位置及宿主连接方式。支持 Windows x64 和 macOS Apple Silicon。
 
 在 DSH Desktop 的「插件 → 添加插件」中，粘贴对应 `.tgz` 附件的下载链接，或先下载后填写绝对路径。点击「立即启用」并重启 DSH。无需额外安装 Electron、Node.js 或启动 DSH Web。
 
@@ -10,4 +10,4 @@ Windows x64 和 macOS Apple Silicon 的完整 DSH 桌宠插件。
 
 自动检查使用隔离协议服务，不调用模型。官方 DSH Desktop 0.2.1-rc.2 安装与宿主连接已在 macOS 验证；Windows 官方宿主的全流程验证仍需目标环境。Intel Mac、Windows ARM64 和 Linux 暂无验证成品。当前应用未签名，macOS 未公证。
 
-不要安装 GitHub 自动生成的 Source code 包或仓库首页地址，它们不包含桌宠运行组件。完整安装与兼容性说明见仓库 README 和 docs/platforms.md。
+也可在 DSH 安装框粘贴 `https://github.com/moutsea/dsh-desk-buddy`，首次启用会按系统下载已验证的 Release 组件。已有 `deepseek-girl` 或 `dsh-girl` 插件时，先卸载旧包再添加新版本，原有配置保留。不要使用 GitHub 自动生成的 Source code 包。完整安装与兼容性说明见仓库 README 和 docs/platforms.md。

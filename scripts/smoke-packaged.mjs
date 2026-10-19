@@ -13,12 +13,12 @@ import { createFixture } from "../tests/fixture.mjs";
 const pkg = JSON.parse(await readFile("package.json", "utf8"));
 const archive = resolve(
   process.env.DSG_PLUGIN_PACKAGE ||
-    `release/dsh-girl-${pkg.version}-${process.platform}-${process.arch}.tgz`,
+    `release/${pkg.name}-${pkg.version}-${process.platform}-${process.arch}.tgz`,
 );
 const directory = await mkdtemp(join(tmpdir(), "DSG packaged 中文 "));
 const fixture = await createFixture();
 const storage = join(directory, "profile");
-const root = join(directory, "node_modules/dsh-girl");
+const root = join(directory, "node_modules", pkg.name);
 let manager;
 
 async function run(script, executable) {
@@ -67,7 +67,7 @@ try {
   assert.deepEqual(installed.cpu, [process.arch]);
   assert.equal(installed.dsh.bundle.patch, "./cordis.patch.yml");
   const plugin = await import(pathToFileURL(join(root, "index.mjs")).href);
-  assert.equal(plugin.name, "dsh-girl");
+  assert.equal(plugin.name, pkg.name);
   assert.equal(typeof plugin.apply, "function");
   await mkdir(join(storage, "settings"), { recursive: true });
   await writeFile(

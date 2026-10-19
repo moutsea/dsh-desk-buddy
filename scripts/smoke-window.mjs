@@ -79,6 +79,8 @@ try {
     async ({ app, BrowserWindow, globalShortcut }) => {
       const window = BrowserWindow.getAllWindows()[0];
       return {
+        name: app.getName(),
+        title: window.getTitle(),
         windowId: window.id,
         packaged: app.isPackaged,
         resizable: window.isResizable(),
@@ -96,6 +98,8 @@ try {
     },
   );
   if (process.env.DSG_TEST_EXECUTABLE) assert.equal(properties.packaged, true);
+  assert.equal(properties.name, "dsh-desk-buddy");
+  assert.equal(properties.title, "dsh-desk-buddy · 桌宠");
   assert.equal(properties.resizable, false);
   assert.equal(properties.topmost, true);
   assert.equal(properties.shortcut, true);

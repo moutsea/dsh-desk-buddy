@@ -7,7 +7,7 @@ import { apply as applyBalance } from "../dsh-girl-bridge/index.mjs";
 import { desktopBridge } from "./desktop-bridge.mjs";
 import { DesktopManager } from "./manager.mjs";
 
-export const name = "dsh-girl";
+export const name = "dsh-desk-buddy";
 export const inject = ["webServer", "credentials", "connection"];
 const root = dirname(fileURLToPath(import.meta.url));
 
@@ -57,7 +57,7 @@ export async function apply(ctx, options = {}) {
       "deepseek-girl",
       createHash("sha256").update(profile).digest("hex").slice(0, 16),
     );
-  if (!isAbsolute(storage)) throw new Error("DSG 数据目录必须为绝对路径");
+  if (!isAbsolute(storage)) throw new Error("桌宠数据目录必须为绝对路径");
   const manager = new DesktopManager({
     endpoint: "",
     storage,
@@ -83,7 +83,9 @@ export async function apply(ctx, options = {}) {
     path: "/dsh-girl",
     handler: async (req, res) => {
       if (!localRequest(req, ctx.webServer.port))
-        return json(res, 403, { error: "仅允许从当前电脑的 DSH 页面管理 DSG" });
+        return json(res, 403, {
+          error: "仅允许从当前电脑的 DSH 页面管理桌宠",
+        });
       const path = new URL(req.url, "http://127.0.0.1").pathname;
       if (path === "/dsh-girl/status.json" && req.method === "GET")
         return json(res, 200, {
@@ -94,7 +96,7 @@ export async function apply(ctx, options = {}) {
         });
       if (path === "/dsh-girl/control") {
         if (req.method !== "POST")
-          return json(res, 405, { error: "请使用管理按钮操作 DSG" });
+          return json(res, 405, { error: "请使用管理按钮操作桌宠" });
         if (
           !/^application\/json(?:;|$)/i.test(req.headers["content-type"] || "")
         )
@@ -117,7 +119,7 @@ export async function apply(ctx, options = {}) {
       }
       const asset = assets.get(path === "/dsh-girl" ? "/dsh-girl/" : path);
       if (req.method !== "GET" || !asset)
-        return json(res, 404, { error: "未找到 DSG 页面" });
+        return json(res, 404, { error: "未找到桌宠页面" });
       res.writeHead(200, {
         "Content-Type": asset.type + "; charset=utf-8",
         "Cache-Control": "no-store",
@@ -178,7 +180,7 @@ export async function apply(ctx, options = {}) {
       if (disposed) return;
       manager.phase = "error";
       manager.error = error.message;
-      ctx.logger?.warn?.("DSG：%s", error.message);
+      ctx.logger?.warn?.("桌宠：%s", error.message);
     }
   });
 }

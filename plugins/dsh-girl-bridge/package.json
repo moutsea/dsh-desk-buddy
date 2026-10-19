@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "main": "index.mjs",
-  "description": "为 DeepSeek Girl 提供不暴露凭证的 DeepSeek 余额查询",
+  "description": "为 dsh-desk-buddy 提供不暴露凭证的 DeepSeek 余额查询",
   "exports": {
     ".": "./index.mjs"
   },

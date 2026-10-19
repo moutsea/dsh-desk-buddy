@@ -31,7 +31,7 @@ import {
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const managed = managedLaunch();
 let controller;
-app.setName("DeepSeek Girl");
+app.setName("dsh-desk-buddy");
 const dataDirectory =
   process.env.DEEPSEEK_GIRL_DATA_DIR || process.env.DSH_GIRL_DATA_DIR;
 app.setPath(
@@ -246,7 +246,7 @@ function createWindows() {
       hasShadow: false,
       alwaysOnTop: config.alwaysOnTop,
       skipTaskbar: true,
-      title: "DeepSeek Girl · 桌宠",
+      title: "dsh-desk-buddy · 桌宠",
       show: false,
     },
     "pet",
@@ -281,7 +281,7 @@ function createWindows() {
   const icon = nativeImage.createFromBitmap(pixels, { width: 18, height: 18 });
   icon.setTemplateImage(true);
   tray = new Tray(icon);
-  tray.setToolTip("DeepSeek Girl");
+  tray.setToolTip("dsh-desk-buddy");
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: "对话", click: () => showSection("chat") },
@@ -290,7 +290,7 @@ function createWindows() {
       { label: "显示桌宠", click: () => pet.showInactive() },
       { label: "隐藏桌宠", click: () => pet.hide() },
       { type: "separator" },
-      { label: "退出 DeepSeek Girl", click: () => app.quit() },
+      { label: "退出 dsh-desk-buddy", click: () => app.quit() },
     ]),
   );
   tray.on("click", toggleContent);
@@ -553,7 +553,7 @@ async function connect(endpoint) {
     state.connectionMessage =
       error.cause?.code === "ECONNREFUSED" || /fetch failed/.test(error.message)
         ? managed
-          ? "暂未连上所属 DSH，请在 DSH 的桌宠管理入口重新启动 DSG"
+          ? "暂未连上所属 DSH，请在 DSH 的桌宠管理入口重新启动桌宠"
           : "未找到 DSH 服务，请先启动 DSH Web，再点击连接"
         : error.message;
     broadcast();
@@ -776,7 +776,7 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
         payload > PET_SCALE.max ||
         payload % PET_SCALE.step !== 0
       )
-        throw new Error("DSG 大小需为 50%–150%，每档 5%");
+        throw new Error("桌宠大小需为 50%–150%，每档 5%");
       if (payload === config.petScale) return payload;
       const anchor = resizedPetAnchor(petAnchor(), config.petScale, payload);
       config.petScale = payload;
@@ -910,6 +910,6 @@ app
     void startConnection();
   })
   .catch((error) => {
-    console.error("DeepSeek Girl 启动失败：", error.message);
+    console.error("dsh-desk-buddy 启动失败：", error.message);
     app.quit();
   });

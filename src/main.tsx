@@ -249,7 +249,7 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
         onMouseEnter={reveal}
         onFocus={reveal}
       >
-        <div className="pet-menu" aria-label="DSG 功能">
+        <div className="pet-menu" aria-label="桌宠功能">
           {[
             { id: "chat", name: "对话", icon: MessageCircle },
             { id: "expressions", name: "表情", icon: SmilePlus },
@@ -306,7 +306,7 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
           width: PET_CHARACTER.width * scale,
           height: PET_CHARACTER.height * scale,
         }}
-        aria-label="摸摸 DSG"
+        aria-label="摸摸桌宠"
         title="按住拖动 · 点击摸摸 · 右键切换表情"
         onPointerDown={(event) => {
           drag.onPointerDown(event);
@@ -706,7 +706,7 @@ function Panel({ state }: { state: AppState }) {
           <strong>
             {tab === "chat" ? "对话" : tab === "expressions" ? "表情" : "设置"}
           </strong>
-          <span>DeepSeek Girl</span>
+          <span>dsh-desk-buddy</span>
         </div>
         <div className="window-actions">
           <button
@@ -1145,7 +1145,7 @@ function Panel({ state }: { state: AppState }) {
             <div className="toggle-row">
               <div>
                 <h2>始终在手边</h2>
-                <p>DSG 和身旁的内容保持置顶</p>
+                <p>桌宠和身旁的内容保持置顶</p>
               </div>
               <button
                 role="switch"
@@ -1178,7 +1178,7 @@ function Panel({ state }: { state: AppState }) {
           <div className="settings-footnote">
             ⌘ / Ctrl + Shift + Space 快速唤起
             <br />
-            DeepSeek Girl · {version} · 一个轻轻陪着你的对话入口
+            dsh-desk-buddy · {version} · 一个轻轻陪着你的对话入口
           </div>
         </div>
       )}
@@ -1186,7 +1186,7 @@ function Panel({ state }: { state: AppState }) {
   );
 }
 document.body.dataset.view = "desktop";
-document.title = "DeepSeek Girl · 桌宠";
+document.title = "dsh-desk-buddy · 桌宠";
 const ContentPanel = React.memo(Panel);
 function App() {
   const { state, surface } = useDesktop();

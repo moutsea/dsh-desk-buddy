@@ -26,7 +26,7 @@ export async function downloadRuntimePackage(
     );
   } catch (error) {
     throw new Error(
-      "此插件尚未包含有效的桌宠组件或下载清单，请安装完整 DSG 插件包",
+      "此插件尚未包含有效的桌宠组件或下载清单，请安装完整桌宠插件包",
       { cause: error },
     );
   }
@@ -37,13 +37,16 @@ export async function downloadRuntimePackage(
       `暂未提供 ${platform}/${arch} 桌宠组件，当前支持 Apple Silicon Mac 和 Windows x64`,
     );
   const version = manifest.version;
+  const packageName = manifest.packageName || "dsh-girl";
+  if (!["dsh-girl", "dsh-desk-buddy"].includes(packageName))
+    throw new Error("桌宠下载清单包名无效");
   if (!/^[\w.-]+$/.test(version) || !/^[a-f0-9]{64}$/.test(asset.sha256))
     throw new Error("桌宠下载清单无效");
   const url = new URL(asset.url);
   if (
     url.origin !== "https://github.com" ||
     url.pathname !==
-      `/moutsea/dsh-desk-buddy/releases/download/v${version}/dsh-girl-${version}-${target}.tgz` ||
+      `/moutsea/dsh-desk-buddy/releases/download/v${version}/${packageName}-${version}-${target}.tgz` ||
     url.search ||
     url.hash ||
     url.username ||
@@ -97,7 +100,7 @@ export async function downloadRuntimePackage(
         throw new Error("桌宠组件下载校验失败");
     } catch (error) {
       throw new Error(
-        `无法准备桌宠组件：${error.message}。请检查 GitHub 连接后在「DSG 桌宠」中重试，或安装 Release 完整插件包。`,
+        `无法准备桌宠组件：${error.message}。请检查 GitHub 连接后在「dsh-desk-buddy」中重试，或安装 Release 完整插件包。`,
         { cause: error },
       );
     }
@@ -129,7 +132,7 @@ export async function downloadRuntimePackage(
       await readFile(join(unpacked, "runtime.json"), "utf8"),
     );
     if (
-      pkg.name !== "dsh-girl" ||
+      pkg.name !== packageName ||
       pkg.version !== version ||
       runtime.version !== version ||
       runtime.platform !== platform ||

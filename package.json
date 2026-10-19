@@ -1,10 +1,10 @@
 {
-  "name": "deepseek-girl",
-  "version": "0.12.0",
+  "name": "dsh-desk-buddy",
+  "version": "0.12.1",
   "private": true,
-  "author": "DeepSeek Girl contributors",
+  "author": "dsh-desk-buddy contributors",
   "license": "UNLICENSED",
-  "description": "DeepSeek 娘：住在桌面上的 DSH 对话与任务入口",
+  "description": "dsh-desk-buddy：住在桌面上的 DSH 对话与任务入口",
   "type": "module",
   "main": "electron/main.mjs",
   "exports": {
@@ -44,7 +44,7 @@
   "build": {
     "icon": "build/icon.png",
     "appId": "com.deepseek.girl",
-    "productName": "DeepSeek Girl",
+    "productName": "dsh-desk-buddy",
     "files": [
       "dist/**/*",
       "electron/**/*",

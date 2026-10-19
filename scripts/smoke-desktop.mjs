@@ -17,10 +17,10 @@ const executablePath =
 const pkg = JSON.parse(await readFile("package.json", "utf8"));
 const archive = resolve(
   process.env.DSG_PLUGIN_PACKAGE ||
-    `release/dsh-girl-${pkg.version}-${process.platform}-${process.arch}.tgz`,
+    `release/${pkg.name}-${pkg.version}-${process.platform}-${process.arch}.tgz`,
 );
 const installSpec = process.env.DSG_PLUGIN_SPEC || archive;
-const bundleName = process.env.DSG_PLUGIN_NAME || "dsh-girl";
+const bundleName = process.env.DSG_PLUGIN_NAME || pkg.name;
 const home = await mkdtemp(join(tmpdir(), "dsg-desktop-install-"));
 const profile = join(home, "profiles/desktop");
 await mkdir(profile, { recursive: true });
@@ -81,8 +81,10 @@ const status = () =>
     return response.ok ? response.json() : { phase: "missing" };
   });
 async function manager() {
-  await page.getByRole("button", { name: "DSG 桌宠", exact: true }).click();
-  const frame = page.frameLocator('iframe[title="DeepSeek Girl 桌宠管理"]');
+  await page
+    .getByRole("button", { name: "dsh-desk-buddy", exact: true })
+    .click();
+  const frame = page.frameLocator('iframe[title="dsh-desk-buddy 桌宠管理"]');
   await expect(
     frame.getByText("已连接 DSH Desktop", { exact: true }),
   ).toBeVisible({ timeout: 30000 });
@@ -153,7 +155,7 @@ try {
     return body.result.value;
   }, home);
   assert.equal(typeof created.sessionId, "string");
-  await frame.getByRole("button", { name: "关闭 DSG", exact: true }).click();
+  await frame.getByRole("button", { name: "关闭桌宠", exact: true }).click();
   await expect.poll(async () => (await status()).phase).toBe("stopped");
   await expect.poll(() => alive(pid)).toBe(false);
   // Select an isolated real Host session while DSG is stopped; restart exercises its actual history adapter.
@@ -166,7 +168,7 @@ try {
   const settings = JSON.parse(await readFile(storage, "utf8"));
   settings.selectedId = created.sessionId;
   await writeFile(storage, JSON.stringify(settings));
-  await frame.getByRole("button", { name: "启动 DSG", exact: true }).click();
+  await frame.getByRole("button", { name: "启动桌宠", exact: true }).click();
   await expect
     .poll(async () => (await status()).connection, { timeout: 45000 })
     .toBe("connected");
