@@ -64,6 +64,8 @@ try {
     return point;
   };
   const move = async (dx, dy) => {
+    const clickCount = await page.evaluate(() => window.dragClicks.length);
+    const lastInteractionAt = (await state()).lastInteractionAt;
     const before = await anchor(),
       point = await start();
     await page.mouse.move(point.x + dx, point.y + dy);
@@ -75,10 +77,16 @@ try {
     await expect
       .poll(async () => (await state()).config.petPosition)
       .toEqual({ x: before.x + dx, y: before.y + dy });
+    assert.ok(
+      (await page.evaluate(() => window.dragClicks))
+        .slice(clickCount)
+        .every(Boolean),
+      "any click emitted by drag release is suppressed",
+    );
     assert.equal(
-      (await page.evaluate(() => window.dragClicks)).at(-1),
-      true,
-      "drag release suppresses petting click",
+      (await state()).lastInteractionAt,
+      lastInteractionAt,
+      "drag release does not pet the character",
     );
   };
   assert.equal(

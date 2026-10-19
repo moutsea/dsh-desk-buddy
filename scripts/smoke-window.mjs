@@ -53,6 +53,23 @@ async function nativeClick(point, target) {
   );
 }
 
+async function screenshot(name) {
+  await mkdir("artifacts", { recursive: true });
+  await powershell(
+    `
+    Add-Type -AssemblyName System.Windows.Forms;
+    Add-Type -AssemblyName System.Drawing;
+    $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds;
+    $bitmap = New-Object System.Drawing.Bitmap($bounds.Width, $bounds.Height);
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap);
+    $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size);
+    $bitmap.Save($env:DSG_SCREENSHOT, [System.Drawing.Imaging.ImageFormat]::Png);
+    $graphics.Dispose(); $bitmap.Dispose();
+  `,
+    { DSG_SCREENSHOT: resolve(`artifacts/${name}.png`) },
+  );
+}
+
 try {
   app = await launchDesktop(env);
   const page = await app.firstWindow();
@@ -97,21 +114,35 @@ try {
       const probe = new BrowserWindow({
         ...bounds,
         frame: false,
+        resizable: false,
         backgroundColor: "#eeeeee",
         webPreferences: { sandbox: true },
       });
       await probe.loadURL(
         "data:text/html,<body style='margin:0;height:100vh' onclick='document.body.dataset.clicks=Number(document.body.dataset.clicks||0)+1'>Windows native mouse probe</body>",
       );
-      pet.show();
-      pet.focus();
+      pet.showInactive();
+      probe.focus();
       return {
         id: probe.id,
-        point: screen.dipToScreenPoint({ x: bounds.x + 2, y: bounds.y + 2 }),
+        point: screen.dipToScreenPoint({ x: bounds.x + 20, y: bounds.y + 20 }),
       };
     });
     await page.evaluate(() => window.desktop.invoke("passthrough", true));
     await nativeClick(background.point);
+    console.log(
+      "Native click probe:",
+      background,
+      await app.evaluate(({ BrowserWindow, screen }) => ({
+        cursor: screen.getCursorScreenPoint(),
+        windows: BrowserWindow.getAllWindows().map((window) => ({
+          id: window.id,
+          bounds: window.getBounds(),
+          focused: window.isFocused(),
+          visible: window.isVisible(),
+        })),
+      })),
+    );
     await expect
       .poll(() =>
         app.evaluate(
@@ -166,20 +197,7 @@ try {
       ({ BrowserWindow }, id) => BrowserWindow.fromId(id).destroy(),
       background.id,
     );
-    await mkdir("artifacts", { recursive: true });
-    await powershell(
-      `
-      Add-Type -AssemblyName System.Windows.Forms;
-      Add-Type -AssemblyName System.Drawing;
-      $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds;
-      $bitmap = New-Object System.Drawing.Bitmap($bounds.Width, $bounds.Height);
-      $graphics = [System.Drawing.Graphics]::FromImage($bitmap);
-      $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size);
-      $bitmap.Save($env:DSG_SCREENSHOT, [System.Drawing.Imaging.ImageFormat]::Png);
-      $graphics.Dispose(); $bitmap.Dispose();
-    `,
-      { DSG_SCREENSHOT: resolve("artifacts/windows-native-desktop.png") },
-    );
+    await screenshot("windows-native-desktop");
     console.log(
       "Windows system input passed: transparent-area click-through, character click, native drag and Ctrl+Shift+Space.",
     );
@@ -187,6 +205,10 @@ try {
   console.log(
     "Native window properties passed: packaged executable, transparency, fixed size, topmost toggle and registered shortcut.",
   );
+} catch (error) {
+  if (process.platform === "win32")
+    await screenshot("windows-native-failure").catch(console.error);
+  throw error;
 } finally {
   await app?.close();
   await fixture.close();
