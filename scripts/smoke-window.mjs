@@ -79,6 +79,7 @@ try {
     async ({ app, BrowserWindow, globalShortcut }) => {
       const window = BrowserWindow.getAllWindows()[0];
       return {
+        windowId: window.id,
         packaged: app.isPackaged,
         resizable: window.isResizable(),
         topmost: window.isAlwaysOnTop(),
@@ -157,26 +158,33 @@ try {
     const character = page.locator(".pet-character");
     const characterPoint = async () => {
       const box = await character.boundingBox();
-      return app.evaluate(({ BrowserWindow, screen }, box) => {
-        const bounds = BrowserWindow.getAllWindows()[0].getBounds();
-        return screen.dipToScreenPoint({
-          x: Math.round(bounds.x + box.x + box.width / 2),
-          y: Math.round(bounds.y + box.y + box.height / 2),
-        });
-      }, box);
+      return app.evaluate(
+        ({ BrowserWindow, screen }, { box, windowId }) => {
+          const bounds = BrowserWindow.fromId(windowId).getBounds();
+          return screen.dipToScreenPoint({
+            x: Math.round(bounds.x + box.x + box.width / 2),
+            y: Math.round(bounds.y + box.y + box.height / 2),
+          });
+        },
+        { box, windowId: properties.windowId },
+      );
     };
     await page.evaluate(() => window.desktop.invoke("passthrough", false));
     await nativeClick(await characterPoint());
     await character.locator('[data-expression="love"]').waitFor();
-    const before = await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0].getBounds(),
+    const before = await app.evaluate(
+      ({ BrowserWindow }, windowId) =>
+        BrowserWindow.fromId(windowId).getBounds(),
+      properties.windowId,
     );
     const point = await characterPoint();
     await nativeClick(point, { x: point.x + 40, y: point.y - 25 });
     await expect
       .poll(async () => {
-        const after = await app.evaluate(({ BrowserWindow }) =>
-          BrowserWindow.getAllWindows()[0].getBounds(),
+        const after = await app.evaluate(
+          ({ BrowserWindow }, windowId) =>
+            BrowserWindow.fromId(windowId).getBounds(),
+          properties.windowId,
         );
         return after.x > before.x && after.y < before.y;
       })
