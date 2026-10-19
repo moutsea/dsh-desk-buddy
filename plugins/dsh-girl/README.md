@@ -14,7 +14,7 @@ https://github.com/moutsea/dsh-desk-buddy
 
 安装后点击“立即启用”，再重启 Desktop。Mac 和 Windows 使用同一个地址，插件自动选择组件。首次下载约 200–230 MB，需要能够访问 GitHub Release；之后使用本地缓存。左下角“dsh-desk-buddy”提供准备状态、启动、关闭、显示、隐藏、对话和自动启动设置；下载失败可检查网络后重试。无需另开 DSH Web 服务，也无需手填地址。Desktop 的插件由应用管理，不能使用 `dsh plugin --profile desktop` 修改。
 
-也可从 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择完整 `.tgz`，将附件链接或下载后文件的绝对路径作为安装来源。macOS ARM64 使用 `dsh-desk-buddy-0.12.2-darwin-arm64.tgz`，Windows x64 使用 `dsh-desk-buddy-0.12.2-win32-x64.tgz`。完整包无需额外下载组件。两种方式的包名均为 `dsh-desk-buddy`；升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再安装新版。用户设置和窗口位置保留。
+也可从 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择完整 `.tgz`，将附件链接或下载后文件的绝对路径作为安装来源。macOS ARM64 使用 `dsh-desk-buddy-0.12.3-darwin-arm64.tgz`，Windows x64 使用 `dsh-desk-buddy-0.12.3-win32-x64.tgz`。完整包无需额外下载组件。两种方式的包名均为 `dsh-desk-buddy`；升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再安装新版。用户设置和窗口位置保留。
 
 ## DSH Web 安装
 
@@ -26,11 +26,11 @@ dsh plugin --profile web add https://github.com/moutsea/dsh-desk-buddy
 
 重启 DSH Web，插件会自动唤醒桌宠。DSH 页面左下角增加“dsh-desk-buddy”按钮，可查看状态、启动、关闭、显示、隐藏、打开对话，以及设置是否随 DSH 启动。也可在当前 DSH 地址后加 `/dsh-girl/` 打开管理页。关闭桌宠不会取消 DSH 任务；停用/卸载插件或退出所属 DSH 后，该插件管理的桌宠会退出。
 
-桌宠自身的表情、角色大小、拖动、对话和完成提醒全部保留。插件模式下服务地址由所属 DSH 自动配置；独立启动方式仍可手动选择连接地址。插件数据与独立应用的数据隔离，避免相互改写连接和会话。
+桌宠自身的表情、角色大小、拖动、对话和完成提醒全部保留。收起窗口时可通过执行进度气泡查看工具命令和实时回复，点击打开对应会话；在桌宠“设置 → 执行进度气泡”中开关，选择会保存。插件模式下服务地址由所属 DSH 自动配置；独立启动方式仍可手动选择连接地址。插件数据与独立应用的数据隔离，避免相互改写连接和会话。
 
 ## 从项目构建
 
-在目标系统的项目根目录执行 `npm ci` 和 `npm run pack:plugin`，输出 `release/dsh-desk-buddy-0.12.2-<platform>-<arch>.tgz` 和带版本、平台、架构名的插件目录。完整包包含桌面组件，源码子目录和 GitHub Source code 压缩包都不能代替构建产物。Windows 使用原生 `.exe` 及其完整依赖目录，macOS 使用 `.app`。
+在目标系统的项目根目录执行 `npm ci` 和 `npm run pack:plugin`，输出 `release/dsh-desk-buddy-0.12.3-<platform>-<arch>.tgz` 和带版本、平台、架构名的插件目录。完整包包含桌面组件，源码子目录和 GitHub Source code 压缩包都不能代替构建产物。Windows 使用原生 `.exe` 及其完整依赖目录，macOS 使用 `.app`。
 
 仓库根目录声明 `dsh.bundle` 并导出插件，首次启动读取 `release-runtime.json`，下载固定版本的官方 Release 附件并校验 SHA-256。完整包则不触发运行时下载。两种方式都不执行 npm 安装脚本、不要求本机编译，也没有后台更新器。发布新版本时，应在 Release 验证完成后同步清单中的版本、平台 URL 和 SHA-256。插件卸载后保留用户设置和组件缓存，方便重新安装。未发布到 npm 或插件市场。
 

@@ -118,6 +118,7 @@ try {
     "drag",
     "stream",
     "completion",
+    "progress",
     "motion",
     "window",
   ]) {
@@ -147,6 +148,7 @@ try {
           "drag",
           "stream",
           "completion",
+          "progress",
           "motion",
           "window",
         ],

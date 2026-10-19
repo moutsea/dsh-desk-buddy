@@ -1,4 +1,5 @@
 import { endStatus } from "./activity.mjs";
+import { toolPresentation } from "./tool-presentation.mjs";
 
 /** @param {any[]} previous @param {any[]} incoming */
 export function mergeEvents(previous, incoming) {
@@ -88,6 +89,7 @@ export function projectSession(events, running = false) {
         id: `event-${event.seq}`,
         role: "tool",
         text: lastTool,
+        ...toolPresentation(data),
         seq: event.seq,
       });
     }

@@ -22,8 +22,8 @@ https://github.com/moutsea/dsh-desk-buddy
 
 | 系统                | 插件包                                                                                                                                               |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows x64         | [dsh-desk-buddy-0.12.2-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.2/dsh-desk-buddy-0.12.2-win32-x64.tgz)       |
-| macOS Apple Silicon | [dsh-desk-buddy-0.12.2-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.2/dsh-desk-buddy-0.12.2-darwin-arm64.tgz) |
+| Windows x64         | [dsh-desk-buddy-0.12.3-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.3/dsh-desk-buddy-0.12.3-win32-x64.tgz)       |
+| macOS Apple Silicon | [dsh-desk-buddy-0.12.3-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.3/dsh-desk-buddy-0.12.3-darwin-arm64.tgz) |
 
 仓库根目录已声明 `dsh.bundle`，可直接安装。若仍提示“这个包没有声明组合包，不能作为插件管理”，删除失败的旧安装项后重新添加上面的仓库地址，确保获取最新提交。自 0.12.1 起，仓库安装和 Release 完整包统一使用 `dsh-desk-buddy` 包名。升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再添加同一个仓库地址；原有桌宠设置与位置继续保留。不要使用 GitHub 自动生成的 Source code 压缩包或源码子目录代替安装来源。
 
@@ -56,6 +56,8 @@ npm run dev
 - 直接按住桌宠身体即可自由拖动，松开后记住位置；轻点仍是摸摸她。展开的内容会跟随角色，靠近边缘时自动换到有空间的一侧，收起后保持角色位置。
 - `Command/Ctrl+Shift+Space` 展开/收起对话；系统托盘可显示、隐藏桌宠或退出。
 - 在对话标题旁切换已有会话，也可点击加号新建会话，历史支持向前加载。聊天、讨论与执行都使用同一个 DSH 会话。
+- 聊天中的助手名称统一为“dsh-desk-buddy”。工具调用直接显示实际命令、文件路径或查询内容，点击可展开完整参数，不再只显示 `bash` 等工具名。
+- 收起内容时，执行中的会话会在桌宠上方显示进度气泡，包括工具命令、实时回复或待回答事项；点击气泡直接打开对应对话。优先提示待回应事项，其次为当前运行会话，再展示后台进度。气泡默认开启，可在“设置 → 执行进度气泡”中关闭，重启后保留选择；不会自动展开窗口或抢占焦点。
 - 遇到工具审批可允许一次或拒绝；遇到提问可直接作答。
 - 设置中的“桌宠大小”可在 50%–150% 之间调节，每档 5%，松开滑块后应用，可一键恢复默认 100%；重启后保留。气泡、余额与对话文字保持原大小。
 - 默认启用窗口置顶，可在设置中关闭。面板关闭后，桌宠继续显示整体状态。

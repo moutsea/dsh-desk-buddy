@@ -1,3 +1,5 @@
+import { toolPresentation } from "./tool-presentation.mjs";
+
 // Live events drive reactions. History is deliberately never fed through this reducer.
 export const ACTIVE_STATUSES = ["thinking", "learning", "working", "replying"];
 export const REACTION_TIMES = {
@@ -32,6 +34,7 @@ export function reduceActivity(previous, event, now = Date.now()) {
   const data = event.data || {};
   let next = { ...previous, seq: event.seq };
   const tools = { ...previous?.tools };
+  const toolDetails = { ...previous?.toolDetails };
   const set = (status, extra = {}) => {
     next = {
       ...next,
@@ -45,20 +48,41 @@ export function reduceActivity(previous, event, now = Date.now()) {
     const status = entries.some((tool) => toolActivity(tool) === "working")
       ? "working"
       : "learning";
-    set(entries.length ? status : "thinking", { tools, tool: entries.at(-1) });
+    set(entries.length ? status : "thinking", {
+      tools,
+      toolDetails,
+      tool: entries.at(-1),
+      toolSummary: toolDetails[Object.keys(tools).at(-1)],
+      preview: "",
+    });
   };
   if (event.type === "turn/start")
     next = { status: "thinking", seq: event.seq, at: now, tools: {} };
   if (event.type === "step/start" && !Object.keys(tools).length)
-    set("thinking");
+    set("thinking", { preview: "" });
   if (event.type === "assistant/chunk" || event.type === "assistant/message") {
     const text =
       data.chunk?.type === "text-delta" ||
       data.message?.content?.some((b) => b.type === "text");
-    if (!Object.keys(tools).length) set(text ? "replying" : "thinking");
+    if (!Object.keys(tools).length) {
+      const preview =
+        data.chunk?.type === "text-delta"
+          ? (previous?.preview || "") + (data.chunk.text || "")
+          : (data.message?.content || [])
+              .filter((block) => block.type === "text")
+              .map((block) => block.text || "")
+              .join("\n");
+      set(text ? "replying" : "thinking", { preview: preview.slice(-1000) });
+    }
   }
   if (event.type === "tool/call") {
-    tools[data.callId || `seq-${event.seq}`] = data.name || "工具";
+    const id = data.callId || `seq-${event.seq}`;
+    const presentation = toolPresentation(data);
+    tools[id] = presentation.name;
+    toolDetails[id] = [presentation.name, presentation.detail]
+      .filter(Boolean)
+      .join(" · ")
+      .slice(0, 1000);
     remaining();
     next.linger = { mood: next.status, until: now + REACTION_TIMES.linger };
   }
@@ -66,8 +90,10 @@ export function reduceActivity(previous, event, now = Date.now()) {
     const blocks = data.message?.content || [];
     const results = blocks.filter((block) => block.type === "tool-result");
     const ids = results.map((block) => block.toolCallId).filter(Boolean);
-    if (ids.length) for (const id of ids) delete tools[id];
-    else delete tools[Object.keys(tools)[0]];
+    for (const id of ids.length ? ids : [Object.keys(tools)[0]]) {
+      delete tools[id];
+      delete toolDetails[id];
+    }
     remaining();
     if (results.some((block) => block.isError === true) || data.error)
       next.reaction = {

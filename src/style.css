@@ -620,12 +620,52 @@ body,
   animation: pulse 1s infinite;
 }
 .tool-message {
-  display: flex;
-  align-items: center;
-  gap: 7px;
   font-size: 10px;
   color: #8291ab;
   margin: 12px 0;
+}
+.tool-message summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  cursor: pointer;
+  list-style: none;
+}
+.tool-message summary::-webkit-details-marker {
+  display: none;
+}
+.tool-message summary > svg,
+.tool-message .tool-dot {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.tool-copy {
+  flex: 1;
+  min-width: 0;
+}
+.tool-copy strong {
+  font-weight: 500;
+}
+.tool-copy code {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  margin-top: 4px;
+  line-height: 1.6;
+  color: #526785;
+}
+.tool-message pre {
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 10px;
+  background: #edf1f8;
+  border-radius: 8px;
+  user-select: text;
 }
 .tool-dot {
   width: 5px;
@@ -1079,6 +1119,73 @@ body,
   height: 400px;
   position: relative;
   user-select: none;
+}
+.pet-progress-bubble {
+  position: absolute;
+  top: 5px;
+  left: 12px;
+  width: calc(100% - 24px);
+  height: 98px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 5px;
+  text-align: left;
+  background: #f8fafff5;
+  border: 1px solid #d6e3f8;
+  border-radius: 17px;
+  box-shadow: 0 3px 8px #35588a12;
+  color: #526785;
+  z-index: 2;
+}
+.pet-progress-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: calc(50% - 4px);
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  background: #f8faff;
+  border-right: 1px solid #d6e3f8;
+  border-bottom: 1px solid #d6e3f8;
+}
+.menu-open .pet-progress-bubble,
+.is-dragging .pet-progress-bubble {
+  visibility: hidden;
+  pointer-events: none;
+}
+.progress-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.progress-heading strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 550;
+}
+.progress-heading svg {
+  flex-shrink: 0;
+}
+.progress-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.progress-footer {
+  font-size: 10px;
+  color: #8291ab;
 }
 .pet-hover-controls {
   position: absolute;

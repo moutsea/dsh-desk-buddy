@@ -40,6 +40,7 @@ import { overallMood, sessionMood } from "../shared/activity.mjs";
 import { projectSession, sessionTitle } from "../shared/projection.mjs";
 import { deepseekPricingPeriod } from "../shared/pricing-period.mjs";
 import { activeCompletion } from "../shared/completion.mjs";
+import { activeProgress } from "../shared/progress.mjs";
 import type { AppState, Pending } from "./types";
 import "./style.css";
 
@@ -163,6 +164,7 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
   const mood = overallMood(state, now),
     running = state.sessions.filter((item) => item.running).length;
   const completion = activeCompletion(state, now);
+  const progress = state.surface.section ? null : activeProgress(state);
   const celebrate =
     !!completion && !["offline", "waiting", "error", "shocked"].includes(mood);
   useEffect(() => {
@@ -244,6 +246,26 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
         if (!event.currentTarget.contains(event.relatedTarget)) conceal();
       }}
     >
+      {progress && (
+        <button
+          data-interactive
+          className={`pet-progress-bubble ${progress.status}`}
+          aria-label={`查看进度：${progress.title}`}
+          title="点击打开对应对话"
+          onClick={() => call("openSession", progress.sessionId)}
+        >
+          <span className="progress-heading">
+            <span className={`status-dot ${progress.status}`} />
+            <strong>{progress.title}</strong>
+            <ChevronRight size={13} aria-hidden="true" />
+          </span>
+          <span className="progress-preview">{progress.text}</span>
+          <span className="progress-footer">
+            {progress.label}
+            {progress.running > 1 && ` · ${progress.running} 个会话进行中`}
+          </span>
+        </button>
+      )}
       <div
         className="pet-hover-controls"
         inert={!controlsVisible}
@@ -849,7 +871,7 @@ function Panel({ state }: { state: AppState }) {
                   <span className="eyebrow">
                     A LITTLE COMPANY, A LITTLE MAGIC
                   </span>
-                  <h1>你好呀，我是 DeepSeek 娘。</h1>
+                  <h1>你好呀，我是 dsh-desk-buddy。</h1>
                   <p>说说你的想法，我们一起把它做好。</p>
                   <div className="suggestions">
                     {["先看看这个项目", "梳理一下接下来要做什么"].map(
@@ -865,10 +887,17 @@ function Panel({ state }: { state: AppState }) {
               )}
               {projection.messages.map((message: any) =>
                 message.role === "tool" ? (
-                  <div className="tool-message" key={message.id}>
-                    <span className="tool-dot" />
-                    {message.text}
-                  </div>
+                  <details className="tool-message" key={message.id}>
+                    <summary>
+                      <span className="tool-dot" />
+                      <span className="tool-copy">
+                        <strong>{message.name}</strong>
+                        {message.detail && <code>{message.detail}</code>}
+                      </span>
+                      <ChevronDown size={12} aria-hidden="true" />
+                    </summary>
+                    <pre>{message.arguments || "此调用没有参数"}</pre>
+                  </details>
                 ) : (
                   <article
                     key={message.id}
@@ -879,7 +908,7 @@ function Panel({ state }: { state: AppState }) {
                         "你"
                       ) : (
                         <>
-                          <span className="mini-spark">✳</span> DeepSeek 娘
+                          <span className="mini-spark">✳</span> dsh-desk-buddy
                         </>
                       )}
                       {message.streaming && (
@@ -1057,6 +1086,26 @@ function Panel({ state }: { state: AppState }) {
                   {option.label}
                 </button>
               ))}
+            </div>
+          </section>
+          <section className="settings-card">
+            <div className="toggle-row">
+              <div>
+                <h2>执行进度气泡</h2>
+                <p>收起窗口时，在桌宠上方显示最新进展，点击打开对应对话。</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={state.config.progressBubbles !== false}
+                aria-label="执行进度气泡"
+                className={`switch ${state.config.progressBubbles !== false ? "on" : ""}`}
+                disabled={busy}
+                onClick={() =>
+                  run("progressBubbles", state.config.progressBubbles === false)
+                }
+              >
+                <span />
+              </button>
             </div>
           </section>
           <section className="settings-card">

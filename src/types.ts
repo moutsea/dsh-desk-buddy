@@ -51,6 +51,9 @@ export type AppState = {
     {
       status: string;
       tool?: string;
+      toolSummary?: string;
+      toolDetails?: Record<string, string>;
+      preview?: string;
       message?: string;
       at?: number;
       seq?: number;
@@ -76,6 +79,7 @@ export type AppState = {
     animations?: boolean;
     petScale?: number;
     chatSize?: "small" | "medium" | "large";
+    progressBubbles?: boolean;
   };
 };
 declare global {

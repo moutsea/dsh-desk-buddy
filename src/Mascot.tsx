@@ -46,7 +46,7 @@ export function Mascot({
     <div
       className={`mascot mood-${mood} expression-${frame} ${small ? "small" : ""} ${enabled ? "" : "motion-disabled"}`}
       role="img"
-      aria-label={`DeepSeek 娘 · ${label}`}
+      aria-label={`dsh-desk-buddy · ${label}`}
       data-expression={frame}
     >
       <span className="character-ground" aria-hidden="true" />

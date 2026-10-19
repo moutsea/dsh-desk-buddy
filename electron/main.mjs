@@ -62,6 +62,7 @@ let config = {
   animations: true,
   petScale: PET_SCALE.default,
   chatSize: "small",
+  progressBubbles: true,
 };
 let state = {
   managed: !!managed,
@@ -458,6 +459,9 @@ function handleFrame(frame) {
       ...state.activity[id],
       status: "error",
       tools: {},
+      toolDetails: {},
+      toolSummary: "",
+      preview: "",
       reaction: { mood: "shocked", at: Date.now(), until: Date.now() + 4000 },
       message: payload.message,
       at: Date.now(),
@@ -607,6 +611,12 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
       save();
       broadcast();
       return;
+    case "progressBubbles":
+      if (typeof payload !== "boolean") throw new Error("无效设置");
+      config.progressBubbles = payload;
+      save();
+      broadcast();
+      return;
     case "expressionMenu": {
       const groups = [...new Set(EXPRESSIONS.map((item) => item.group))];
       const menu = Menu.buildFromTemplate([
@@ -645,15 +655,19 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
     }
     case "balance":
       return refreshBalance(requireClient());
-    case "select": {
+    case "select":
+    case "openSession": {
       requireClient();
       if (!state.sessions.some((item) => item.sessionId === payload))
         throw new Error("会话不存在，请刷新会话列表");
-      state.selectedId = payload;
-      config.selectedId = payload;
-      state.events = [];
-      state.hasMore = false;
-      historyRevision++;
+      if (state.selectedId !== payload) {
+        state.selectedId = payload;
+        config.selectedId = payload;
+        state.events = [];
+        state.hasMore = false;
+        historyRevision++;
+      }
+      if (action === "openSession") showSection("chat");
       save();
       broadcast();
       await history();
@@ -894,6 +908,8 @@ app
     if (typeof config.idleExpressions !== "boolean")
       config.idleExpressions = true;
     if (typeof config.animations !== "boolean") config.animations = true;
+    if (typeof config.progressBubbles !== "boolean")
+      config.progressBubbles = true;
     config.petScale = normalizePetScale(config.petScale);
     config.chatSize = normalizeChatSize(config.chatSize);
     Menu.setApplicationMenu(
