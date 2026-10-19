@@ -21,6 +21,8 @@ flowchart LR
 
 ## 完整插件与原生组件
 
+仓库根包通过 `exports` 导出 `plugins/dsh-girl/index.mjs`，并以 `dsh.bundle.patch` 声明组合包，因此 DSH 可直接安装 GitHub 仓库地址。根包只携带插件、管理页和下载清单。首次启用没有内置 `runtime.json` 时，`release-runtime.mjs` 从 `release-runtime.json` 选择当前系统和架构的固定 Release URL，流式下载、限制大小并校验完整包 SHA-256，再只提取组件 ZIP 和清单，交给同一套原子安装流程。下载有超时，失败会清理临时文件并允许重试；缓存成功后无需联网。清单只指向本仓库已验证的 Release，不执行安装脚本或本机编译。新版本组件发布并验证后再更新下载清单。
+
 `scripts/pack-plugin.mjs` 将插件后端及余额模块打包为无第三方运行依赖的 ESM，复制管理页和标准 `dsh.bundle` 声明；macOS 使用 ditto 打包同版本 `.app`，保留 framework 符号链接和可执行权限；Windows 使用系统 PowerShell 调用 .NET ZipFile 打包完整 `win-unpacked` 目录。两者都将 ZIP 和 SHA-256 清单放进带系统、架构名的插件 `.tgz`，不依赖 npm 生命周期脚本、额外运行时下载或系统 Electron。PowerShell 使用固定脚本，路径通过环境变量传入，支持空格、中文和引号。Windows 启动直接执行 `.exe`，不经过 shell、不显示控制台。
 
 插件注入当前 `webServer`、`credentials` 服务，读取真实监听端口；管理路由限制本机地址、来源和请求体，操作白名单仅包含启动、关闭、显示、隐藏、对话和自动启动设置，不接受路径、命令或任意 RPC。Desktop 通过结构化 `webserver/index-inject` 注入自己的管理按钮，旧版 Web 使用 `tapIndex`；不会抓取或操作 DSH 会话页面 DOM。余额继续通过同源只读接口提供。

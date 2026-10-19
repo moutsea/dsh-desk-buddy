@@ -7,6 +7,19 @@
   "description": "DeepSeek 娘：住在桌面上的 DSH 对话与任务入口",
   "type": "module",
   "main": "electron/main.mjs",
+  "exports": {
+    ".": "./plugins/dsh-girl/index.mjs"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "plugins/dsh-girl",
+    "plugins/dsh-girl-bridge/index.mjs"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:web": "vite --host 127.0.0.1",
@@ -25,6 +38,7 @@
     "test:plugin": "node scripts/smoke-plugin.mjs",
     "test:desktop": "node scripts/smoke-desktop.mjs",
     "test:packaged": "node scripts/smoke-packaged.mjs",
+    "test:repository": "node scripts/smoke-repository.mjs",
     "test:stream": "node scripts/smoke-stream.mjs"
   },
   "build": {
@@ -58,6 +72,7 @@
     "react-dom": "^19.3.1",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "tar": "^7.5.22",
     "ws": "^8.22.0"
   },
   "devDependencies": {

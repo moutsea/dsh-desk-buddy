@@ -20,6 +20,7 @@ const archive = resolve(
     `release/dsh-girl-${pkg.version}-${process.platform}-${process.arch}.tgz`,
 );
 const installSpec = process.env.DSG_PLUGIN_SPEC || archive;
+const bundleName = process.env.DSG_PLUGIN_NAME || "dsh-girl";
 const home = await mkdtemp(join(tmpdir(), "dsg-desktop-install-"));
 const profile = join(home, "profiles/desktop");
 await mkdir(profile, { recursive: true });
@@ -103,7 +104,7 @@ try {
         const manifest = JSON.parse(
           await readFile(join(profile, "package.json"), "utf8"),
         );
-        return manifest.dsh.profile.bundles.includes("dsh-girl");
+        return manifest.dsh.profile.bundles.includes(bundleName);
       },
       {
         timeout: 180000,
@@ -111,16 +112,13 @@ try {
       },
     )
     .toBe(true);
-  console.log(
-    "Official Desktop plugin UI installed the complete plugin:",
-    installSpec,
-  );
+  console.log("Official Desktop plugin UI installed the plugin:", installSpec);
   // Host restart reloads the shell's startup injection snapshot as in normal use.
   await app.close();
   app = null;
   await boot();
   await expect
-    .poll(async () => (await status()).connection, { timeout: 90000 })
+    .poll(async () => (await status()).connection, { timeout: 360000 })
     .toBe("connected");
   const running = await status();
   pid = running.pid;

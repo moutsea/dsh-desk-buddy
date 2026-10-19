@@ -8,28 +8,36 @@ Electron 提供单一透明置顶窗口，React 构建 DSG 和身旁的内容气
 
 ## 通过 DSH 插件安装
 
-完整插件包包含桌宠组件，支持 macOS 和 Windows 构建。在 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择与系统和架构匹配的 `.tgz` 文件：
+在官方 DSH Desktop 左侧打开“插件”→“添加插件”，粘贴以下仓库地址：
+
+```text
+https://github.com/moutsea/dsh-desk-buddy
+```
+
+安装后点击“立即启用”，再重启 Desktop。首次启动会自动识别系统，从 GitHub Release 下载已验证的桌宠组件，校验 SHA-256、解压并连接当前 DSH。Mac 和 Windows 使用同一个地址，无需另装 App、Node.js、Electron 或手动构建，也无需另外启动 Web 服务。当前支持 macOS Apple Silicon 和 Windows x64。
+
+首次下载约 200–230 MB，需要能够访问 GitHub Release；成功后缓存到当前用户目录，后续启动无需再次下载。可在左下角“DSG 桌宠”查看准备状态；下载失败时，检查网络后点击“启动 DSG”重试。
+
+也可以在 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择对应的完整 `.tgz`，将附件链接或本地文件的绝对路径填入同一安装框。完整包已包含组件，启用时无需额外下载：
 
 | 系统                | 插件包                                                                                                                                   |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Windows x64         | [dsh-girl-0.12.0-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.0/dsh-girl-0.12.0-win32-x64.tgz)       |
 | macOS Apple Silicon | [dsh-girl-0.12.0-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.0/dsh-girl-0.12.0-darwin-arm64.tgz) |
 
-官方 DSH Desktop 用户在左侧“插件”中添加插件，粘贴 Release 附件的下载链接或已下载文件的绝对路径，安装后点击“立即启用”，再重启 Desktop，即可自动连接；无需另外启动 Web 服务。GitHub 仓库首页和自动生成的 Source code 压缩包不包含桌宠组件，不能作为完整插件安装。
-
-若提示“这个包没有声明组合包，不能作为插件管理”，先核对安装来源：`https://github.com/moutsea/dsh-desk-buddy`、`github:moutsea/dsh-desk-buddy` 和源码压缩包读取的是应用源码根目录，其 `package.json` 没有 `dsh.bundle`。请复制上表对应附件的完整链接（含 `/releases/download/` 和 `.tgz`），或下载附件后填写文件的绝对路径。完整插件包的包名为 `dsh-girl`，声明了 `dsh.bundle.patch`。
+仓库根目录现已声明 `dsh.bundle`，可直接安装。若仍提示“这个包没有声明组合包，不能作为插件管理”，删除失败的旧安装项后重新添加上面的仓库地址，确保获取最新提交。仓库安装的包名为 `deepseek-girl`，Release 完整包为 `dsh-girl`；切换安装方式前卸载原来的插件，避免重复启用同一个桌宠。不要使用 GitHub 自动生成的 Source code 压缩包或源码子目录代替安装来源。
 
 DSH Web 用户可通过命令安装，无需另装 App、Electron 或手填地址：
 
 ```sh
-dsh plugin --profile web add /absolute/path/to/dsh-girl-0.12.0-darwin-arm64.tgz
+dsh plugin --profile web add https://github.com/moutsea/dsh-desk-buddy
 ```
 
 重启 DSH Web，DSG 自动启动并连接当前 DSH。页面左下角的“DSG 桌宠”入口提供启动、关闭、显示、隐藏、打开对话、运行状态和“随 DSH 启动”设置；也可访问当前服务的 `/dsh-girl/`。停用插件或退出所属 DSH 时，插件管理的 DSG 会退出，已接受的 DSH 任务不受关闭桌宠影响。
 
-插件包由 `npm run pack:plugin` 生成，文件名包含版本、系统和架构；源码目录不包含完整运行组件，安装时使用构建产物。内置余额桥接，无需再装 `dsh-girl-bridge`；已有旧余额插件时先停用，避免路由重复。详见 [插件说明](plugins/dsh-girl/README.md)。
+完整插件包由 `npm run pack:plugin` 生成，文件名包含版本、系统和架构。仓库入口只携带管理插件和下载清单，原生组件使用已发布的完整包。内置余额桥接，无需再装 `dsh-girl-bridge`；已有旧余额插件时先停用，避免路由重复。详见 [插件说明](plugins/dsh-girl/README.md)。
 
-接入协议依据官方 DSH Desktop `0.2.1-rc.2` 和 DSH Web `0.1.1-rc.2`。Desktop 使用宿主正式 Gateway/Peer 接口，管理入口随官方启动注入加载。Desktop 插件由应用管理，不能使用 `dsh plugin --profile desktop` 安装。插件通过 GitHub Release 完整包分发，尚未发布到 npm 或插件市场。各系统的验证范围见 [平台验证](docs/platforms.md)。
+接入协议依据官方 DSH Desktop `0.2.1-rc.2` 和 DSH Web `0.1.1-rc.2`。Desktop 使用宿主正式 Gateway/Peer 接口，管理入口随官方启动注入加载。Desktop 插件由应用管理，不能使用 `dsh plugin --profile desktop` 安装。支持 GitHub 仓库地址和 Release 完整包两种安装方式，尚未发布到 npm 或插件市场。各系统的验证范围见 [平台验证](docs/platforms.md)。
 
 ## 独立运行与开发
 
@@ -76,6 +84,7 @@ npm test                 # 协议、流式解析、状态投影、余额插件
 npm run test:stream      # Desktop 无游标流式回复、最终替换和断线清理
 npm run test:completion  # 独立完成提醒、后台会话、去重及动态效果
 npm run test:desktop     # 官方 Desktop 隔离安装与连接检查（先构建插件包）
+npm run test:repository  # 隔离安装仓库入口、下载 Release、原生启动和缓存重启
 npm run test:plugin      # 真实 DSH 完整插件包安装、原生组件和管理流程（先构建插件包）
 npm run test:packaged    # 安装完整包、解压和启动组件，再验证打包后的桌面交互
 npm run build            # 类型检查与前端构建
@@ -93,7 +102,7 @@ npm run pack:plugin      # 生成包含原生组件的完整 DSH 插件目录与
 
 在 macOS 上生成 `release/mac-arm64/DeepSeek Girl.app`（Intel 为 `release/mac/`）；在 Windows x64 上生成 `release/win-unpacked/DeepSeek Girl.exe`，整个目录需保持完整。插件包会携带该目录及全部运行依赖。当前构建尚未签名，macOS 也未公证。直接独立启动时需连接 DSH Web；通过插件启动时自动使用所属宿主。
 
-GitHub Actions 在 Windows x64 和 macOS ARM64 上执行构建、单元检查、完整包安装及桌面交互验证。只有验证成功的任务上传插件成品；截图和结果报告作为独立 artifacts 保存。Windows 使用系统自带 Windows PowerShell 和 .NET 解压，无需用户安装 Node、Electron、7-Zip 或执行安装脚本。Intel Mac 和 Windows ARM64 暂无 CI 验证成品，Linux 尚不支持完整插件。
+GitHub Actions 在 Windows x64 和 macOS ARM64 上执行构建、单元检查、仓库入口安装、Release 下载和启动、完整包安装及桌面交互验证。只有验证成功的任务上传插件成品；截图和结果报告作为独立 artifacts 保存。Windows 使用系统自带 Windows PowerShell 和 .NET 解压，无需用户安装 Node、Electron、7-Zip 或执行安装脚本。Intel Mac 和 Windows ARM64 暂无 CI 验证成品，Linux 尚不支持完整插件。
 
 ## 文档
 

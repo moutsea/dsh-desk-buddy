@@ -6,7 +6,7 @@
 
 工作流：[Desktop validation](https://github.com/moutsea/dsh-desk-buddy/actions/workflows/desktop.yml)。以具体提交对应的绿色任务为通过依据。
 
-每个平台执行 `npm ci`、`npm test`、`npm run pack:plugin` 和 `npm run test:packaged`。最后一项将实际 `.tgz` 安装到含中文和空格的临时目录，校验组件、解压，然后直接运行该组件，而非开发环境 Electron：
+每个平台执行 `npm ci`、`npm test`、`npm run test:repository`、`npm run pack:plugin` 和 `npm run test:packaged`。仓库入口检查使用含中文和空格的隔离目录，验证根包的插件导出、真实 Release 下载、SHA-256 校验、原生启动、连接、显示/隐藏和缓存重启。完整包检查将实际 `.tgz` 安装到临时目录，校验组件、解压，然后直接运行该组件，而非开发环境 Electron：
 
 - 私有管道启动、版本检查、双事件连接、显示/隐藏/对话、重复启动去重、正常退出、重启和父管道断开后退出。
 - 完整对话、会话切换、审批提问、流式回复、连接恢复、完成提醒和动画。
@@ -30,7 +30,11 @@ npm run test:desktop
 
 `DSG_PLUGIN_PACKAGE` 可指定完整插件包路径。此检查使用独立 DSH_HOME，不覆盖日常使用的配置。macOS 默认使用 `/Applications/DeepSeek Harness.app`。
 
-`DSG_PLUGIN_SPEC` 可直接指定安装框中的来源，包括 Release 下载链接；测试会在官方 Desktop 界面填写原始地址并验证安装、启用、重启及连接，避免仅测试下载后的本地文件。
+`DSG_PLUGIN_SPEC` 可直接指定安装框中的来源，包括 GitHub 仓库地址和 Release 下载链接；测试会在官方 Desktop 界面填写原始地址并验证安装、启用、重启及连接，避免仅测试下载后的本地文件。仓库安装时同时指定 `DSG_PLUGIN_NAME=deepseek-girl`，完整包默认名称为 `dsh-girl`。例如 macOS：
+
+```sh
+DSG_PLUGIN_SPEC=https://github.com/moutsea/dsh-desk-buddy DSG_PLUGIN_NAME=deepseek-girl npm run test:desktop
+```
 
 ## 构建与安装
 
@@ -38,4 +42,4 @@ npm run test:desktop
 
 Windows 解压使用系统 Windows PowerShell 与 .NET，支持当前 Electron 支持的 Windows 10/11 环境。成品未签名；macOS 未公证。多显示器、不同 DPI、系统托盘菜单与不同 Windows 安全软件的兼容性仍需实际设备覆盖，CI 只提供单显示器自动验证。
 
-安装时在 DSH 插件页填写 GitHub Release 的 `.tgz` 附件链接或本地文件绝对路径；仓库首页不是当前项目的可安装插件入口。
+推荐在 DSH 插件页填写 `https://github.com/moutsea/dsh-desk-buddy`；首次启用自动下载当前平台的已验证组件，随后缓存复用。也可填写 GitHub Release 的完整 `.tgz` 附件链接或本地文件绝对路径，以使用包内组件。仓库安装和完整包安装都支持 macOS ARM64、Windows x64。

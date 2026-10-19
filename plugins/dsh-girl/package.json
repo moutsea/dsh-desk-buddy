@@ -11,6 +11,8 @@
     "index.mjs",
     "manager.mjs",
     "runtime.mjs",
+    "release-runtime.mjs",
+    "release-runtime.json",
     "archive.mjs",
     "desktop-bridge.mjs",
     "web",

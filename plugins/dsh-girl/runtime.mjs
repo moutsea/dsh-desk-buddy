@@ -11,6 +11,7 @@ import {
 } from "node:fs/promises";
 import { join, resolve, sep } from "node:path";
 import { extractArchive } from "./archive.mjs";
+import { downloadRuntimePackage } from "./release-runtime.mjs";
 
 export async function fileHash(path) {
   const hash = createHash("sha256");
@@ -27,10 +28,11 @@ export async function prepareRuntime(root, cache) {
   let manifest;
   try {
     manifest = JSON.parse(await readFile(join(root, "runtime.json"), "utf8"));
-  } catch {
-    throw new Error(
-      "此插件尚未包含桌宠组件，请安装 release/ 中生成的完整 DSG 插件包",
-    );
+  } catch (error) {
+    if (error.code !== "ENOENT")
+      throw new Error("桌宠组件清单无效", { cause: error });
+    const packageRoot = await downloadRuntimePackage(root, cache);
+    return prepareRuntime(packageRoot, cache);
   }
   if (manifest.platform !== process.platform || manifest.arch !== process.arch)
     throw new Error(

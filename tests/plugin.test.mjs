@@ -402,7 +402,10 @@ test("plugin serves a discoverable manager and rejects cross-origin, remote and 
       ).code,
       "NO_KEY",
     );
-    assert.equal((await control('{"action":"start"}')).status, 400);
+    assert.equal(
+      (await control('{"action":"autoStart","value":"yes"}')).status,
+      400,
+    );
   } finally {
     for (const dispose of disposers.reverse()) await dispose();
     assert.equal(routes.length, 0);
