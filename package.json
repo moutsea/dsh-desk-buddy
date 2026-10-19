@@ -16,7 +16,7 @@
     "test:ui": "node scripts/smoke-ui.mjs",
     "test:motion": "node scripts/smoke-motion.mjs",
     "register:motion": "node scripts/register-motion.mjs",
-    "pack": "npm run build && node scripts/icon.mjs && electron-builder --dir",
+    "pack": "npm run build && node scripts/icon.mjs && electron-builder --dir --publish never",
     "check:dsh": "node scripts/check-dsh.mjs",
     "test:size": "node scripts/smoke-size.mjs",
     "test:drag": "node scripts/smoke-drag.mjs",
@@ -61,6 +61,7 @@
     "ws": "^8.22.0"
   },
   "devDependencies": {
+    "@electron/asar": "^3.4.1",
     "@playwright/test": "^1.64.1",
     "@resvg/resvg-js": "^2.6.2",
     "@types/react": "^19.3.0",

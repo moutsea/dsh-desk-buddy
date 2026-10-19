@@ -1,10 +1,11 @@
 import { rolldown } from "rolldown";
+import { extractFile } from "@electron/asar";
 import { readFile, writeFile, mkdir, cp, rm, rename } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { join, resolve } from "node:path";
 import { fileHash } from "../plugins/dsh-girl/runtime.mjs";
-import { createArchive, powershell } from "../plugins/dsh-girl/archive.mjs";
+import { createArchive } from "../plugins/dsh-girl/archive.mjs";
 
 const exec = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
@@ -21,17 +22,13 @@ const app = join(
     ? [process.arch === "x64" ? "win-unpacked" : `win-${process.arch}-unpacked`]
     : [process.arch === "arm64" ? "mac-arm64" : "mac", "DeepSeek Girl.app"]),
 );
-const version = windows
-  ? await powershell(
-      "[System.Diagnostics.FileVersionInfo]::GetVersionInfo($env:DSG_PACK_EXECUTABLE).ProductVersion",
-      { DSG_PACK_EXECUTABLE: join(app, "DeepSeek Girl.exe") },
-    )
-  : await exec("/usr/libexec/PlistBuddy", [
-      "-c",
-      "Print :CFBundleShortVersionString",
-      join(app, "Contents/Info.plist"),
-    ]);
-if (version.stdout.trim() !== pkg.version)
+const packaged = JSON.parse(
+  extractFile(
+    join(app, windows ? "resources/app.asar" : "Contents/Resources/app.asar"),
+    "package.json",
+  ).toString("utf8"),
+);
+if (packaged.version !== pkg.version || packaged.name !== pkg.name)
   throw new Error("桌宠组件版本不匹配，请先执行 npm run pack");
 const source = join(root, "plugins/dsh-girl");
 const output = join(
