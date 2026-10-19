@@ -111,6 +111,7 @@ try {
   console.log(
     "Installed tarball, verified native runtime, private-pipe control, restart and parent-disconnect cleanup.",
   );
+  const failures = [];
   for (const name of [
     "ui",
     "size",
@@ -119,8 +120,15 @@ try {
     "completion",
     "motion",
     "window",
-  ])
-    await run(`scripts/smoke-${name}.mjs`, runtime.executable);
+  ]) {
+    try {
+      await run(`scripts/smoke-${name}.mjs`, runtime.executable);
+    } catch (error) {
+      failures.push(error);
+    }
+  }
+  if (failures.length)
+    throw new AggregateError(failures, "Packaged desktop checks failed");
   await mkdir("artifacts", { recursive: true });
   await writeFile(
     "artifacts/packaged-result.json",

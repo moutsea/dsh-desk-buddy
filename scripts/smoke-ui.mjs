@@ -419,6 +419,16 @@ try {
     1,
   );
   // Time changes update the badge while the same hover controls stay open.
+  await panel.evaluate(
+    (endpoint) => window.desktop.invoke("connect", endpoint),
+    fixture.endpoint,
+  );
+  await expect
+    .poll(
+      async () =>
+        (await panel.evaluate(() => window.desktop.invoke("state"))).connection,
+    )
+    .toBe("connected");
   await pet.hover();
   for (const [time, label] of [
     ["2026-10-19T08:59:59+08:00", "谷时"],
@@ -428,7 +438,7 @@ try {
     ["2026-10-19T18:00:00+08:00", "谷时"],
     ["2026-10-01T10:00:00+08:00", "谷时"],
   ]) {
-    await panel.clock.setSystemTime(new Date(time));
+    await panel.clock.setFixedTime(new Date(time));
     await panel.clock.fastForward(600);
     await expect(panel.locator(".pet-pricing-period")).toHaveText(label);
     await expect(panel.locator(".pet-balance")).toBeVisible();
