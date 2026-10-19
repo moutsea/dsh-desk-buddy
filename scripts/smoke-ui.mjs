@@ -430,6 +430,12 @@ try {
     )
     .toBe("connected");
   await pet.hover();
+  await pet.focus();
+  await expect(pet).toBeFocused();
+  await expect(panel.locator(".pet-hover-controls")).toHaveAttribute(
+    "aria-hidden",
+    "false",
+  );
   for (const [time, label] of [
     ["2026-10-19T08:59:59+08:00", "谷时"],
     ["2026-10-19T09:00:00+08:00", "峰时"],
