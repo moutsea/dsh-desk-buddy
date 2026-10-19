@@ -1,0 +1,44 @@
+name: Desktop validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win32-x64
+          - os: macos-15
+            platform: darwin-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run pack:plugin
+      - run: npm run test:packaged
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-evidence-${{ matrix.platform }}
+          path: artifacts/
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dsh-girl-${{ matrix.platform }}
+          path: release/dsh-girl-*-${{ matrix.platform }}.tgz
+          if-no-files-found: error

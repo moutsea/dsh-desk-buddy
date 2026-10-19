@@ -1,0 +1,107 @@
+# DeepSeek Girl
+
+[![Desktop validation](https://github.com/moutsea/dsh-desk-buddy/actions/workflows/desktop.yml/badge.svg)](https://github.com/moutsea/dsh-desk-buddy/actions/workflows/desktop.yml)
+
+一个独立的 Agent 桌宠产品：陪伴、余额、任务状态、对话和任务调用。目前接入 DSH，并提供完整的 DSH 插件安装入口。
+
+Electron 提供单一透明置顶窗口，React 构建 DSG 和身旁的内容气泡，所有任务通过本机 DSH 执行。桌宠退出不会取消 DSH 中已接受的任务。角色采用蓝白鲸鱼娘形象：蓝色渐变长发、鲸鳍耳、鲸尾与蓝白女仆装，内置 19 张透明表情与姿态，支持自动跟随任务、日常互动和手动固定。
+
+## 通过 DSH 插件安装
+
+完整插件包包含桌宠组件，支持 macOS 和 Windows 构建。在 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择与系统和架构匹配的 `.tgz` 文件：
+
+| 系统                | 插件包                             |
+| ------------------- | ---------------------------------- |
+| Windows x64         | `dsh-girl-0.12.0-win32-x64.tgz`    |
+| macOS Apple Silicon | `dsh-girl-0.12.0-darwin-arm64.tgz` |
+
+官方 DSH Desktop 用户在左侧“插件”中添加插件，粘贴 Release 附件的下载链接或已下载文件的绝对路径，安装后点击“立即启用”，再重启 Desktop，即可自动连接；无需另外启动 Web 服务。GitHub 仓库首页和自动生成的 Source code 压缩包不包含桌宠组件，不能作为完整插件安装。
+
+DSH Web 用户可通过命令安装，无需另装 App、Electron 或手填地址：
+
+```sh
+dsh plugin --profile web add /absolute/path/to/dsh-girl-0.12.0-darwin-arm64.tgz
+```
+
+重启 DSH Web，DSG 自动启动并连接当前 DSH。页面左下角的“DSG 桌宠”入口提供启动、关闭、显示、隐藏、打开对话、运行状态和“随 DSH 启动”设置；也可访问当前服务的 `/dsh-girl/`。停用插件或退出所属 DSH 时，插件管理的 DSG 会退出，已接受的 DSH 任务不受关闭桌宠影响。
+
+插件包由 `npm run pack:plugin` 生成，文件名包含版本、系统和架构；源码目录不包含完整运行组件，安装时使用构建产物。内置余额桥接，无需再装 `dsh-girl-bridge`；已有旧余额插件时先停用，避免路由重复。详见 [插件说明](plugins/dsh-girl/README.md)。
+
+接入协议依据官方 DSH Desktop `0.2.1-rc.2` 和 DSH Web `0.1.1-rc.2`。Desktop 使用宿主正式 Gateway/Peer 接口，管理入口随官方启动注入加载。Desktop 插件由应用管理，不能使用 `dsh plugin --profile desktop` 安装。插件通过 GitHub Release 完整包分发，尚未发布到 npm 或插件市场。各系统的验证范围见 [平台验证](docs/platforms.md)。
+
+## 独立运行与开发
+
+需要 Node.js 22.12+、npm 和可用的 DSH Web 服务。
+
+```sh
+npm ci
+dsh web --host 127.0.0.1 --port 3080 --no-open
+npm run dev
+```
+
+打开设置，填写本机 DSH 地址（默认 `http://127.0.0.1:3080`），点击连接。选择项目目录，新建对话，发送任务。执行中的输入进入 DSH 队列；停止按钮取消当前轮次，DSH 原有排队消息可能继续执行。
+
+- 平时只显示 DSG；鼠标悬停在她身上时，浮现“对话、表情、设置”三个气泡及带有“DeepSeek 余额”说明的金额标签，旁边以暖色“峰时”和绿色“谷时”显示 DeepSeek 官方 API 当前计价时段。按北京时间自动切换，移开后一起隐去。
+- 点击气泡，在 DSG 身旁的同一个窗口展开对应内容；对话采用 360 × 460 的紧凑布局，再次点击同一气泡、右上角关闭或按 Escape 可收起，草稿保留。可用空间决定在左侧还是右侧展开。
+- 直接按住 DSG 身体即可自由拖动，松开后记住位置；轻点仍是摸摸她。展开的内容会跟随角色，靠近边缘时自动换到有空间的一侧，收起后保持角色位置。
+- `Command/Ctrl+Shift+Space` 展开/收起对话；系统托盘可显示、隐藏桌宠或退出。
+- 在对话标题旁切换已有会话，也可点击加号新建会话，历史支持向前加载。聊天、讨论与执行都使用同一个 DSH 会话。
+- 遇到工具审批可允许一次或拒绝；遇到提问可直接作答。
+- 设置中的“DSG 大小”可在 50%–150% 之间调节，每档 5%，松开滑块后应用，可一键恢复默认 100%；重启后保留。气泡、余额与对话文字保持原大小。
+- 默认启用窗口置顶，可在设置中关闭。面板关闭后，桌宠继续显示整体状态。
+- “表情”页预览全部 19 种表情；点击即可固定，选择“自动跟随会话”恢复自动。也可右键点击桌宠快速选择。
+- 对话与后台任务联动：读资料→学习、执行工具→工作、回复→开心、报错→震惊、成功→庆祝后开心。对话顶部小头像跟随当前会话，桌宠也关注后台会话。详见 [任务与表情联动](docs/task-behaviour.md)。
+- 任一普通会话成功完成后，DSG 无需悬停就会跳跃庆祝 6 秒，并短暂显示任务名称；多个完成会合并计数。即使固定了表情，完成提醒也会短暂出现，随后恢复原选择；下一轮立即开始也不会漏掉提醒。仅根据实时成功事件触发，失败、取消及历史加载不触发，重复事件不会重复提醒。动态效果开关与系统减少动态效果设置继续生效。
+- 点击比心、连续点 5 下生气、悬停 8 秒害羞；空闲时偶尔吃饭、读书或得意，1 分钟未互动会无聊、2 分钟犯困、4 分钟睡觉。可关闭空闲随机表情。
+- 19 种表情的静态图和全部 76 个动作帧统一可见身高与脚底位置，切换不会忽大忽小。表情均提供逐帧循环动作：挥手眨眼、敲键盘、翻书、夹饭、举手欢呼等。桌宠、对话头像和表情预览使用同一套播放规则；“让她动起来”开关可暂停，系统减少动态效果也会生效。
+
+## 余额插件
+
+完整 DSG 插件已内置余额功能。若只使用独立应用，可单独安装轻量余额插件，让 DSH 使用其凭证服务查询余额；独立应用不读取 API Key：
+
+```sh
+dsh plugin --profile web add link:/absolute/path/to/dsh-girl/plugins/dsh-girl-bridge
+```
+
+重启 DSH Web 后，在应用中刷新余额。插件读取 DSH 中的 `DEEPSEEK_API_KEY`，返回按币种区分的官方余额，不返回密钥。余额表示这个 Key 所属账号，与会话使用的第三方模型余额无关。没有插件、没有凭证、数据过期等情况均明确展示。不需要安装鲸鱼参考插件。
+
+峰谷时段按 [DeepSeek 官方规则](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)（2026-10-18 核对）显示：北京时间周一至周五 09:00–12:00、14:00–18:00 为峰时，周末、中国节假日及其余时段为谷时。悬停金额可查看规则；时段提示不依赖余额连接，也不代表第三方供应商的实际计费。已内置 [2026 年节假日日历](https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html)；新年份需更新日历，未收录年份在可能的峰时明确显示“峰时·估算”。
+
+## 构建与检查
+
+```sh
+npm test                 # 协议、流式解析、状态投影、余额插件
+npm run test:stream      # Desktop 无游标流式回复、最终替换和断线清理
+npm run test:completion  # 独立完成提醒、后台会话、去重及动态效果
+npm run test:desktop     # 官方 Desktop 隔离安装与连接检查（先构建插件包）
+npm run test:plugin      # 真实 DSH 完整插件包安装、原生组件和管理流程（先构建插件包）
+npm run test:packaged    # 安装完整包、解压和启动组件，再验证打包后的桌面交互
+npm run build            # 类型检查与前端构建
+npm start                # 运行构建后的桌面应用
+npm run check:dsh        # 只读探测本机 DSH，DSH_URL 可覆盖地址
+npm run test:ui          # 构建后执行 Electron 端到端检查（本地模拟服务）
+npm run test:motion      # 构建后检查 19 段动画的真实帧变化、透明度、暂停与恢复
+npm run test:size        # 构建后检查大小调节、屏幕边界、收起和重启恢复
+npm run test:drag        # 构建后检查直接拖动、点击区分、内容跟随及位置恢复
+npm run pack             # 生成本机平台的应用目录，输出到 release/
+npm run pack:plugin      # 生成包含原生组件的完整 DSH 插件目录与 .tgz
+```
+
+`npm run dev:web` 仅用于界面预览，不提供桌面连接能力。界面不会展示模拟余额或伪造任务。自动化测试使用明确隔离的测试服务，不消耗模型额度。
+
+在 macOS 上生成 `release/mac-arm64/DeepSeek Girl.app`（Intel 为 `release/mac/`）；在 Windows x64 上生成 `release/win-unpacked/DeepSeek Girl.exe`，整个目录需保持完整。插件包会携带该目录及全部运行依赖。当前构建尚未签名，macOS 也未公证。直接独立启动时需连接 DSH Web；通过插件启动时自动使用所属宿主。
+
+GitHub Actions 在 Windows x64 和 macOS ARM64 上执行构建、单元检查、完整包安装及桌面交互验证。只有验证成功的任务上传插件成品；截图和结果报告作为独立 artifacts 保存。Windows 使用系统自带 Windows PowerShell 和 .NET 解压，无需用户安装 Node、Electron、7-Zip 或执行安装脚本。Intel Mac 和 Windows ARM64 暂无 CI 验证成品，Linux 尚不支持完整插件。
+
+## 文档
+
+- [产品与交互](docs/product.md)
+- [架构、协议和兼容性](docs/architecture.md)
+- [开发阶段与验收记录](docs/roadmap.md)
+- [DeepSeek 娘角色设定、素材与生成提示词](docs/character.md)
+- [任务、对话与表情联动](docs/task-behaviour.md)
+- [动态动作与素材维护](docs/animation.md)
+
+## 来源
+
+功能研究参考 [dsh-whale-widget-plus](https://github.com/louke6572/dsh-whale-widget-plus)；本项目重新实现界面和连接层。角色通过内置 ImageGen 参考鲸鱼娘形象重新绘制，素材来源与提示词见角色文档。DSH 接口依据本机 Web `0.1.1-rc.2` 与官方 Desktop `0.2.1-rc.2` 安装包的实现核对。独立客户端与 DSH 协议尚无稳定版本协商，升级后需重新验证。

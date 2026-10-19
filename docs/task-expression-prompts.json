@@ -1,0 +1,28 @@
+{
+  "mode": "built-in image_gen edit",
+  "transparent_background": true,
+  "reference": "public/characters/deepseek-girl/idle.png",
+  "variants": [
+    {
+      "id": "learning",
+      "label": "学习",
+      "pose": "She is studying an open small navy blue book held at chest level in both hands. Her bright eyes look down thoughtfully at the pages, tiny gentle focused smile, attentive and curious. Clear visible open book with plain ivory pages without text. Upright standing pose, same feet baseline.",
+      "prompt": "Use case: identity-preserve. Asset: ONE production transparent full-body expression sprite for the DeepSeek Girl desktop pet. Input image 1 is the EDIT TARGET and locked character identity. Preserve her exact elegant semi-chibi proportions, face identity, sapphire-blue to cyan long curled hair, white ruffled maid headband, side whale-fin ears, single ahoge, complete blue whale tail and horizontal flukes, navy-and-white modest maid dress with tiny whale apron emblem, white stockings and navy Mary Jane shoes. Match the reference image's detailed delicate linework and soft premium anime cel shading. Preserve the same portrait canvas, full-body character scale, head placement and feet baseline for stable in-app switching. Change only face expression and the stated arms/pose/prop. Entire ahoge, hair, hands, feet and tail fully inside canvas, clear transparent margins. Genuine alpha transparency; no environment, no ground, no cast shadow, no frame, no text, no words, no watermark, no extra characters. She is studying an open small navy blue book held at chest level in both hands. Her bright eyes look down thoughtfully at the pages, tiny gentle focused smile, attentive and curious. Clear visible open book with plain ivory pages without text. Upright standing pose, same feet baseline.",
+      "path": "public/characters/deepseek-girl/learning.png"
+    },
+    {
+      "id": "bored",
+      "label": "无聊",
+      "pose": "She is a little bored waiting for her companion: shoulders gently drooped, one palm props her cheek, other arm lightly supports that elbow at her waist, half-lidded blue eyes gazing aside and small pout. Endearing restless patience, awake and bored rather than sleepy. Standing same feet baseline, no props.",
+      "prompt": "Use case: identity-preserve. Asset: ONE production transparent full-body expression sprite for the DeepSeek Girl desktop pet. Input image 1 is the EDIT TARGET and locked character identity. Preserve her exact elegant semi-chibi proportions, face identity, sapphire-blue to cyan long curled hair, white ruffled maid headband, side whale-fin ears, single ahoge, complete blue whale tail and horizontal flukes, navy-and-white modest maid dress with tiny whale apron emblem, white stockings and navy Mary Jane shoes. Match the reference image's detailed delicate linework and soft premium anime cel shading. Preserve the same portrait canvas, full-body character scale, head placement and feet baseline for stable in-app switching. Change only face expression and the stated arms/pose/prop. Entire ahoge, hair, hands, feet and tail fully inside canvas, clear transparent margins. Genuine alpha transparency; no environment, no ground, no cast shadow, no frame, no text, no words, no watermark, no extra characters. She is a little bored waiting for her companion: shoulders gently drooped, one palm props her cheek, other arm lightly supports that elbow at her waist, half-lidded blue eyes gazing aside and small pout. Endearing restless patience, awake and bored rather than sleepy. Standing same feet baseline, no props.",
+      "path": "public/characters/deepseek-girl/bored.png"
+    },
+    {
+      "id": "celebrating",
+      "label": "庆祝",
+      "pose": "She celebrates a successfully completed task: both arms lifted in a joyful V, open palms, delighted crescent closed eyes and big cheerful open smile, soft blush. Her entire raised hands remain below the top of the ahoge and fully inside the existing canvas. Upright standing pose, same feet baseline, no confetti or external decoration; the app will animate sparkles separately.",
+      "prompt": "Use case: identity-preserve. Asset: ONE production transparent full-body expression sprite for the DeepSeek Girl desktop pet. Input image 1 is the EDIT TARGET and locked character identity. Preserve her exact elegant semi-chibi proportions, face identity, sapphire-blue to cyan long curled hair, white ruffled maid headband, side whale-fin ears, single ahoge, complete blue whale tail and horizontal flukes, navy-and-white modest maid dress with tiny whale apron emblem, white stockings and navy Mary Jane shoes. Match the reference image's detailed delicate linework and soft premium anime cel shading. Preserve the same portrait canvas, full-body character scale, head placement and feet baseline for stable in-app switching. Change only face expression and the stated arms/pose/prop. Entire ahoge, hair, hands, feet and tail fully inside canvas, clear transparent margins. Genuine alpha transparency; no environment, no ground, no cast shadow, no frame, no text, no words, no watermark, no extra characters. She celebrates a successfully completed task: both arms lifted in a joyful V, open palms, delighted crescent closed eyes and big cheerful open smile, soft blush. Her entire raised hands remain below the top of the ahoge and fully inside the existing canvas. Upright standing pose, same feet baseline, no confetti or external decoration; the app will animate sparkles separately.",
+      "path": "public/characters/deepseek-girl/celebrating.png"
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+:root {
+  color-scheme: light;
+  font:
+    14px/1.6 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "PingFang SC",
+    sans-serif;
+  color: #34445f;
+  background: #f7f9ff;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 470px;
+  margin: auto;
+  padding: 28px 24px;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #8297ba;
+}
+h1 {
+  margin: 6px 0 8px;
+  font-size: 24px;
+  font-weight: 600;
+}
+p {
+  margin: 0;
+}
+.intro,
+.note {
+  color: #7b8da9;
+  font-size: 12px;
+}
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 22px 0 18px;
+  padding: 15px;
+  border: 1px solid #dce5f4;
+  border-radius: 16px;
+  background: white;
+}
+.status-card p {
+  font-size: 11px;
+  color: #8291aa;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #b8c3d4;
+  flex-shrink: 0;
+}
+.dot.running {
+  background: #75b7a0;
+}
+.dot.error {
+  background: #dca06a;
+}
+#version {
+  margin-left: auto;
+  font-size: 10px;
+  color: #91a0b8;
+}
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+button {
+  font: inherit;
+  font-size: 12px;
+  padding: 10px;
+  border: 1px solid #d8e3f6;
+  border-radius: 12px;
+  background: white;
+  color: #617aab;
+  cursor: pointer;
+}
+button.primary {
+  background: #e9f0ff;
+  border-color: #bbcff5;
+  color: #4b6caa;
+}
+button.stop {
+  grid-column: 1 / -1;
+  color: #95857f;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #819cce;
+  outline-offset: 3px;
+}
+.preference {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 23px 0 15px;
+  font-size: 13px;
+}
+.preference small {
+  display: block;
+  font-size: 11px;
+  color: #8998ae;
+}
+input {
+  width: 18px;
+  height: 18px;
+  accent-color: #7294ce;
+}
+#error {
+  margin: 0 0 14px;
+  color: #a26e49;
+  background: #fff5e8;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.note {
+  font-size: 11px;
+  line-height: 1.8;
+}
