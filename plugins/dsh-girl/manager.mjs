@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
+import { createServer } from "node:net";
+import { randomUUID } from "node:crypto";
 import { prepareRuntime } from "./runtime.mjs";
 
 export function desktopEnvironment(endpoint, data, env = process.env) {
@@ -91,6 +93,15 @@ export class DesktopManager {
         if (this.disposed) throw new Error("DSG 插件已停用");
         this.version = runtime.version;
         this.phase = "starting";
+        let pipe;
+        if (process.platform === "win32") {
+          pipe = `\\\\.\\pipe\\dsg-${randomUUID()}`;
+          this.controlServer = createServer();
+          await new Promise((resolve, reject) => {
+            this.controlServer.once("error", reject);
+            this.controlServer.listen(pipe, resolve);
+          });
+        }
         const child = spawn(runtime.executable, runtime.args || [], {
           env: {
             ...desktopEnvironment(
@@ -100,6 +111,7 @@ export class DesktopManager {
             ...(this.token
               ? { DEEPSEEK_GIRL_CONNECTION_TOKEN: this.token }
               : {}),
+            ...(pipe ? { DEEPSEEK_GIRL_CONTROL_PIPE: pipe } : {}),
           },
           stdio: ["pipe", "pipe", "pipe"],
           shell: false,
@@ -108,7 +120,7 @@ export class DesktopManager {
         this.child = child;
         child.stdin.on("error", () => {});
         child.stderr.on("data", () => {}); // Never forward inherited diagnostics/credentials to the browser.
-        const lines = createInterface({ input: child.stdout });
+        let lines;
         let ready, fail;
         const started = new Promise((resolve, reject) => {
           ready = resolve;
@@ -119,7 +131,7 @@ export class DesktopManager {
             fail(new Error("DSG 启动超时，请重试或检查系统是否允许打开桌宠")),
           20000,
         );
-        lines.on("line", (line) => {
+        const receive = (line) => {
           if (!line.startsWith("DSG_CONTROL ")) return;
           try {
             const message = JSON.parse(line.slice(12));
@@ -132,12 +144,28 @@ export class DesktopManager {
               this.connection = message.connection;
             }
           } catch {}
-        });
+        };
+        if (pipe) {
+          child.stdout.resume();
+          this.controlServer.on("connection", (socket) => {
+            if (this.control) return socket.destroy();
+            this.control = socket;
+            socket.on("error", () => {});
+            lines = createInterface({ input: socket });
+            lines.on("line", receive);
+            this.controlServer.close();
+          });
+        } else {
+          this.control = child.stdin;
+          lines = createInterface({ input: child.stdout });
+          lines.on("line", receive);
+        }
         child.on("error", () =>
           fail(new Error("无法启动 DSG 桌宠组件，请检查安装是否完整")),
         );
         child.on("exit", () => {
-          lines.close();
+          lines?.close();
+          this.closeControl();
           if (this.child === child) {
             this.child = null;
             this.visible = false;
@@ -154,6 +182,7 @@ export class DesktopManager {
         return this.snapshot();
       } catch (error) {
         await this.stopChild();
+        this.closeControl();
         this.phase = "error";
         this.error = error.message;
         throw error;
@@ -163,7 +192,13 @@ export class DesktopManager {
   send(action) {
     if (!this.child || this.phase !== "running")
       throw new Error("请先启动 DSG");
-    this.child.stdin.write(JSON.stringify({ action }) + "\n");
+    this.control?.write(JSON.stringify({ action }) + "\n");
+  }
+  closeControl() {
+    this.control?.destroy();
+    this.control = null;
+    this.controlServer?.close();
+    this.controlServer = null;
   }
   async stopChild() {
     const child = this.child;
@@ -174,7 +209,7 @@ export class DesktopManager {
     }
     if (child.exitCode !== null || child.signalCode !== null) return;
     const exited = new Promise((resolve) => child.once("exit", resolve));
-    child.stdin.write('{"action":"stop"}\n');
+    this.control?.write('{"action":"stop"}\n');
     const terminate = setTimeout(() => child.kill("SIGTERM"), 5000);
     const kill = setTimeout(() => child.kill("SIGKILL"), 7000);
     try {

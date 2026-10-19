@@ -1,4 +1,5 @@
 import { createInterface } from "node:readline";
+import { createConnection } from "node:net";
 import { isAbsolute } from "node:path";
 import { normalizeEndpoint } from "../shared/dsh-client.mjs";
 
@@ -14,10 +15,20 @@ export function managedLaunch(env = process.env) {
   };
 }
 export function managedControl(app, handlers) {
-  const input = createInterface({ input: process.stdin });
-  process.stdout.on("error", () => app.quit());
+  const pipe = process.env.DEEPSEEK_GIRL_CONTROL_PIPE;
+  if (
+    pipe &&
+    (process.platform !== "win32" ||
+      !/^\\\\\.\\pipe\\dsg-[a-f0-9-]{36}$/.test(pipe))
+  )
+    throw new Error("插件管理通道无效");
+  const socket = pipe ? createConnection(pipe) : null;
+  const output = socket || process.stdout;
+  const input = createInterface({ input: socket || process.stdin });
+  output.on("error", () => app.quit());
+  socket?.on("close", () => app.quit());
   const send = (value) =>
-    process.stdout.write("DSG_CONTROL " + JSON.stringify(value) + "\n");
+    output.write("DSG_CONTROL " + JSON.stringify(value) + "\n");
   input.on("line", (line) => {
     if (line.length > 4096) return;
     try {

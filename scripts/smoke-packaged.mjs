@@ -100,7 +100,7 @@ try {
   await expect
     .poll(() => manager.connection, { timeout: 45000 })
     .toBe("connected");
-  manager.child.stdin.end();
+  manager.control.end();
   await expect.poll(() => manager.child, { timeout: 15000 }).toBe(null);
   await manager.dispose();
   const saved = JSON.parse(
