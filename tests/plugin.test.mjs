@@ -137,7 +137,7 @@ test("auto-start preference persists, user exit is respected and dispose cancels
     assert.equal(other.phase, "stopped");
     assert.equal(other.autoStart, false);
     await other.start();
-    other.control.end();
+    other.controlStream.end();
     await eventually(() => other.phase === "stopped");
     await other.dispose();
     const started = manager.start();

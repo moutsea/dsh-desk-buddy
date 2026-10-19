@@ -148,15 +148,15 @@ export class DesktopManager {
         if (pipe) {
           child.stdout.resume();
           this.controlServer.on("connection", (socket) => {
-            if (this.control) return socket.destroy();
-            this.control = socket;
+            if (this.controlStream) return socket.destroy();
+            this.controlStream = socket;
             socket.on("error", () => {});
             lines = createInterface({ input: socket });
             lines.on("line", receive);
             this.controlServer.close();
           });
         } else {
-          this.control = child.stdin;
+          this.controlStream = child.stdin;
           lines = createInterface({ input: child.stdout });
           lines.on("line", receive);
         }
@@ -192,11 +192,11 @@ export class DesktopManager {
   send(action) {
     if (!this.child || this.phase !== "running")
       throw new Error("请先启动 DSG");
-    this.control?.write(JSON.stringify({ action }) + "\n");
+    this.controlStream?.write(JSON.stringify({ action }) + "\n");
   }
   closeControl() {
-    this.control?.destroy();
-    this.control = null;
+    this.controlStream?.destroy();
+    this.controlStream = null;
     this.controlServer?.close();
     this.controlServer = null;
   }
@@ -209,7 +209,7 @@ export class DesktopManager {
     }
     if (child.exitCode !== null || child.signalCode !== null) return;
     const exited = new Promise((resolve) => child.once("exit", resolve));
-    this.control?.write('{"action":"stop"}\n');
+    this.controlStream?.write('{"action":"stop"}\n');
     const terminate = setTimeout(() => child.kill("SIGTERM"), 5000);
     const kill = setTimeout(() => child.kill("SIGKILL"), 7000);
     try {
