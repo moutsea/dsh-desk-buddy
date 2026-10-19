@@ -24,6 +24,7 @@ import {
   desktopLayout,
   PET_SCALE,
   normalizePetScale,
+  normalizeChatSize,
   petSize,
   resizedPetAnchor,
 } from "../shared/desktop-layout.mjs";
@@ -60,6 +61,7 @@ let config = {
   idleExpressions: true,
   animations: true,
   petScale: PET_SCALE.default,
+  chatSize: "small",
 };
 let state = {
   managed: !!managed,
@@ -182,7 +184,13 @@ function showSection(section, anchor) {
     ...anchor,
     ...petSize(config.petScale),
   }).workArea;
-  const layout = desktopLayout(anchor, area, section, config.petScale);
+  const layout = desktopLayout(
+    anchor,
+    area,
+    section,
+    config.petScale,
+    config.chatSize,
+  );
   applyLayout(layout, true);
   config.petPosition = petAnchor();
   save();
@@ -761,7 +769,13 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
         y: Math.round(point.y),
       }).workArea;
       applyLayout(
-        desktopLayout(anchor, area, state.surface.section, config.petScale),
+        desktopLayout(
+          anchor,
+          area,
+          state.surface.section,
+          config.petScale,
+          config.chatSize,
+        ),
       );
       return;
     }
@@ -783,6 +797,13 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
       showSection(state.surface.section, anchor);
       return payload;
     }
+    case "chatSize":
+      if (normalizeChatSize(payload) !== payload)
+        throw new Error("对话框大小请选择小、中或大");
+      if (payload === config.chatSize) return payload;
+      config.chatSize = payload;
+      showSection(state.surface.section);
+      return payload;
     case "alwaysOnTop":
       config.alwaysOnTop = !!payload;
       windows().forEach((window) => window.setAlwaysOnTop(config.alwaysOnTop));
@@ -874,6 +895,7 @@ app
       config.idleExpressions = true;
     if (typeof config.animations !== "boolean") config.animations = true;
     config.petScale = normalizePetScale(config.petScale);
+    config.chatSize = normalizeChatSize(config.chatSize);
     Menu.setApplicationMenu(
       process.platform === "darwin"
         ? Menu.buildFromTemplate([

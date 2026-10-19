@@ -22,8 +22,8 @@ https://github.com/moutsea/dsh-desk-buddy
 
 | 系统                | 插件包                                                                                                                                               |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows x64         | [dsh-desk-buddy-0.12.1-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.1/dsh-desk-buddy-0.12.1-win32-x64.tgz)       |
-| macOS Apple Silicon | [dsh-desk-buddy-0.12.1-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.1/dsh-desk-buddy-0.12.1-darwin-arm64.tgz) |
+| Windows x64         | [dsh-desk-buddy-0.12.2-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.2/dsh-desk-buddy-0.12.2-win32-x64.tgz)       |
+| macOS Apple Silicon | [dsh-desk-buddy-0.12.2-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.2/dsh-desk-buddy-0.12.2-darwin-arm64.tgz) |
 
 仓库根目录已声明 `dsh.bundle`，可直接安装。若仍提示“这个包没有声明组合包，不能作为插件管理”，删除失败的旧安装项后重新添加上面的仓库地址，确保获取最新提交。自 0.12.1 起，仓库安装和 Release 完整包统一使用 `dsh-desk-buddy` 包名。升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再添加同一个仓库地址；原有桌宠设置与位置继续保留。不要使用 GitHub 自动生成的 Source code 压缩包或源码子目录代替安装来源。
 
@@ -52,7 +52,7 @@ npm run dev
 打开设置，填写本机 DSH 地址（默认 `http://127.0.0.1:3080`），点击连接。选择项目目录，新建对话，发送任务。执行中的输入进入 DSH 队列；停止按钮取消当前轮次，DSH 原有排队消息可能继续执行。
 
 - 平时只显示桌宠；鼠标悬停在她身上时，浮现“对话、表情、设置”三个气泡及带有“DeepSeek 余额”说明的金额标签，旁边以暖色“峰时”和绿色“谷时”显示 DeepSeek 官方 API 当前计价时段。按北京时间自动切换，移开后一起隐去。
-- 点击气泡，在桌宠身旁的同一个窗口展开对应内容；对话采用 360 × 460 的紧凑布局，再次点击同一气泡、右上角关闭或按 Escape 可收起，草稿保留。可用空间决定在左侧还是右侧展开。
+- 点击气泡，在桌宠身旁的同一个窗口展开对应内容；设置中的“对话框大小”提供小（默认 360 × 460）、中（480 × 620）、大（600 × 760）三档，选择后自动保存，重启继续使用。屏幕空间不足时自动缩小适配，不改变文字和桌宠大小。再次点击同一气泡、右上角关闭或按 Escape 可收起，草稿保留。可用空间决定在左侧还是右侧展开。
 - 直接按住桌宠身体即可自由拖动，松开后记住位置；轻点仍是摸摸她。展开的内容会跟随角色，靠近边缘时自动换到有空间的一侧，收起后保持角色位置。
 - `Command/Ctrl+Shift+Space` 展开/收起对话；系统托盘可显示、隐藏桌宠或退出。
 - 在对话标题旁切换已有会话，也可点击加号新建会话，历史支持向前加载。聊天、讨论与执行都使用同一个 DSH 会话。

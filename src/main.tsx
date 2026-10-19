@@ -30,6 +30,8 @@ import {
   PET_CHARACTER,
   petSize,
   normalizePetScale,
+  CHAT_SIZES,
+  normalizeChatSize,
 } from "../shared/desktop-layout.mjs";
 import { version } from "../package.json";
 import { MotionContext } from "./Motion";
@@ -1034,6 +1036,29 @@ function Panel({ state }: { state: AppState }) {
               }
             }}
           />
+          <section className="settings-card">
+            <h2>对话框大小</h2>
+            <p>默认使用「小」，调整后重启也会记住。空间不足时自动适应屏幕。</p>
+            <div
+              className="chat-size-options"
+              role="group"
+              aria-label="对话框大小"
+            >
+              {Object.entries(CHAT_SIZES).map(([size, option]) => (
+                <button
+                  key={size}
+                  className={`secondary ${normalizeChatSize(state.config.chatSize) === size ? "current" : ""}`}
+                  aria-pressed={
+                    normalizeChatSize(state.config.chatSize) === size
+                  }
+                  disabled={busy}
+                  onClick={() => void run("chatSize", size)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
           <section className="settings-card">
             <h2>
               <span

@@ -75,6 +75,7 @@ export type AppState = {
     idleExpressions?: boolean;
     animations?: boolean;
     petScale?: number;
+    chatSize?: "small" | "medium" | "large";
   };
 };
 declare global {

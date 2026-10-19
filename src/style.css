@@ -1648,6 +1648,19 @@ body,
   font-size: 9px;
   color: #8a9bb5;
 }
+.chat-size-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.chat-size-options .secondary {
+  padding: 10px;
+}
+.chat-size-options .current {
+  color: #4d6fe0;
+  border-color: #aec2e8;
+  background: #eaf0fc;
+}
 
 .pet-stage.is-dragging .pet-character {
   cursor: grabbing;

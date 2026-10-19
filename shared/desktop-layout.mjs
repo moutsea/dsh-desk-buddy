@@ -3,6 +3,16 @@ import { CHARACTER_LAYOUT } from "./character-layout.mjs";
 export const PET_SIZE = { width: 300, height: 400 };
 export const PET_CHARACTER = { width: 264, height: 270, top: 110 };
 export const PET_SCALE = { min: 50, max: 150, step: 5, default: 100 };
+export const CHAT_SIZES = {
+  small: { label: "小", width: 360, height: 460 },
+  medium: { label: "中", width: 480, height: 620 },
+  large: { label: "大", width: 600, height: 760 },
+};
+export function normalizeChatSize(value) {
+  return typeof value === "string" && Object.hasOwn(CHAT_SIZES, value)
+    ? value
+    : "small";
+}
 export function normalizePetScale(value) {
   if (typeof value !== "number" || !Number.isFinite(value))
     return PET_SCALE.default;
@@ -41,6 +51,7 @@ export function desktopLayout(
   area,
   section = null,
   scale = PET_SCALE.default,
+  chatSize = "small",
 ) {
   const size = petSize(scale);
   const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
@@ -64,7 +75,7 @@ export function desktopLayout(
   const side = left >= right ? "left" : "right";
   const preferred =
     section === "chat"
-      ? { width: 360, height: 460 }
+      ? CHAT_SIZES[normalizeChatSize(chatSize)]
       : { width: 460, height: 720 };
   const contentWidth = Math.min(
     preferred.width,

@@ -1,4 +1,4 @@
-dsh-desk-buddy 0.12.1：统一应用名称、DSH 插件名称和安装包名称，保留已有用户设置、桌宠位置及宿主连接方式。支持 Windows x64 和 macOS Apple Silicon。
+dsh-desk-buddy 0.12.2：设置中新增“对话框大小”小、中、大三档。小档保持现有 360 × 460，中档为 480 × 620，大档为 600 × 760；选择自动保存，重启后恢复。屏幕空间不足时自动适配，保留会话草稿。支持 Windows x64 和 macOS Apple Silicon。
 
 在 DSH Desktop 的「插件 → 添加插件」中，粘贴对应 `.tgz` 附件的下载链接，或先下载后填写绝对路径。点击「立即启用」并重启 DSH。无需额外安装 Electron、Node.js 或启动 DSH Web。
 

@@ -5,7 +5,11 @@ import { mkdtemp, writeFile, readFile, mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFixture } from "../tests/fixture.mjs";
-import { petSize, PET_CHARACTER } from "../shared/desktop-layout.mjs";
+import {
+  petSize,
+  PET_CHARACTER,
+  CHAT_SIZES,
+} from "../shared/desktop-layout.mjs";
 
 const fixture = await createFixture(),
   data = await mkdtemp(join(tmpdir(), "dsg-size-"));
@@ -38,6 +42,11 @@ try {
     stage = page.locator(".pet-stage"),
     character = page.locator(".pet-character");
   await expect(range).toHaveValue("100");
+  await expect(
+    page
+      .getByRole("group", { name: "对话框大小" })
+      .getByRole("button", { name: "小", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   const anchor = async () => {
     const state = await page.evaluate(() => window.desktop.invoke("state"));
     const bounds = await app.evaluate(({ BrowserWindow }) =>
@@ -166,10 +175,75 @@ try {
     /桌宠大小/,
   );
   await page.evaluate(() => window.desktop.invoke("petScale", 75));
+  await page.evaluate(() => window.desktop.invoke("section", "chat"));
+  await page
+    .getByRole("textbox", { name: "消息" })
+    .fill("调整大小后保留的草稿");
+  for (const [size, preset] of Object.entries(CHAT_SIZES)) {
+    await page.evaluate(() => window.desktop.invoke("section", "settings"));
+    const choice = page
+      .getByRole("group", { name: "对话框大小" })
+      .getByRole("button", { name: preset.label, exact: true });
+    await choice.click();
+    await expect(choice).toHaveAttribute("aria-pressed", "true");
+    await page.evaluate(() => window.desktop.invoke("section", "chat"));
+    const state = await page.evaluate(() => window.desktop.invoke("state"));
+    assert.equal(state.config.chatSize, size);
+    assert.equal(state.config.petScale, 75);
+    const display = await app.evaluate(({ BrowserWindow, screen }) => {
+      const bounds = BrowserWindow.getAllWindows()[0].getBounds();
+      return { bounds, area: screen.getDisplayMatching(bounds).workArea };
+    });
+    assert.equal(
+      state.surface.contentHeight,
+      Math.min(preset.height, display.area.height),
+    );
+    assert.ok(state.surface.contentWidth <= preset.width);
+    await expect(page.locator(".companion-surface")).toHaveCSS(
+      "width",
+      `${state.surface.contentWidth}px`,
+    );
+    await expect(page.locator(".companion-surface")).toHaveCSS(
+      "height",
+      `${state.surface.contentHeight}px`,
+    );
+    await expect(page.getByRole("textbox", { name: "消息" })).toHaveValue(
+      "调整大小后保留的草稿",
+    );
+    assert.ok(display.bounds.x >= display.area.x);
+    assert.ok(display.bounds.y >= display.area.y);
+    assert.ok(
+      display.bounds.x + display.bounds.width <=
+        display.area.x + display.area.width,
+    );
+    assert.ok(
+      display.bounds.y + display.bounds.height <=
+        display.area.y + display.area.height,
+    );
+    await page.screenshot({
+      path: `artifacts/chat-size-${size}.png`,
+      omitBackground: true,
+    });
+  }
+  await page.evaluate(() => window.desktop.invoke("chatSize", "medium"));
+  await expect(page.locator(".companion-surface")).toHaveCSS(
+    "height",
+    `${CHAT_SIZES.medium.height}px`,
+  );
+  await page.evaluate(() => window.desktop.invoke("chatSize", "large"));
+  await assert.rejects(
+    page.evaluate(() => window.desktop.invoke("chatSize", "extra-large")),
+    /对话框大小/,
+  );
+  await assert.rejects(
+    page.evaluate(() => window.desktop.invoke("chatSize", 1)),
+    /对话框大小/,
+  );
   await app.close();
   app = null;
   const saved = JSON.parse(await readFile(join(data, "settings.json"), "utf8"));
   assert.equal(saved.petScale, 75);
+  assert.equal(saved.chatSize, "large");
   app = await launchDesktop(env);
   const restored = await app.firstWindow({ timeout: 15000 });
   await expect(restored.locator(".pet-character")).toHaveCSS(
@@ -185,9 +259,23 @@ try {
   await expect(restored.getByRole("slider", { name: "桌宠大小" })).toHaveValue(
     "75",
   );
+  await expect(
+    restored
+      .getByRole("group", { name: "对话框大小" })
+      .getByRole("button", { name: "大", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await restored.evaluate(() => window.desktop.invoke("section", "chat"));
+  const restoredState = await restored.evaluate(() =>
+    window.desktop.invoke("state"),
+  );
+  assert.equal(restoredState.config.chatSize, "large");
+  await expect(restored.locator(".companion-surface")).toHaveCSS(
+    "height",
+    `${restoredState.surface.contentHeight}px`,
+  );
   assert.deepEqual(errors, []);
   console.log(
-    "DSG size passed: keyboard and pointer controls, 50–150%, reset, readable bubbles, stable feet, screen edges, collapse and restart persistence.",
+    "Size settings passed: pet scale, conversation presets, screen bounds, draft preservation, validation and restart persistence.",
   );
 } finally {
   await app?.close();

@@ -7,6 +7,8 @@ import {
   normalizePetScale,
   petSize,
   resizedPetAnchor,
+  CHAT_SIZES,
+  normalizeChatSize,
 } from "../shared/desktop-layout.mjs";
 import {
   CHARACTER_LAYOUT,
@@ -114,6 +116,55 @@ test("size settings normalize old/invalid config and resize around the feet", ()
     assert.equal(anchor.y + size.height, origin.y + PET_SIZE.height);
     assert.ok(size.width >= 300, "small characters retain usable controls");
     assert.deepEqual(resizedPetAnchor(anchor, scale, 100), origin);
+  }
+});
+
+test("conversation presets retain the small default, preserve the pet and fit constrained displays", () => {
+  for (const value of [undefined, null, "invalid", "constructor", {}, 1])
+    assert.equal(normalizeChatSize(value), "small");
+  const area = { x: -1920, y: 24, width: 1920, height: 1056 };
+  const anchor = { x: -500, y: 500 };
+  assert.deepEqual(
+    desktopLayout(anchor, area, "chat"),
+    desktopLayout(anchor, area, "chat", 100, "small"),
+  );
+  for (const [size, expected] of Object.entries(CHAT_SIZES)) {
+    assert.equal(normalizeChatSize(size), size);
+    const { bounds, surface } = desktopLayout(anchor, area, "chat", 100, size);
+    assert.equal(surface.contentWidth, expected.width);
+    assert.equal(surface.contentHeight, expected.height);
+    assert.equal(bounds.x + surface.pet.x, anchor.x);
+    assert.equal(bounds.y + surface.pet.y, anchor.y);
+    assert.deepEqual(
+      desktopLayout(anchor, area, "settings", 100, size),
+      desktopLayout(anchor, area, "settings"),
+    );
+    for (const scale of [50, 100, 150]) {
+      for (const workArea of [
+        { x: 0, y: 24, width: 800, height: 576 },
+        { x: -1440, y: 30, width: 1440, height: 870 },
+      ]) {
+        for (const position of [
+          { x: -1400, y: 60 },
+          { x: 9000, y: -9000 },
+        ]) {
+          const layout = desktopLayout(position, workArea, "chat", scale, size);
+          assert.ok(layout.bounds.x >= workArea.x);
+          assert.ok(layout.bounds.y >= workArea.y);
+          assert.ok(
+            layout.bounds.x + layout.bounds.width <=
+              workArea.x + workArea.width,
+          );
+          assert.ok(
+            layout.bounds.y + layout.bounds.height <=
+              workArea.y + workArea.height,
+          );
+          assert.ok(layout.surface.contentWidth <= expected.width);
+          assert.ok(layout.surface.contentHeight <= expected.height);
+          assert.ok(layout.surface.contentWidth > 0);
+        }
+      }
+    }
   }
 });
 
