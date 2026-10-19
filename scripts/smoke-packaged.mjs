@@ -76,6 +76,11 @@ try {
   );
   manager = new DesktopManager({ endpoint: fixture.endpoint, storage, root });
   await manager.init();
+  console.log("Managed startup:", manager.snapshot());
+  manager.child?.stderr.on("data", (part) => console.error(part.toString()));
+  manager.child?.on("exit", (code, signal) =>
+    console.log("Managed exit:", { code, signal }),
+  );
   await expect
     .poll(() => manager.connection, { timeout: 45000 })
     .toBe("connected");
@@ -146,6 +151,14 @@ try {
   console.log(
     `Packaged ${process.platform}/${process.arch} desktop validation passed.`,
   );
+} catch (error) {
+  console.error(
+    "Packaged validation:",
+    manager?.snapshot(),
+    "Fixture requests:",
+    fixture.calls.map((call) => call.path),
+  );
+  throw error;
 } finally {
   await manager?.dispose();
   await fixture.close();

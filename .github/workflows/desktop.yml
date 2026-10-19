@@ -3,6 +3,7 @@ name: Desktop validation
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
@@ -42,3 +43,25 @@ jobs:
           name: dsh-girl-${{ matrix.platform }}
           path: release/dsh-girl-*-${{ matrix.platform }}.tgz
           if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: desktop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dsh-girl-*
+          merge-multiple: true
+          path: release
+      - name: Publish verified plugin packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module -e 'import pkg from "./package.json" with { type: "json" }; if (process.env.GITHUB_REF_NAME !== `v${pkg.version}`) throw new Error("Tag and package version must match")'
+          cd release
+          sha256sum *.tgz > SHA256SUMS.txt
+          gh release create "$GITHUB_REF_NAME" *.tgz SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --verify-tag --title "DeepSeek Girl $GITHUB_REF_NAME" --notes-file ../docs/release-notes.md
