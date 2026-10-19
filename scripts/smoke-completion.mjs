@@ -44,7 +44,7 @@ delete env.ELECTRON_RUN_AS_NODE;
 let app;
 try {
   app = await launchDesktop(env);
-  const page = await app.firstWindow();
+  const page = await app.firstWindow({ timeout: 15000 });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   const state = () => page.evaluate(() => window.desktop.invoke("state"));

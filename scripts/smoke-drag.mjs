@@ -22,7 +22,7 @@ await writeFile(
 let app;
 try {
   app = await launchDesktop(env);
-  const page = await app.firstWindow(),
+  const page = await app.firstWindow({ timeout: 15000 }),
     errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await expect
@@ -178,7 +178,7 @@ try {
   const saved = JSON.parse(await readFile(join(data, "settings.json"), "utf8"));
   assert.deepEqual(saved.petPosition, final);
   app = await launchDesktop(env);
-  await app.firstWindow();
+  await app.firstWindow({ timeout: 15000 });
   const restored = await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].getBounds(),
   );

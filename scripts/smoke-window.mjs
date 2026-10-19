@@ -72,7 +72,7 @@ async function screenshot(name) {
 
 try {
   app = await launchDesktop(env);
-  const page = await app.firstWindow();
+  const page = await app.firstWindow({ timeout: 15000 });
   const state = () => page.evaluate(() => window.desktop.invoke("state"));
   await expect.poll(async () => (await state()).connection).toBe("connected");
   const properties = await app.evaluate(

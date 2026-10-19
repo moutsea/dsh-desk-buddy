@@ -23,7 +23,7 @@ await writeFile(
 let app;
 try {
   app = await launchDesktop(env);
-  const page = await app.firstWindow();
+  const page = await app.firstWindow({ timeout: 15000 });
   await expect
     .poll(() =>
       page.evaluate(() =>
@@ -171,7 +171,7 @@ try {
   const saved = JSON.parse(await readFile(join(data, "settings.json"), "utf8"));
   assert.equal(saved.petScale, 75);
   app = await launchDesktop(env);
-  const restored = await app.firstWindow();
+  const restored = await app.firstWindow({ timeout: 15000 });
   await expect(restored.locator(".pet-character")).toHaveCSS(
     "height",
     `${PET_CHARACTER.height * 0.75}px`,

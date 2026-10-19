@@ -1,0 +1,50 @@
+name: Publish verified build
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag
+        required: true
+        type: string
+      run_id:
+        description: Successful Desktop validation run for this exact tag commit
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      VALIDATED_RUN: ${{ inputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Verify successful build and revision
+        run: |
+          test "$(gh run view "$VALIDATED_RUN" --repo "$GITHUB_REPOSITORY" --json conclusion --jq .conclusion)" = success
+          test "$(gh run view "$VALIDATED_RUN" --repo "$GITHUB_REPOSITORY" --json workflowName --jq .workflowName)" = 'Desktop validation'
+          test "$(gh run view "$VALIDATED_RUN" --repo "$GITHUB_REPOSITORY" --json headSha --jq .headSha)" = "$(git rev-parse HEAD)"
+          node --input-type=module -e 'import pkg from "./package.json" with { type: "json" }; if (process.env.RELEASE_TAG !== `v${pkg.version}`) throw new Error("Tag and package version must match")'
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          pattern: dsh-girl-*
+          merge-multiple: true
+          path: release
+      - name: Publish tested artifacts
+        run: |
+          cd release
+          test -f "dsh-girl-${RELEASE_TAG#v}-win32-x64.tgz"
+          test -f "dsh-girl-${RELEASE_TAG#v}-darwin-arm64.tgz"
+          sha256sum *.tgz > SHA256SUMS.txt
+          gh release create "$RELEASE_TAG" *.tgz SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --verify-tag --title "DeepSeek Girl $RELEASE_TAG" --notes-file ../docs/release-notes.md
