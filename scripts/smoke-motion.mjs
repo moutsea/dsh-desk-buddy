@@ -35,6 +35,15 @@ try {
   assert.ok(pet);
   const errors = [];
   pet.on("pageerror", (error) => errors.push(error.message));
+  console.log(
+    "Motion environment:",
+    await pet.evaluate(async () => ({
+      hidden: document.hidden,
+      reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
+      windowVisible: await window.desktop.invoke("visibility"),
+    })),
+  );
+  await pet.emulateMedia({ reducedMotion: "no-preference" });
   await mkdir("artifacts/motion", { recursive: true });
   for (const id of ids) {
     await pet.evaluate(
