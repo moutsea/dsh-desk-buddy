@@ -24,6 +24,7 @@ import remarkGfm from "remark-gfm";
 import { Mascot } from "./Mascot";
 import { Expressions } from "./Expressions";
 import { Sessions } from "./Sessions";
+import { SessionUsage } from "./SessionUsage";
 import { PetSizeSetting } from "./PetSizeSetting";
 import { PluginUpdates } from "./PluginUpdates";
 import { SoundProvider, useSounds } from "./SoundProvider";
@@ -57,6 +58,7 @@ const initial: AppState = {
     contentTop: 0,
   },
   connection: "offline",
+  connectionEpoch: 0,
   connectionMessage: "",
   host: null,
   sessions: [],
@@ -856,6 +858,9 @@ function Panel({ state }: { state: AppState }) {
             />
           )}
           <div className="chat-body" hidden={sessionsOpen}>
+            {selected && (
+              <SessionUsage key={selected.sessionId} session={selected} />
+            )}
             <div
               className="messages"
               ref={scroll}

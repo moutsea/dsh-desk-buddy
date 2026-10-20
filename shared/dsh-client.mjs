@@ -92,6 +92,8 @@ export class DshClient extends EventEmitter {
     return this.request("/dsh-girl/balance.json", { method: "GET" });
   }
   openStream(kind, onOpen = () => {}) {
+    // Reserve baseline order before the handshake can race with HTTP reads.
+    this.emit("stream-start", { kind });
     return new Promise((resolve, reject) => {
       const socket = new WebSocket(
         `${this.endpoint.replace(/^http:/, "ws:")}/api/events.${kind}`,

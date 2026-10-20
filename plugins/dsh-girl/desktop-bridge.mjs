@@ -196,9 +196,47 @@ export async function desktopBridge(ctx) {
       group.add(ws);
       ws.on("error", () => {});
       ws.once("close", () => group.delete(ws));
-      if (kind === "mux") void events(ws);
+      if (kind === "mux") {
+        void events(ws);
+        void projections(ws);
+      }
     });
   });
+  async function projections(socket) {
+    const control = new AbortController();
+    const closed = () => control.abort();
+    socket.once("close", closed);
+    const signal = AbortSignal.any([lifetime.signal, control.signal]);
+    try {
+      const source = await gateway.stream({
+        namespace: "session",
+        method: "control",
+        args: {},
+        peer,
+        signal,
+      });
+      for await (const frame of source) {
+        if (signal.aborted) break;
+        if (frame.type === "baseline")
+          send(socket, {
+            type: "session/projections",
+            projections: frame.value.projections,
+          });
+        else if (frame.type === "projection")
+          send(socket, { ...frame, type: "session/projection" });
+      }
+      if (!signal.aborted) throw new Error("Desktop statistics stream ended");
+    } catch (error) {
+      if (!signal.aborted) {
+        lastError = error.message;
+        // Reopen mux to obtain a fresh baseline instead of silently going stale.
+        socket.close(1011, "Desktop statistics stream unavailable");
+      }
+    } finally {
+      control.abort();
+      socket.removeListener("close", closed);
+    }
+  }
   async function events(socket) {
     const control = new AbortController();
     socket.once("close", () => control.abort());

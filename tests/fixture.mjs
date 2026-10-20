@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
 
 // An explicitly isolated protocol fixture; no model provider or credentials.
-export async function createFixture() {
+export async function createFixture({ historyPageSize } = {}) {
   const streams = { mux: new Set(), host: new Set() },
     sessions = new Map(),
     pending = new Map(),
@@ -98,7 +98,12 @@ export async function createFixture() {
       };
     else if (path === "/api/session.list")
       value = {
-        items: [...sessions.values()].map(({ events, ...row }) => row),
+        items: [...sessions.values()].map(
+          ({ events, listProjections, ...row }) => ({
+            ...row,
+            ...(listProjections ? { projections: listProjections } : {}),
+          }),
+        ),
       };
     else if (path === "/api/session.create") {
       const id = body.payload.sessionId || crypto.randomUUID();
@@ -117,15 +122,18 @@ export async function createFixture() {
       value = { sessionId: id };
     } else if (path === "/api/session.history") {
       const row = sessions.get(body.payload.sessionId);
+      const matching = row.events.filter(
+        (item) =>
+          body.payload.beforeSeq === undefined ||
+          item.seq < body.payload.beforeSeq,
+      );
       value = {
-        events: row.events
-          .filter(
-            (item) =>
-              body.payload.beforeSeq === undefined ||
-              item.seq < body.payload.beforeSeq,
-          )
-          .map((event) => ({ event })),
-        hasMore: false,
+        events: (historyPageSize
+          ? matching.slice(-historyPageSize)
+          : matching
+        ).map((event) => ({ event })),
+        hasMore: historyPageSize ? matching.length > historyPageSize : false,
+        ...(row.projections ? { projections: row.projections } : {}),
       };
     } else if (path === "/api/session.prompt") {
       const id = body.payload.sessionId,

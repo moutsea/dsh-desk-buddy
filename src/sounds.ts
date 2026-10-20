@@ -1,63 +1,67 @@
 import { normalizeSoundSettings } from "../shared/sound.mjs";
+import { isSoundVoice } from "../shared/voices.mjs";
 
 export type SoundKind = "pet" | "completion" | "idle";
+type ClipKind = SoundKind | "preview";
 export type SoundSettings = {
   enabled: boolean;
   volume: number;
+  voice: string;
   pet: boolean;
   completion: boolean;
   idle: boolean;
 };
-type Voice = {
-  kind: SoundKind;
+type Playback = {
+  kind: ClipKind;
+  audition: boolean;
+  requestedAt: number;
+  isCurrent?: () => boolean;
+};
+type PendingPlayback = Playback & {
+  cancelled: boolean;
+  cancel: () => void;
+};
+type Voice = Playback & {
   gain: GainNode;
-  tones: OscillatorNode[];
+  source: AudioBufferSourceNode;
 };
-type Tone = {
-  frequency: number;
-  end?: number;
-  at: number;
-  duration: number;
-  level: number;
-  wave?: OscillatorType;
-};
-const melodies: Record<SoundKind, Tone[]> = {
-  pet: [
-    { frequency: 660, end: 880, at: 0, duration: 0.13, level: 0.2 },
-    { frequency: 990, end: 880, at: 0.09, duration: 0.17, level: 0.13 },
-  ],
-  completion: [
-    { frequency: 523.25, at: 0, duration: 0.22, level: 0.19 },
-    { frequency: 659.25, at: 0.13, duration: 0.22, level: 0.18 },
-    { frequency: 783.99, at: 0.26, duration: 0.24, level: 0.17 },
-    { frequency: 1046.5, at: 0.4, duration: 0.38, level: 0.14 },
-  ],
-  idle: [
-    { frequency: 440, end: 523.25, at: 0, duration: 0.28, level: 0.12 },
-    { frequency: 392, end: 440, at: 0.22, duration: 0.3, level: 0.1 },
-  ],
+type BufferLoad = {
+  promise: Promise<AudioBuffer>;
+  cancel: () => void;
 };
 const cooldowns: Record<SoundKind, number> = {
   pet: 350,
   completion: 1200,
   idle: 30000,
 };
+const loadDeadline = 1000;
+
+function isCompletion(playback: Playback) {
+  return playback.kind === "completion" && !playback.audition;
+}
+
+function canInterrupt(next: Playback, current: Playback) {
+  return !isCompletion(current) && (isCompletion(next) || next.audition);
+}
 
 export class PetAudio {
   private context?: AudioContext;
   private output?: GainNode;
+  private buffers = new Map<string, BufferLoad>();
   private settings: SoundSettings = normalizeSoundSettings(null);
   private voices = new Set<Voice>();
   private lastPlayed: Partial<Record<SoundKind, number>> = {};
-  private revision = 0;
-  private request = 0;
+  private pending?: PendingPlayback;
   private disposed = false;
 
   configure(value: unknown) {
     const settings = normalizeSoundSettings(value);
     if (JSON.stringify(settings) === JSON.stringify(this.settings)) return;
+    const voiceChanged = settings.voice !== this.settings.voice;
     this.settings = settings;
-    this.revision++;
+    if (this.pending && (voiceChanged || !this.isCurrent(this.pending)))
+      this.cancelPending();
+    if (voiceChanged) this.lastPlayed = {};
     if (this.context && this.output) {
       this.output.gain.cancelAndHoldAtTime(this.context.currentTime);
       this.output.gain.linearRampToValueAtTime(
@@ -65,38 +69,156 @@ export class PetAudio {
         this.context.currentTime + 0.02,
       );
       for (const voice of this.voices)
-        if (!this.allowed(voice.kind)) this.stopVoice(voice);
+        if (voiceChanged || !this.allowed(voice.kind)) this.stopVoice(voice);
     }
   }
 
-  private allowed(kind: SoundKind) {
+  private allowed(kind: ClipKind) {
     return (
       !this.disposed &&
       this.settings.enabled &&
       this.settings.volume > 0 &&
-      this.settings[kind]
+      (kind === "preview" || this.settings[kind])
     );
+  }
+
+  private isCurrent(playback: Playback) {
+    return this.allowed(playback.kind) && (playback.isCurrent?.() ?? true);
+  }
+
+  refresh() {
+    if (this.pending && !this.isCurrent(this.pending)) this.cancelPending();
+    else if (
+      this.pending &&
+      performance.now() - this.pending.requestedAt > loadDeadline
+    )
+      // Expiry releases priority, but remains a genuine playback failure.
+      this.pending = undefined;
+    for (const voice of this.voices)
+      if (!this.isCurrent(voice)) this.stopVoice(voice);
+  }
+
+  private cancelPending() {
+    this.pending?.cancel();
+    this.pending = undefined;
   }
 
   private stopVoice(voice: Voice) {
     const now = this.context!.currentTime;
     voice.gain.gain.cancelScheduledValues(now);
     voice.gain.gain.setTargetAtTime(0, now, 0.005);
-    for (const tone of voice.tones) tone.stop(now + 0.03);
+    voice.source.stop(now + 0.03);
     this.voices.delete(voice);
   }
 
-  async play(kind: SoundKind) {
-    if (!this.allowed(kind)) return "muted";
+  private buffer(context: AudioContext, voice: string, kind: ClipKind) {
+    const key = `${voice}/${kind}`;
+    let load = this.buffers.get(key);
+    if (!load) {
+      const controller = new AbortController();
+      let settled = false;
+      let cancel!: () => void;
+      const cancelled = new Promise<never>((_, reject) => {
+        cancel = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (this.buffers.get(key) === pending) this.buffers.delete(key);
+          reject(new Error("Voice clip loading cancelled"));
+          controller.abort();
+        };
+      });
+      const timer = setTimeout(cancel, loadDeadline);
+      const pending: BufferLoad = {
+        cancel,
+        promise: Promise.race([
+          (async () => {
+            const response = await fetch(
+              `${import.meta.env?.BASE_URL ?? "./"}voices/${key}.wav`,
+              { signal: controller.signal },
+            );
+            if (!response.ok) throw new Error("Voice clip unavailable");
+            const data = await response.arrayBuffer();
+            // decodeAudioData cannot be aborted; the race also bounds decoding.
+            controller.signal.throwIfAborted();
+            return context.decodeAudioData(data);
+          })(),
+          cancelled,
+        ])
+          .catch((error) => {
+            if (this.buffers.get(key) === pending) this.buffers.delete(key);
+            controller.abort();
+            throw error;
+          })
+          .finally(() => {
+            settled = true;
+            clearTimeout(timer);
+          }),
+      };
+      load = pending;
+      this.buffers.set(key, load);
+    }
+    return load;
+  }
+
+  play(kind: SoundKind, isCurrent?: () => boolean) {
+    return this.playClip(kind, this.settings.voice, { isCurrent });
+  }
+
+  preview(voice: string, kind: ClipKind = "preview", onAccepted?: () => void) {
+    if (!isSoundVoice(voice)) {
+      onAccepted?.();
+      return Promise.resolve("unavailable");
+    }
+    return this.playClip(kind, voice, { audition: true, onAccepted });
+  }
+
+  private async playClip(
+    kind: ClipKind,
+    voiceId: string,
+    {
+      audition = false,
+      isCurrent,
+      onAccepted,
+    }: {
+      audition?: boolean;
+      isCurrent?: () => boolean;
+      onAccepted?: () => void;
+    } = {},
+  ) {
+    this.refresh();
     const requestedAt = performance.now();
+    const playback: PendingPlayback = {
+      kind,
+      audition,
+      requestedAt,
+      isCurrent,
+      cancelled: false,
+      cancel: () => {},
+    };
+    if (!this.isCurrent(playback)) return "muted";
     if (
-      requestedAt - (this.lastPlayed[kind] ?? -Infinity) < cooldowns[kind] ||
-      (kind !== "completion" && this.voices.size > 0)
+      (!audition &&
+        kind !== "preview" &&
+        requestedAt - (this.lastPlayed[kind] ?? -Infinity) < cooldowns[kind]) ||
+      (this.pending && !canInterrupt(playback, this.pending)) ||
+      [...this.voices].some((voice) => !canInterrupt(playback, voice))
     )
       return "busy";
-    const revision = this.revision;
-    const request = ++this.request;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const cancelled = new Promise<null>((resolve) => {
+      playback.cancel = () => {
+        playback.cancelled = true;
+        clearTimeout(timer);
+        resolve(null);
+      };
+    });
+    // Reserve priority while loading, before an AudioBufferSourceNode exists.
+    this.cancelPending();
+    this.pending = playback;
     try {
+      onAccepted?.();
+      if (playback.cancelled) return "muted";
       if (!this.context) {
         this.context = new AudioContext();
         this.output = this.context.createGain();
@@ -104,64 +226,67 @@ export class PetAudio {
         this.output.connect(this.context.destination);
       }
       const context = this.context;
-      if (context.state !== "running") await context.resume();
-      if (context.state !== "running" || performance.now() - requestedAt > 1000)
-        return "unavailable";
-      if (
-        revision !== this.revision ||
-        request !== this.request ||
-        !this.allowed(kind)
-      )
+      const load = this.buffer(context, voiceId, kind);
+      const result = await Promise.race([
+        Promise.all([
+          load.promise,
+          context.state !== "running" ? context.resume() : Promise.resolve(),
+        ]),
+        new Promise<never>((_, reject) => {
+          // Bound resume() too: it may never settle if the output is unavailable.
+          timer = setTimeout(
+            () => {
+              load.cancel();
+              reject(new Error("Voice playback timed out"));
+            },
+            Math.max(0, loadDeadline - (performance.now() - requestedAt)),
+          );
+        }),
+        cancelled,
+      ]);
+      if (!result || playback.cancelled || !this.isCurrent(playback))
         return "muted";
-      if (kind === "completion")
+      const [buffer] = result;
+      if (
+        context.state !== "running" ||
+        performance.now() - requestedAt > loadDeadline
+      )
+        return "unavailable";
+      if (this.pending !== playback) return "muted";
+      if (isCompletion(playback) || audition)
         for (const voice of this.voices) this.stopVoice(voice);
-      this.lastPlayed[kind] = performance.now();
+      if (!audition && kind !== "preview")
+        this.lastPlayed[kind] = performance.now();
       const gain = context.createGain();
       gain.connect(this.output!);
-      const voice: Voice = { kind, gain, tones: [] };
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(gain);
+      const voice: Voice = { ...playback, gain, source };
       this.voices.add(voice);
-      const now = context.currentTime + 0.01;
-      for (const note of melodies[kind]) {
-        const tone = context.createOscillator();
-        const envelope = context.createGain();
-        const start = now + note.at;
-        tone.type = note.wave || "sine";
-        tone.frequency.setValueAtTime(note.frequency, start);
-        tone.frequency.exponentialRampToValueAtTime(
-          note.end || note.frequency,
-          start + note.duration,
-        );
-        envelope.gain.setValueAtTime(0, start);
-        envelope.gain.linearRampToValueAtTime(note.level, start + 0.018);
-        envelope.gain.exponentialRampToValueAtTime(
-          0.0001,
-          start + note.duration,
-        );
-        tone.connect(envelope);
-        envelope.connect(gain);
-        voice.tones.push(tone);
-        tone.onended = () => {
-          tone.disconnect();
-          envelope.disconnect();
-          voice.tones = voice.tones.filter((item) => item !== tone);
-          if (!voice.tones.length) {
-            gain.disconnect();
-            this.voices.delete(voice);
-          }
-        };
-        tone.start(start);
-        tone.stop(start + note.duration + 0.02);
-      }
+      source.onended = () => {
+        source.disconnect();
+        gain.disconnect();
+        this.voices.delete(voice);
+      };
+      source.start(context.currentTime + 0.01);
       return "played";
     } catch {
-      return "unavailable";
+      return playback.cancelled || !this.isCurrent(playback)
+        ? "muted"
+        : "unavailable";
+    } finally {
+      clearTimeout(timer);
+      if (this.pending === playback) this.pending = undefined;
     }
   }
 
   dispose() {
     this.disposed = true;
-    this.revision++;
+    this.cancelPending();
     for (const voice of this.voices) this.stopVoice(voice);
+    for (const load of this.buffers.values()) load.cancel();
+    this.buffers.clear();
     void this.context?.close().catch(() => {});
   }
 }

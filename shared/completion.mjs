@@ -5,7 +5,13 @@ export const COMPLETION_DURATION = 6000;
 
 /** Only call for accepted live events; history never creates reminders.
  * @param {any[]} previous @param {string} sessionId @param {any} event */
-export function recordCompletion(previous, sessionId, event, now = Date.now()) {
+export function recordCompletion(
+  previous,
+  sessionId,
+  event,
+  now = Date.now(),
+  connectionEpoch = 0,
+) {
   if (
     !sessionId ||
     !Number.isSafeInteger(event?.seq) ||
@@ -13,7 +19,8 @@ export function recordCompletion(previous, sessionId, event, now = Date.now()) {
     endStatus(event.data?.reason) !== "done"
   )
     return previous;
-  const id = `${sessionId}:${event.seq}`;
+  // Different connections can reuse both session IDs and event sequences.
+  const id = `${connectionEpoch}:${sessionId}:${event.seq}`;
   if (previous.some((item) => item.id === id)) return previous;
   return [
     ...previous.filter((item) => now - item.at < COMPLETION_DURATION),

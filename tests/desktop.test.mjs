@@ -6,99 +6,10 @@ import { desktopBridge } from "../plugins/dsh-girl/desktop-bridge.mjs";
 import { DshClient } from "../shared/dsh-client.mjs";
 import { reduceAssistantStream } from "../shared/assistant-stream.mjs";
 
-function fixture() {
-  const listeners = new Map(),
-    calls = [];
-  const peer = {
-    principal: { kind: "owner" },
-    dispose: async () => {
-      peer.disposed = true;
-    },
-  };
-  let publish;
-  const gateway = {
-    async invoke(call) {
-      assert.equal(call.peer, peer);
-      calls.push(call);
-      if (call.method === "list") {
-        assert.deepEqual(call.args, { _request: {} });
-        return { items: [{ sessionId: "s1", running: false }] };
-      }
-      if (call.method === "page")
-        return { records: [{ event: { seq: 1 } }], hasMore: true };
-      return { sessionId: "s1" };
-    },
-    async stream(call) {
-      assert.equal(call.method, "follow");
-      return (async function* () {
-        try {
-          yield {
-            type: "snapshot",
-            cursor: 9,
-            records: [{ event: { seq: 9 } }],
-            hasMore: false,
-            projections: { asOfSeq: 9, values: {} },
-          };
-        } finally {
-          gateway.followClosed = true;
-        }
-      })();
-    },
-    wireStream: {
-      async open(endpoint, payload, uplink, gotPeer, signal) {
-        assert.equal(endpoint, "$events");
-        assert.equal(gotPeer, peer);
-        const queue = [];
-        let wake;
-        publish = (value) => {
-          queue.push(value);
-          wake?.();
-        };
-        return (async function* () {
-          yield { type: "ready", clientId: "client" };
-          const aborted = () => wake?.();
-          signal.addEventListener("abort", aborted);
-          try {
-            while (!signal.aborted) {
-              if (!queue.length)
-                await new Promise((resolve) => {
-                  wake = resolve;
-                });
-              while (queue.length) yield queue.shift();
-            }
-          } finally {
-            signal.removeEventListener("abort", aborted);
-          }
-        })();
-      },
-    },
-    async dispatchRpc(endpoint, payload, signal, gotPeer) {
-      assert.equal(gotPeer, peer);
-      calls.push({ endpoint, payload });
-      return { ok: true };
-    },
-  };
-  return {
-    ctx: {
-      get: () => gateway,
-      connection: { createPeer: () => peer },
-      credentials: { resolve: async () => null },
-      on: (event, fn) => {
-        listeners.set(event, fn);
-        return () => listeners.delete(event);
-      },
-    },
-    calls,
-    gateway,
-    peer,
-    publish: (value) => publish(value),
-    emit: (event, ...args) => listeners.get(event)?.(...args),
-    listeners,
-  };
-}
+import { desktopHost } from "./helpers/desktop-host.mjs";
 
 test("Desktop bridge authenticates HTTP and sockets, translates history and keeps the same owner Peer for human decisions", async () => {
-  const host = fixture(),
+  const host = desktopHost(),
     bridge = await desktopBridge(host.ctx);
   const client = new DshClient(bridge.endpoint, { token: bridge.token });
   try {
@@ -137,8 +48,10 @@ test("Desktop bridge authenticates HTTP and sockets, translates history and keep
         if (client.streams.size === 2) resolve();
       }),
     );
+    const baseline = once(client, "frame");
     assert.equal((await client.connect()).version, "desktop-0.2");
     await connected;
+    assert.equal((await baseline)[0].payload.type, "session/projections");
     assert.equal((await client.rpc("session.list")).items[0].sessionId, "s1");
     assert.equal(
       (await client.rpc("session.history", { sessionId: "s1", beforeSeq: 5 }))
@@ -211,6 +124,64 @@ test("Desktop bridge authenticates HTTP and sockets, translates history and keep
   assert.equal(host.peer.disposed, true);
   assert.equal(host.listeners.size, 0);
 });
+
+test(
+  "Desktop control forwards baseline and live projections, then resubscribes after stream EOF",
+  { timeout: 10000 },
+  async () => {
+    const host = desktopHost();
+    const row = host.sessions.get("s1");
+    row.projections = {
+      asOfSeq: 10,
+      values: { tokenUsage: { outputTokens: 12 } },
+    };
+    const bridge = await desktopBridge(host.ctx);
+    const client = new DshClient(bridge.endpoint, { token: bridge.token });
+    try {
+      const baseline = once(client, "frame");
+      await client.connect();
+      assert.deepEqual((await baseline)[0].payload, {
+        type: "session/projections",
+        projections: { s1: row.projections },
+      });
+      const delta = {
+        type: "projection",
+        sessionId: "s1",
+        key: "tokenUsage",
+        value: { outputTokens: 24 },
+        seq: 11,
+      };
+      const live = once(client, "frame");
+      host.publishControl(delta);
+      assert.deepEqual((await live)[0].payload, {
+        ...delta,
+        type: "session/projection",
+      });
+
+      // A host restart can reset its sequence. EOF must trigger a new subscription.
+      row.projections = {
+        asOfSeq: 1,
+        values: { tokenUsage: { outputTokens: 3 } },
+      };
+      const reconnect = once(client, "frame");
+      host.endControl();
+      assert.deepEqual((await reconnect)[0].payload, {
+        type: "session/projections",
+        projections: { s1: row.projections },
+      });
+      assert.equal(
+        host.calls.filter((call) => call.method === "control").length,
+        2,
+      );
+      assert.equal(host.controls.size, 1);
+    } finally {
+      client.close();
+      await bridge.dispose();
+    }
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(host.controls.size, 0);
+  },
+);
 
 test("Desktop cursorless streaming drops duplicates and gaps without changing durable event cursors", () => {
   let stream = reduceAssistantStream(null, {

@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { launchDesktop } from "./electron-test.mjs";
 import { createFixture } from "../tests/fixture.mjs";
+import { SOUND_VOICES, SOUND_PHRASES } from "../shared/voices.mjs";
+import { checkSoundRaces } from "./sound-races.mjs";
 
 const fixture = await createFixture();
 const data = await mkdtemp(join(tmpdir(), "dsg-sound-"));
@@ -49,7 +51,13 @@ try {
     );
   await expect.poll(async () => (await state()).connection).toBe("connected");
   await page.evaluate(() => {
-    window.audioProbe = { starts: [], contexts: [], peak: 0, output: null };
+    window.audioProbe = {
+      starts: [],
+      contexts: [],
+      peak: 0,
+      output: null,
+      active: 0,
+    };
     const Original = window.AudioContext;
     window.AudioContext = class extends Original {
       constructor(...args) {
@@ -77,17 +85,19 @@ try {
           );
         }, 5);
       }
-      createOscillator() {
-        const oscillator = super.createOscillator();
-        const start = oscillator.start.bind(oscillator);
-        oscillator.start = (at) => {
+      createBufferSource() {
+        const source = super.createBufferSource();
+        const start = source.start.bind(source);
+        source.addEventListener("ended", () => window.audioProbe.active--);
+        source.start = (at) => {
+          window.audioProbe.active++;
           window.audioProbe.starts.push({
-            frequency: oscillator.frequency.value,
+            duration: source.buffer?.duration,
             at,
           });
           start(at);
         };
-        return oscillator;
+        return source;
       }
     };
   });
@@ -96,7 +106,19 @@ try {
     await page.waitForTimeout(350);
     assert.equal(await count(), expected);
   };
-  const rest = () => page.waitForTimeout(1000);
+  const rest = async () => {
+    await expect
+      .poll(() => page.evaluate(() => window.audioProbe.active))
+      .toBe(0);
+    const cooldown = await page.evaluate(() => {
+      const probe = window.audioProbe;
+      const last = probe.starts.at(-1);
+      return last
+        ? Math.max(0, (last.at + 1.3 - probe.contexts[0].currentTime) * 1000)
+        : 0;
+    });
+    if (cooldown) await page.waitForTimeout(cooldown);
+  };
   const turn = (sessionId, reason = "completed") => {
     fixture.event(sessionId, "turn/start", {});
     return fixture.event(sessionId, "turn/end", { reason: { kind: reason } });
@@ -106,7 +128,7 @@ try {
     BrowserWindow.getAllWindows()[0].blur(),
   );
   const completed = turn("front");
-  await expect.poll(count).toBe(4);
+  await expect.poll(count).toBe(1);
   await expect
     .poll(() => page.evaluate(() => window.audioProbe.peak))
     .toBeGreaterThan(0.005);
@@ -127,17 +149,17 @@ try {
     event: completed,
   });
   await invoke("refresh");
-  await quiet(4);
+  await quiet(1);
   await rest();
   turn("back");
-  await expect.poll(count).toBe(8);
+  await expect.poll(count).toBe(2);
   await rest();
   turn("front", "error");
   turn("front", "cancelled");
-  await quiet(8);
+  await quiet(2);
   await invoke("connect", fixture.endpoint);
   await expect.poll(async () => (await state()).connection).toBe("connected");
-  await quiet(8);
+  await quiet(2);
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].focus(),
   );
@@ -146,7 +168,7 @@ try {
     window.audioProbe.peak = 0;
   });
   await pet.click();
-  await expect.poll(count).toBe(10);
+  await expect.poll(count).toBe(3);
   await rest();
   const lowPeak = await page.evaluate(() => window.audioProbe.peak);
   assert.ok(lowPeak > 0.005);
@@ -157,17 +179,17 @@ try {
     window.audioProbe.peak = 0;
   });
   await pet.click();
-  await expect.poll(count).toBe(12);
+  await expect.poll(count).toBe(4);
   await rest();
   const highPeak = await page.evaluate(() => window.audioProbe.peak);
   assert.ok(
     highPeak > lowPeak * 1.6 && highPeak < lowPeak * 2.4,
-    `volume scales synthesized signal: ${lowPeak} -> ${highPeak}`,
+    `volume scales voice playback: ${lowPeak} -> ${highPeak}`,
   );
   await pet.dispatchEvent("click");
   await pet.dispatchEvent("click");
   await pet.dispatchEvent("click");
-  await expect.poll(count).toBe(14);
+  await expect.poll(count).toBe(5);
   await rest();
   const box = await pet.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -178,7 +200,7 @@ try {
   );
   await expect(page.locator(".pet-stage")).toHaveClass(/is-dragging/);
   await page.mouse.up();
-  await quiet(14);
+  await quiet(5);
   await invoke("section", "settings");
   const settings = page.getByRole("region", { name: "声音设置" });
   await expect(
@@ -187,7 +209,7 @@ try {
   await settings
     .getByRole("button", { name: "试听任务完成", exact: true })
     .click();
-  await expect.poll(count).toBe(18);
+  await expect.poll(count).toBe(6);
   await settings.getByRole("switch", { name: "声音陪伴", exact: true }).click();
   await expect
     .poll(async () => (await state()).config.sounds.enabled)
@@ -208,12 +230,12 @@ try {
     settings.getByRole("button", { name: "试听任务完成" }),
   ).toBeDisabled();
   turn("front");
-  await quiet(18);
+  await quiet(6);
   await settings.getByRole("switch", { name: "声音陪伴", exact: true }).click();
   await expect
     .poll(async () => (await state()).config.sounds.enabled)
     .toBe(true);
-  await quiet(18);
+  await quiet(6);
   await settings
     .getByRole("switch", { name: "任务完成声音", exact: true })
     .click();
@@ -221,11 +243,11 @@ try {
     .poll(async () => (await state()).config.sounds.completion)
     .toBe(false);
   turn("back");
-  await quiet(18);
+  await quiet(6);
   await settings
     .getByRole("switch", { name: "任务完成声音", exact: true })
     .click();
-  await quiet(18);
+  await quiet(6);
   const volume = settings.getByRole("slider", { name: "音量", exact: true });
   await volume.focus();
   await volume.press("Home");
@@ -234,7 +256,7 @@ try {
     settings.getByRole("button", { name: "试听摸摸桌宠" }),
   ).toBeDisabled();
   turn("front");
-  await quiet(18);
+  await quiet(6);
   await volume.press("ArrowRight");
   await expect.poll(async () => (await state()).config.sounds.volume).toBe(5);
   await settings
@@ -246,7 +268,7 @@ try {
   ).toHaveAttribute("aria-checked", "false");
   await invoke("section", null);
   await pet.click();
-  await quiet(18);
+  await quiet(6);
   await invoke("soundSettings", {
     pet: true,
     completion: true,
@@ -259,33 +281,100 @@ try {
   await page.clock.fastForward(15000);
   await invoke("section", "settings");
   await page.clock.fastForward(110000);
-  assert.equal(await count(), 18, "open settings prevent idle sound");
+  assert.equal(await count(), 6, "open settings prevent idle sound");
   await invoke("section", null);
   await expect(page.locator(".companion-surface")).not.toBeVisible();
   await page.mouse.move(1, 1);
   await page.clock.fastForward(110000);
-  await expect.poll(count).toBe(20);
+  await expect.poll(count).toBe(7);
   await page.clock.fastForward(250000);
-  assert.equal(await count(), 20, "sleeping prevents further idle sounds");
+  assert.equal(await count(), 7, "sleeping prevents further idle sounds");
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].hide(),
   );
   await page.clock.fastForward(110000);
-  assert.equal(await count(), 20, "hidden pet stays quiet");
+  assert.equal(await count(), 7, "hidden pet stays quiet");
   await page.clock.setSystemTime(Date.now());
   turn("back");
-  await expect.poll(count).toBe(24);
+  await expect.poll(count).toBe(8);
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].show(),
   );
-  await quiet(24);
+  await quiet(8);
+  await rest();
+  await invoke("section", "settings");
+  const picker = settings.getByRole("combobox", { name: "声线", exact: true });
+  await expect(picker.locator("option")).toHaveCount(SOUND_VOICES.length);
+  const preview = settings.getByRole("button", {
+    name: "试听当前声线",
+    exact: true,
+  });
+  let previewCount = 8;
+  for (const voice of SOUND_VOICES) {
+    await picker.selectOption(voice.id);
+    await expect
+      .poll(async () => (await state()).config.sounds.voice)
+      .toBe(voice.id);
+    assert.equal(
+      await count(),
+      previewCount,
+      "selecting a voice does not auto-play",
+    );
+    await preview.click();
+    await expect.poll(count).toBe(++previewCount);
+  }
+  // Verify every packaged clip can load and decode through the actual file:// renderer.
+  const decoded = await page.evaluate(
+    async ({ voices, kinds }) => {
+      const context = window.audioProbe.contexts[0];
+      const results = [];
+      for (const voice of voices) {
+        for (const kind of kinds) {
+          const response = await fetch(`./voices/${voice}/${kind}.wav`);
+          if (!response.ok) throw new Error(`Missing ${voice}/${kind}`);
+          const buffer = await context.decodeAudioData(
+            await response.arrayBuffer(),
+          );
+          results.push({ voice, kind, duration: buffer.duration });
+        }
+      }
+      return results;
+    },
+    {
+      voices: SOUND_VOICES.map((voice) => voice.id),
+      kinds: Object.keys(SOUND_PHRASES),
+    },
+  );
+  assert.equal(decoded.length, SOUND_VOICES.length * 4);
+  assert.ok(decoded.every((clip) => clip.duration > 0.25 && clip.duration < 6));
+  await expect
+    .poll(() => page.evaluate(() => window.audioProbe.active))
+    .toBe(0);
+  // A voice preview is independent of the individual event switches.
+  await invoke("soundSettings", { pet: false, completion: false, idle: false });
+  await preview.click();
+  await expect.poll(count).toBe(++previewCount);
+  await invoke("soundSettings", { enabled: false });
+  await expect
+    .poll(() => page.evaluate(() => window.audioProbe.active))
+    .toBe(0);
+  await expect(preview).toBeDisabled();
+  await invoke("soundSettings", { enabled: true, completion: true });
+  await quiet(previewCount);
   await invoke("soundSettings", { volume: 0, idle: false, pet: false });
+  await expect(preview).toBeDisabled();
   await expect
     .poll(
       async () =>
         JSON.parse(await readFile(join(data, "settings.json"), "utf8")).sounds,
     )
-    .toMatchObject({ volume: 0, idle: false, pet: false, enabled: true });
+    .toMatchObject({
+      volume: 0,
+      idle: false,
+      pet: false,
+      enabled: true,
+      voice: SOUND_VOICES.at(-1).id,
+    });
   await mkdir("artifacts", { recursive: true });
   await invoke("section", "settings");
   await settings.scrollIntoViewIfNeeded();
@@ -301,6 +390,7 @@ try {
   assert.deepEqual((await state()).config.sounds, {
     enabled: true,
     volume: 0,
+    voice: SOUND_VOICES.at(-1).id,
     pet: false,
     completion: true,
     idle: false,
@@ -320,6 +410,9 @@ try {
         muteStopsPlayback: true,
         idleSuppression: true,
         settingsPersisted: true,
+        selectableVoices: SOUND_VOICES.length,
+        decodedLocalClips: decoded.length,
+        voiceChoicePersisted: true,
         noModelCalls: true,
       },
       null,
@@ -327,7 +420,7 @@ try {
     ),
   );
   console.log(
-    "Sound passed: real audio signal before first gesture, background completion, click/drag distinction, cooldown, volume, mute, event switches, preview, sparse idle and sleeping/hidden suppression, restart persistence. No model calls.",
+    "Sound passed: real local TTS signal before first gesture, background completion, click/drag distinction, cooldown, volume, mute, event switches, 8 selectable voices, 32 decoded local clips, independent voice preview, sparse idle and sleeping/hidden suppression, restart persistence. No model calls.",
   );
 } finally {
   await app?.close();
@@ -339,3 +432,5 @@ try {
     retryDelay: 200,
   });
 }
+
+await checkSoundRaces();

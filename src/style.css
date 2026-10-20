@@ -137,6 +137,78 @@ body,
   flex-direction: column;
   min-height: 0;
 }
+.session-usage {
+  flex: 0 0 auto;
+  margin: 0 14px 4px;
+  border: 1px solid #e3e8f3;
+  border-radius: 10px;
+  background: #f0f4fb;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.session-usage summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 9px;
+  cursor: pointer;
+  list-style: none;
+}
+.session-usage summary::-webkit-details-marker {
+  display: none;
+}
+.session-usage summary > span {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 3px 5px;
+  flex: 1;
+  min-width: 0;
+}
+.usage-label,
+.usage-detail dt {
+  color: #71809a;
+}
+.session-usage strong {
+  color: #4b6087;
+  font-size: 11px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.usage-chevron {
+  flex-shrink: 0;
+  color: #8595b0;
+}
+.session-usage[open] .usage-chevron {
+  transform: rotate(180deg);
+}
+.usage-detail {
+  max-height: min(180px, 20cqh);
+  padding: 8px 9px;
+  overflow: auto;
+  border-top: 1px solid #e3e8f3;
+}
+.usage-scope,
+.usage-note {
+  margin: 0;
+  color: #71809a;
+  line-height: 1.6;
+}
+.usage-detail dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px 12px;
+  margin: 8px 0;
+}
+.usage-detail dd {
+  margin: 3px 0 0;
+  color: #435577;
+  overflow-wrap: anywhere;
+}
+.usage-context {
+  grid-column: 1 / -1;
+}
 [hidden] {
   display: none !important;
 }
@@ -840,6 +912,32 @@ body,
   justify-content: space-between;
   font-size: 11px;
   color: #627493;
+}
+.sound-voice-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sound-voice-picker select {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #d6dce6;
+  border-radius: 7px;
+  padding: 9px 10px;
+  background: #fff;
+  color: #425878;
+  font: inherit;
+  font-size: 11px;
+}
+.sound-voice-picker select:focus-visible {
+  outline: 2px solid #7b9dd0;
+  outline-offset: 2px;
+}
+.sound-voice-picker .sound-preview {
+  flex-shrink: 0;
+}
+.settings-card .sound-voice-note {
+  margin: 7px 0 14px;
 }
 .sound-volume-heading output {
   font-variant-numeric: tabular-nums;
@@ -1843,6 +1941,7 @@ body,
 /* Compact conversation: preserve readable message text while reducing surrounding chrome. */
 .companion-surface[data-section="chat"] .app-shell {
   border-radius: 20px;
+  container-type: size;
 }
 .companion-surface[data-section="chat"] .titlebar {
   height: 42px;

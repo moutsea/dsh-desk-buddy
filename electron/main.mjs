@@ -14,6 +14,7 @@ import { join, dirname, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DshClient, normalizeEndpoint } from "../shared/dsh-client.mjs";
 import { mergeEvents } from "../shared/projection.mjs";
+import { SessionProjections } from "../shared/session-projections.mjs";
 import { EXPRESSIONS, isExpressionId } from "../shared/expressions.mjs";
 import { reduceActivity, reconcileActivity } from "../shared/activity.mjs";
 import { recordCompletion } from "../shared/completion.mjs";
@@ -60,7 +61,14 @@ let pet,
   broadcastTimer;
 let connectRevision = 0,
   historyRevision = 0,
-  refreshRevision = 0;
+  refreshRevision = 0,
+  snapshotRevision = 0,
+  controlSnapshotRevision = 0;
+const projections = new Map();
+function projectionFor(id) {
+  if (!projections.has(id)) projections.set(id, new SessionProjections());
+  return projections.get(id);
+}
 let config = {
   endpoint: "http://127.0.0.1:3080",
   cwd: "",
@@ -78,6 +86,7 @@ let config = {
 let state = {
   managed: !!managed,
   connection: "offline",
+  connectionEpoch: 0,
   connectionMessage: "",
   host: null,
   sessions: [],
@@ -110,14 +119,14 @@ function broadcast() {
     visible:
       !!pet && !pet.isDestroyed() && pet.isVisible() && !pet.isMinimized(),
   });
-  clearTimeout(broadcastTimer);
-  broadcastTimer = setTimeout(
-    () =>
-      windows().forEach((window) =>
-        window.webContents.send("desktop:state", state),
-      ),
-    35,
-  );
+  // Coalesce into a fixed window: continuous streams must not defer delivery.
+  if (broadcastTimer) return;
+  broadcastTimer = setTimeout(() => {
+    broadcastTimer = undefined;
+    windows().forEach((window) =>
+      window.webContents.send("desktop:state", state),
+    );
+  }, 35);
 }
 let saveQueue = Promise.resolve();
 function save() {
@@ -350,13 +359,9 @@ async function refreshSessions(expectedClient = client) {
   state.sessions = result.items
     .filter((item) => item.origin !== "subagent")
     .map((item) => {
-      const newer = state.sessions.find(
-        (row) => row.sessionId === item.sessionId,
-      );
-      if (
-        (newer?.projections?.asOfSeq ?? -1) > (item.projections?.asOfSeq ?? -1)
-      )
-        item.projections = newer.projections;
+      const store = projectionFor(item.sessionId);
+      store.list(item.projections);
+      item.projections = store.snapshot();
       return item;
     });
   for (const row of state.sessions) {
@@ -385,6 +390,8 @@ async function history(older = false, expectedClient = client) {
   if (!id || !expectedClient) return;
   const revision = historyRevision;
   const beforeSeq = older ? state.events[0]?.seq : undefined;
+  const store = projectionFor(id);
+  const seedProjections = store.beginSeed(++snapshotRevision);
   const result = await expectedClient.rpc("session.history", {
     sessionId: id,
     maxMessages: 40,
@@ -404,8 +411,8 @@ async function history(older = false, expectedClient = client) {
     state.hasMore = result.hasMore;
   if (result.projections) {
     const row = state.sessions.find((item) => item.sessionId === id);
-    if (row && (row.projections?.asOfSeq ?? -1) <= result.projections.asOfSeq)
-      row.projections = result.projections;
+    seedProjections(result.projections);
+    if (row) row.projections = store.snapshot();
   }
   broadcast();
 }
@@ -474,7 +481,13 @@ function handleFrame(frame) {
     state.activity[id] = activity;
     // Ignore duplicate/reordered events for reactions AND running flags.
     if (activity === previous) return broadcast();
-    state.completions = recordCompletion(state.completions, id, event);
+    state.completions = recordCompletion(
+      state.completions,
+      id,
+      event,
+      Date.now(),
+      state.connectionEpoch,
+    );
     if (event.type === "turn/start") {
       if (row) row.running = true;
     }
@@ -504,13 +517,23 @@ function handleFrame(frame) {
     payload.type === "host/session-removed"
   )
     refreshSessions().catch(() => {});
-  if (payload.type === "session/projection" && row) {
-    const previous = row.projections || { asOfSeq: -1, values: {} };
-    if (payload.seq >= previous.asOfSeq)
-      row.projections = {
-        asOfSeq: payload.seq,
-        values: { ...previous.values, [payload.key]: payload.value },
-      };
+  if (payload.type === "host/session-removed") projections.delete(id);
+  if (payload.type === "session/projections") {
+    for (const [sessionId, block] of Object.entries(
+      payload.projections || {},
+    )) {
+      const store = projectionFor(sessionId);
+      store.seed(block, controlSnapshotRevision);
+      const session = state.sessions.find(
+        (item) => item.sessionId === sessionId,
+      );
+      if (session) session.projections = store.snapshot();
+    }
+  }
+  if (payload.type === "session/projection" && typeof id === "string") {
+    const store = projectionFor(id);
+    store.apply(payload.key, payload.value, payload.seq);
+    if (row) row.projections = store.snapshot();
   }
   if (
     payload.type === "approval/requested" ||
@@ -532,6 +555,7 @@ function handleFrame(frame) {
 async function connect(endpoint) {
   endpoint = normalizeEndpoint(endpoint);
   const revision = ++connectRevision;
+  state.connectionEpoch++;
   client?.close();
   clearInterval(pollTimer);
   clearInterval(balanceTimer);
@@ -551,6 +575,7 @@ async function connect(endpoint) {
   state.liveAssistant = {};
   state.completions = [];
   state.sessions = [];
+  projections.clear();
   state.host = null;
   state.balance = null;
   state.balanceError = "";
@@ -558,12 +583,23 @@ async function connect(endpoint) {
   const next = new DshClient(endpoint, { token: managed?.token });
   client = next;
   next.on("frame", handleFrame);
+  next.on("stream-start", ({ kind }) => {
+    if (client === next && kind === "mux")
+      controlSnapshotRevision = ++snapshotRevision;
+  });
   next.on("stream", ({ kind, connected, message }) => {
     if (client !== next) return;
     if (!connected) {
+      state.connectionEpoch++;
+      state.completions = [];
       if (kind === "mux") {
         state.pending = [];
         state.liveAssistant = {};
+        projections.clear();
+        for (const session of state.sessions) delete session.projections;
+        // An old in-flight response must not seed the new stream generation.
+        historyRevision++;
+        refreshRevision++;
       }
       state.connection = "reconnecting";
       state.connectionMessage = message || "正在重新连接";

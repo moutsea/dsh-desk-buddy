@@ -7,6 +7,14 @@ const SoundContext = createContext({
   engage: () => {},
   setSleeping: (_sleeping: boolean) => {},
   play: async (_kind: SoundKind): Promise<string> => "unavailable",
+  preview: async (
+    _voice: string,
+    _kind: SoundKind | "preview" = "preview",
+    onAccepted?: () => void,
+  ): Promise<string> => {
+    onAccepted?.();
+    return "unavailable";
+  },
 });
 
 export const useSounds = () => useContext(SoundContext);
@@ -34,15 +42,40 @@ export function SoundProvider({
     let visible = !document.hidden;
     let live = true;
     tick.current = () => {
-      if (!current.current.ready) return;
+      if (!current.current.ready) {
+        engine.refresh();
+        return;
+      }
       const snapshot = current.current.state;
       engine.configure(snapshot.config.sounds);
-      for (const kind of policy.update(
+      const next = policy.update(
         snapshot,
         Date.now(),
         visible && !document.hidden && !sleeping.current,
-      ))
-        void engine.play(kind as SoundKind);
+      );
+      engine.refresh();
+      for (const kind of next) {
+        const idleRevision = policy.idleRevision;
+        const completionCue = policy.completionCue;
+        void engine.play(
+          kind as SoundKind,
+          () =>
+            live &&
+            current.current.ready &&
+            (kind === "idle"
+              ? policy.idleIsCurrent(
+                  current.current.state,
+                  Date.now(),
+                  visible && !document.hidden && !sleeping.current,
+                  idleRevision,
+                )
+              : policy.completionIsCurrent(
+                  current.current.state,
+                  Date.now(),
+                  completionCue,
+                )),
+        );
+      }
     };
     const visibility = (value: boolean) => {
       visible = value;
@@ -77,12 +110,26 @@ export function SoundProvider({
   useEffect(() => tick.current(), [state, ready]);
   const value = useMemo(
     () => ({
-      engage: () => cues.current?.engage(),
+      engage: () => {
+        cues.current?.engage();
+        audio.current?.refresh();
+      },
       setSleeping: (value: boolean) => {
         sleeping.current = value;
+        tick.current();
       },
       play: async (kind: SoundKind) =>
         (await audio.current?.play(kind)) || "unavailable",
+      preview: async (
+        voice: string,
+        kind: SoundKind | "preview" = "preview",
+        onAccepted?: () => void,
+      ) => {
+        if (audio.current)
+          return audio.current.preview(voice, kind, onAccepted);
+        onAccepted?.();
+        return "unavailable";
+      },
     }),
     [],
   );

@@ -186,8 +186,20 @@ test("streams reconnect and replay pending interactions without resubmitting pro
       }, 10);
     });
   const states = [],
-    frames = [];
-  client.on("stream", (value) => states.push(value));
+    frames = [],
+    starts = [];
+  client.on("stream-start", ({ kind }) => starts.push(kind));
+  client.on("stream", (value) => {
+    if (value.connected)
+      assert.ok(
+        starts.filter((kind) => kind === value.kind).length >
+          states.filter(
+            (previous) => previous.kind === value.kind && previous.connected,
+          ).length,
+        "each subscription reserves order before its open event or baseline",
+      );
+    states.push(value);
+  });
   client.on("frame", (frame) => frames.push(frame));
   try {
     await client.connect();
@@ -200,6 +212,7 @@ test("streams reconnect and replay pending interactions without resubmitting pro
     fixture.dropStreams();
     await wait(() => frames.some((frame) => frame.rpcId === "pending-replay"));
     assert.ok(states.some((value) => !value.connected));
+    assert.equal(starts.filter((kind) => kind === "mux").length, 2);
     assert.equal(
       fixture.calls.filter((call) => call.method === "session.prompt").length,
       0,

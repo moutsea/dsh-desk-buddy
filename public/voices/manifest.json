@@ -1,0 +1,327 @@
+{
+  "model": "qwen-audio-3.1-tts-flash",
+  "source": "https://help.aliyun.com/zh/model-studio/qwen-audio-tts-voice-list",
+  "processing": "24 kHz mono PCM16; matched RMS with a 0.75 peak ceiling; quieter idle cues; 5 ms edge fades",
+  "clips": [
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "pet",
+      "text": "嗯？嘿嘿。",
+      "file": "qiaoxiaojiao_v3.1/pet.wav",
+      "duration": 1.2,
+      "sha256": "8d062f51ea73c4e6fe2edbf716bdfd06d4adb8ebaf0de45304d17eef17934cf0",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "cd5a5a0e-708c-9cee-8c56-1ddb04dc1c68"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "completion",
+      "text": "做好啦！",
+      "file": "qiaoxiaojiao_v3.1/completion.wav",
+      "duration": 0.72,
+      "sha256": "971d5a40862c2997f657f94cd87733cf49823999f39dd9948c37ee803975bf4c",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。带一点做完事情的小开心。不要播音腔，不要大喊。",
+      "requestId": "5f6f6da2-367c-98f5-b9af-0f9ce235e60a"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "idle",
+      "text": "陪我玩一会儿嘛。",
+      "file": "qiaoxiaojiao_v3.1/idle.wav",
+      "duration": 1.28,
+      "sha256": "f356c78b00f3d7c98e513ce1efa571975edc83ea8b8258912fa8071c21e958f8",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
+      "requestId": "82e38f70-0834-95fb-a69a-34692be2180f"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "preview",
+      "text": "嗯？嘿嘿，做好啦！",
+      "file": "qiaoxiaojiao_v3.1/preview.wav",
+      "duration": 1.84,
+      "sha256": "772ac7598a4445341c8890cd32d335f78889ce4b7730d315061ab2b11022edad",
+      "instruction": "用清甜软萌、轻柔亲近的女声说话，语气俏皮，带自然微笑和一点点鼻音。轻轻起声，尾音微微上扬，语速自然。不要播音腔，不要大喊。",
+      "requestId": "f7bac46f-46f0-9c78-9c23-5fdda08db89c"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "pet",
+      "text": "嗯？嘿嘿。",
+      "file": "longanlingxi_v3.1/pet.wav",
+      "duration": 1.44,
+      "sha256": "2efd9bb560ab78be980e75c76a1403297203b96c2bce8b53dbf087fc9d58b897",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "43a21c59-4436-9768-a4f5-8d56c482e6d4"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "completion",
+      "text": "做好啦！",
+      "file": "longanlingxi_v3.1/completion.wav",
+      "duration": 0.88,
+      "sha256": "b16b764f0f50db084386defa9ba9b4b2b65fa2234a72f3911d10d154b5933355",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。带一点做完事情的小开心。不要播音腔，不要大喊。",
+      "requestId": "37035bef-0a9e-9575-b1f5-76e4c66532f3"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "idle",
+      "text": "陪我玩一会儿嘛。",
+      "file": "longanlingxi_v3.1/idle.wav",
+      "duration": 1.68,
+      "sha256": "896d346731ad229c815a22baaa7cd35eb14e3455760088c40edee3676f3ba2bd",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
+      "requestId": "6f625884-697b-9670-b645-165f3c8f14bc"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "preview",
+      "text": "嗯？嘿嘿，做好啦！",
+      "file": "longanlingxi_v3.1/preview.wav",
+      "duration": 2.24,
+      "sha256": "2e601e6d7833cd56a61bdbc693628f70b91b11eeb158c9c09376188b8bb2e7fb",
+      "instruction": "用清甜软萌、轻柔亲近的女声说话，语气俏皮，带自然微笑和一点点鼻音。轻轻起声，尾音微微上扬，语速自然。不要播音腔，不要大喊。",
+      "requestId": "9dcb4348-8820-9d88-be8e-e6795bc66fec"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "pet",
+      "text": "嗯？嘿嘿。",
+      "file": "anyuqing_v3.1/pet.wav",
+      "duration": 1.28,
+      "sha256": "c5cf1ef7b17389420ccb00dcc12b5ff4baf148ca6ea15249a60f11314d20007c",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "ad7b97dc-6fd2-9e95-89be-8d709b73e629"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "completion",
+      "text": "做好啦！",
+      "file": "anyuqing_v3.1/completion.wav",
+      "duration": 0.88,
+      "sha256": "ef143549ebb291f9f7045af86c3c618bde2ab1a06800aa27963efa93891c1672",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。带一点做完事情的小开心。不要播音腔，不要大喊。",
+      "requestId": "32d2deea-f69b-9359-bd86-b72934e653b3"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "idle",
+      "text": "陪我玩一会儿嘛。",
+      "file": "anyuqing_v3.1/idle.wav",
+      "duration": 1.68,
+      "sha256": "4d302fdb2e86c036cd399148f33d631f1dfbecec8198124afc740d9dc5dbecb7",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
+      "requestId": "b4da86eb-4423-9b39-a5fb-ff8f86e5425a"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "preview",
+      "text": "嗯？嘿嘿，做好啦！",
+      "file": "anyuqing_v3.1/preview.wav",
+      "duration": 2.64,
+      "sha256": "85efe545f659b557de8582cc9838eaf11aa40d79061d6edab30525fe85c5437f",
+      "instruction": "用清甜软萌、轻柔亲近的女声说话，语气俏皮，带自然微笑和一点点鼻音。轻轻起声，尾音微微上扬，语速自然。不要播音腔，不要大喊。",
+      "requestId": "b58960a3-4f9b-9d03-a11c-f7be59b33e80"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "pet",
+      "text": "嗯？嘿嘿。",
+      "file": "anxiaolan_v3.1/pet.wav",
+      "duration": 1.04,
+      "sha256": "71b3b0929d2f4b71e68b146caff1f05022f42223e33703e79e87ad1fc6311183",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "841582c0-e1af-9187-84cc-46ee64eb8e4c"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "completion",
+      "text": "做好啦！",
+      "file": "anxiaolan_v3.1/completion.wav",
+      "duration": 0.8,
+      "sha256": "91d81ac8733f2d9ade437bf5e8a16c7c111f8b1a56c78f5c5e63854ccb6aeafe",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。带一点做完事情的小开心。不要播音腔，不要大喊。",
+      "requestId": "75f6f307-e452-99c8-8ec9-b9cfd8dbc0bc"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "idle",
+      "text": "陪我玩一会儿嘛。",
+      "file": "anxiaolan_v3.1/idle.wav",
+      "duration": 1.2,
+      "sha256": "1dc04d94d4ec40fd46c97ccc337d81547bc486251d62a086cae97ccd9d4234cc",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
+      "requestId": "0d3faf26-79bc-9850-bba3-87884ae27f6e"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "preview",
+      "text": "嗯？嘿嘿，做好啦！",
+      "file": "anxiaolan_v3.1/preview.wav",
+      "duration": 2.08,
+      "sha256": "e6f07bc21947f7ce6dd56298c40faf96389b94cfa585b538db80a9c0cecb7fb5",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "f8076a24-f9df-9d76-ba66-6114feb545d9"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "pet",
+      "text": "嗯？嘿嘿。",
+      "file": "wenhuaiqing_v3.1/pet.wav",
+      "duration": 1.12,
+      "sha256": "f2b4f8da5cd48621d0c9f602cb444407f5282f181f8505f6acc66c539d73076a",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "7afe6fa2-edb9-9f77-a221-edade99867b9"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "completion",
+      "text": "做好啦！",
+      "file": "wenhuaiqing_v3.1/completion.wav",
+      "duration": 0.88,
+      "sha256": "cc14916735b259df6f921ba1e195113da22f370d2efc7a0bee82e3e0feda65cc",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。带一点做完事情的小开心。不要播音腔，不要大喊。",
+      "requestId": "1d5e9a48-13b4-9f68-a39c-0db34567ed4d"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "idle",
+      "text": "陪我玩一会儿嘛。",
+      "file": "wenhuaiqing_v3.1/idle.wav",
+      "duration": 1.44,
+      "sha256": "aa00f8e610e9d8f27bddd55b3915296077f493a60e5594c6e8f3aa7fe4167d1a",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
+      "requestId": "664f1c4f-9f75-9bef-9ad1-63988e357b62"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "preview",
+      "text": "嗯？嘿嘿，做好啦！",
+      "file": "wenhuaiqing_v3.1/preview.wav",
+      "duration": 1.76,
+      "sha256": "8cdf0ab632faca23f63448084f1242becab8109387e51cb3707f03de435ad556",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "50de389a-2190-9a9a-9251-f9995d3532b1"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "pet",
+      "text": "嗯？嘿嘿。",
+      "file": "xuxiaoqiao_v3.1/pet.wav",
+      "duration": 1.2,
+      "sha256": "452de0442cadc17ba37a75948236cf6475288a969fedee15f71b567018583a21",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "1f5cbaeb-40c9-92f7-aca0-49f879fc91e5"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "completion",
+      "text": "做好啦！",
+      "file": "xuxiaoqiao_v3.1/completion.wav",
+      "duration": 0.72,
+      "sha256": "cbf4d77cc0f6faef0e1fdb87241b9ec0f1c49203913ae4a07187453b9e701e45",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。带一点做完事情的小开心。不要播音腔，不要大喊。",
+      "requestId": "bb2767e9-0922-9001-ae1d-fe88d6944820"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "idle",
+      "text": "陪我玩一会儿嘛。",
+      "file": "xuxiaoqiao_v3.1/idle.wav",
+      "duration": 1.36,
+      "sha256": "f509fec96bc2ccb1a0731791a2993cc3749c736fed29f8d6cfb5070f1e9095d0",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
+      "requestId": "b9333b42-3a11-9b4a-b22e-345f3f5d8233"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "preview",
+      "text": "嗯？嘿嘿，做好啦！",
+      "file": "xuxiaoqiao_v3.1/preview.wav",
+      "duration": 1.84,
+      "sha256": "d2c7b53ed477addecc17d7fa2ec7fa17e2f8db80a96d48bf29d9a17edaabb939",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "6f840484-8ede-9e59-baa6-cb863a9d0844"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "pet",
+      "text": "嗯？嘿嘿。",
+      "file": "yeqinghe_v3.1/pet.wav",
+      "duration": 1.44,
+      "sha256": "6c85d278cbea2b440b6e2324663032ae8895d9bd1cd54c688f74e7fc1a1c1ec2",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "038e6210-6788-913a-b13c-3adc3e50a630"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "completion",
+      "text": "做好啦！",
+      "file": "yeqinghe_v3.1/completion.wav",
+      "duration": 1.04,
+      "sha256": "e3d8370398ada355d0a9bd48861c425ca4f48fd4b7bf37677f476fa7912f6a10",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。带一点做完事情的小开心。不要播音腔，不要大喊。",
+      "requestId": "33e5dbee-bd54-928a-94f4-fa888c3a64fc"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "idle",
+      "text": "陪我玩一会儿嘛。",
+      "file": "yeqinghe_v3.1/idle.wav",
+      "duration": 1.44,
+      "sha256": "7f4dd7c8e2f8a2bb8e98a4622fe38f86c18c8ed6765495f0e456c7510b44145b",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
+      "requestId": "b3c0697c-d017-9ea9-ae92-c8f530b6d0bc"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "preview",
+      "text": "嗯？嘿嘿，做好啦！",
+      "file": "yeqinghe_v3.1/preview.wav",
+      "duration": 2.8,
+      "sha256": "5394dafe57f21e3a8cf9fc2144171a39f7163affb28329b25a441f54f260c8ac",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "0395779d-b448-97c6-9097-431d75bdf608"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "pet",
+      "text": "嗯？嘿嘿。",
+      "file": "anruorou_v3.1/pet.wav",
+      "duration": 1.52,
+      "sha256": "ba2ba2b1cd6b0b9251712661699e9e394a416a8960cb23fc454657bc92d95e34",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "299c86f8-3442-9491-9b4e-57f3417728c8"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "completion",
+      "text": "做好啦！",
+      "file": "anruorou_v3.1/completion.wav",
+      "duration": 0.72,
+      "sha256": "018072519aa0a69f48b103756cda9758ee3474191b1c98989ffd4e77b63caf6c",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。带一点做完事情的小开心。不要播音腔，不要大喊。",
+      "requestId": "0e21e343-a363-9a80-943c-06c73cf32b8b"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "idle",
+      "text": "陪我玩一会儿嘛。",
+      "file": "anruorou_v3.1/idle.wav",
+      "duration": 1.52,
+      "sha256": "07b63cebd3e62c94ee6f9e98c02b86350ba72bab2d3e47b58df97a6196123ff2",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
+      "requestId": "f45afcdd-7872-9261-bd73-684a5008034a"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "preview",
+      "text": "嗯？嘿嘿，做好啦！",
+      "file": "anruorou_v3.1/preview.wav",
+      "duration": 1.76,
+      "sha256": "d73fb04a8e965aa8846925526696e1957070f6162ed98e4c864416fc6a6eefbd",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "e6e219ce-1d42-9268-9db7-84f0c4150bcf"
+    }
+  ]
+}

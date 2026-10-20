@@ -24,7 +24,7 @@ test("live completion reminders survive a new turn and expire without changing e
   assert.equal(activeCompletion(live, 1500).text, "当前任务 完成啦！");
   assert.equal(live.sessions[0].running, true);
   assert.equal(live.config.expression, "proud");
-  assert.equal(activeCompletion(live, 6999).id, "front:5");
+  assert.equal(activeCompletion(live, 6999).id, completions[0].id);
   assert.equal(activeCompletion(live, 7000), null);
 });
 
@@ -81,6 +81,17 @@ test("background completions combine briefly and expire independently", () => {
     "expired records are pruned on the next completion",
   );
   assert.equal(activeCompletion(state(completions), 15000), null);
+});
+
+test("completion identities distinguish connections that reuse session IDs and sequences", () => {
+  const first = recordCompletion([], "front", done(5), 1000, 1);
+  const second = recordCompletion([], "front", done(5), 1000, 2);
+  assert.notEqual(first[0].id, second[0].id);
+  assert.equal(
+    recordCompletion(second, "front", done(5), 2000, 2),
+    second,
+    "duplicates within one connection remain suppressed",
+  );
 });
 
 test("only connected ordinary sessions show reminders, with no replay from list or history", () => {

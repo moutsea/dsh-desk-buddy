@@ -35,6 +35,7 @@ export type AppState = {
     contentTop: number;
   };
   connection: string;
+  connectionEpoch: number;
   connectionMessage: string;
   host: { version: string; model?: string; cwd: string } | null;
   sessions: Session[];
