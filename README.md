@@ -26,8 +26,8 @@ https://github.com/moutsea/dsh-desk-buddy
 
 | 系统                | 插件包                                                                                                                                               |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows x64         | [dsh-desk-buddy-0.12.6-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.6/dsh-desk-buddy-0.12.6-win32-x64.tgz)       |
-| macOS Apple Silicon | [dsh-desk-buddy-0.12.6-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.6/dsh-desk-buddy-0.12.6-darwin-arm64.tgz) |
+| Windows x64         | [dsh-desk-buddy-0.12.7-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.7/dsh-desk-buddy-0.12.7-win32-x64.tgz)       |
+| macOS Apple Silicon | [dsh-desk-buddy-0.12.7-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.7/dsh-desk-buddy-0.12.7-darwin-arm64.tgz) |
 
 仓库根目录已声明 `dsh.bundle`，可直接安装。若仍提示“这个包没有声明组合包，不能作为插件管理”，删除失败的旧安装项后重新添加上面的仓库地址，确保获取最新提交。自 0.12.1 起，仓库安装和 Release 完整包统一使用 `dsh-desk-buddy` 包名。升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再添加同一个仓库地址；原有桌宠设置与位置继续保留。不要使用 GitHub 自动生成的 Source code 压缩包或源码子目录代替安装来源。
 
@@ -89,6 +89,7 @@ dsh plugin --profile web add link:/absolute/path/to/dsh-girl/plugins/dsh-girl-br
 npm test                 # 协议、流式解析、状态投影、余额插件
 npm run test:manager     # 手动更新界面、下载校验、失败重试与 logo
 npm run test:settings-update # 桌宠设置内更新、独立管理地址、进度与重试
+npm run test:expand      # 首次展开与收起连续帧、原生窗口位置稳定
 npm run test:stream      # Desktop 无游标流式回复、最终替换和断线清理
 npm run test:completion  # 独立完成提醒、后台会话、去重及动态效果
 npm run test:desktop     # 官方 Desktop 隔离安装与连接检查（先构建插件包）

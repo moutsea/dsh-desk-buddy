@@ -1,6 +1,6 @@
 {
   "name": "dsh-desk-buddy",
-  "version": "0.12.6",
+  "version": "0.12.7",
   "description": "dsh-desk-buddy：安装、启动和管理桌宠，并自动连接当前 DSH",
   "type": "module",
   "main": "index.mjs",

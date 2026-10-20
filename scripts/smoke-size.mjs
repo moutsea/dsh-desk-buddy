@@ -135,13 +135,15 @@ try {
     path: "artifacts/size-settings.png",
     omitBackground: true,
   });
+  const expanded = await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].getBounds(),
+  );
   await page.evaluate(() => window.desktop.invoke("section", null));
   await expect(page.locator(".companion-surface")).not.toBeVisible();
   const collapsed = await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].getBounds(),
   );
-  assert.equal(collapsed.width, petSize(150).width);
-  assert.equal(collapsed.height, petSize(150).height);
+  assert.deepEqual(collapsed, expanded);
   assert.deepEqual(await anchor(), original);
   // Enlarge at a display edge: clamp the entire transparent surface to the work area.
   await app.evaluate(({ BrowserWindow, screen }) => {
@@ -253,8 +255,11 @@ try {
   const bounds = await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].getBounds(),
   );
-  assert.equal(bounds.width, petSize(75).width);
-  assert.equal(bounds.height, petSize(75).height);
+  const restoredSurface = (
+    await restored.evaluate(() => window.desktop.invoke("state"))
+  ).surface;
+  assert.equal(bounds.x + restoredSurface.pet.x, saved.petPosition.x);
+  assert.equal(bounds.y + restoredSurface.pet.y, saved.petPosition.y);
   await restored.evaluate(() => window.desktop.invoke("section", "settings"));
   await expect(restored.getByRole("slider", { name: "桌宠大小" })).toHaveValue(
     "75",

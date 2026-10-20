@@ -117,6 +117,7 @@ try {
   const failures = [];
   for (const name of [
     "settings-update",
+    "expand",
     "ui",
     "size",
     "drag",
@@ -148,6 +149,7 @@ try {
         parentDisconnectCleanup: true,
         desktopInteractions: [
           "settings-update",
+          "expand",
           "ui",
           "size",
           "drag",

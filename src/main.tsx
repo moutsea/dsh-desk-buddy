@@ -93,6 +93,7 @@ const invoke = async (action: string, payload?: any) => {
   return window.desktop.invoke(action, payload);
 };
 function useDesktop() {
+  const [ready, setReady] = useState(!window.desktop);
   const [state, setState] = useState(initial);
   const [surface, setSurface] = useState(initial.surface);
   useEffect(() => {
@@ -100,6 +101,7 @@ function useDesktop() {
     let live = true;
     const unsubscribe = window.desktop.subscribe((value) => {
       if (live) {
+        setReady(true);
         setState(value);
         setSurface(value.surface);
       }
@@ -109,6 +111,7 @@ function useDesktop() {
     });
     window.desktop.invoke("state").then((value) => {
       if (live) {
+        setReady(true);
         setState(value);
         setSurface(value.surface);
       }
@@ -119,7 +122,7 @@ function useDesktop() {
       unsubscribeSurface?.();
     };
   }, []);
-  return { state, surface };
+  return { state, surface, ready };
 }
 function balanceLabel(state: AppState) {
   if (!state.balance) return "未连接";
@@ -1265,8 +1268,9 @@ document.body.dataset.view = "desktop";
 document.title = "dsh-desk-buddy · 桌宠";
 const ContentPanel = React.memo(Panel);
 function App() {
-  const { state, surface } = useDesktop();
+  const { state, surface, ready } = useDesktop();
   const drag = usePetDrag();
+  const pointer = useRef<{ x: number; y: number } | null>(null);
   const passthrough = useRef<boolean | null>(null);
   const setPassthrough = (ignore: boolean) => {
     if (passthrough.current === ignore) return;
@@ -1278,10 +1282,16 @@ function App() {
   useEffect(() => {
     setPassthrough(true);
   }, []);
-  // Native resize returns to interactive mode; re-evaluate on the next pointer move.
-  useEffect(() => {
+  useLayoutEffect(() => {
     passthrough.current = null;
-  }, [state.surface.section, state.config.petScale, drag.held]);
+    const target =
+      pointer.current &&
+      document.elementFromPoint(pointer.current.x, pointer.current.y);
+    setPassthrough(
+      !drag.held &&
+        !target?.closest("[data-interactive], .companion-surface.open"),
+    );
+  }, [surface, state.config.petScale, drag.held, ready]);
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !event.defaultPrevented)
@@ -1297,15 +1307,20 @@ function App() {
       <div
         className="desktop-stage"
         data-side={surface.side}
-        onMouseMove={(event) =>
+        style={{ visibility: ready ? "visible" : "hidden" }}
+        onMouseMove={(event) => {
+          pointer.current = { x: event.clientX, y: event.clientY };
           setPassthrough(
             !drag.held &&
               !(event.target as Element).closest(
                 "[data-interactive], .companion-surface.open",
               ),
-          )
-        }
-        onMouseLeave={() => setPassthrough(!drag.held)}
+          );
+        }}
+        onMouseLeave={() => {
+          pointer.current = null;
+          setPassthrough(!drag.held);
+        }}
       >
         <div
           className={`companion-surface ${surface.section ? "open" : ""}`}
@@ -1314,7 +1329,10 @@ function App() {
           aria-hidden={!surface.section}
           style={
             {
-              left: surface.side === "left" ? 0 : size.width + 18,
+              left:
+                surface.side === "left"
+                  ? surface.pet.x - surface.contentWidth - 18
+                  : surface.pet.x + size.width + 18,
               top: surface.contentTop,
               width: surface.contentWidth,
               height: surface.contentHeight,

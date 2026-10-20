@@ -159,6 +159,34 @@ try {
         ),
       )
       .toBe(1);
+    await page.evaluate(() => window.desktop.invoke("section", "settings"));
+    await expect(page.locator(".companion-surface")).toBeVisible();
+    const content = await page.locator(".companion-surface").boundingBox();
+    const contentPoint = await app.evaluate(
+      ({ BrowserWindow, screen }, { content, windowId }) => {
+        const bounds = BrowserWindow.fromId(windowId).getBounds();
+        return screen.dipToScreenPoint({
+          x: Math.round(bounds.x + content.x + 100),
+          y: Math.round(bounds.y + content.y + 40),
+        });
+      },
+      { content, windowId: properties.windowId },
+    );
+    await nativeClick(contentPoint);
+    await page.evaluate(() => window.desktop.invoke("section", null));
+    await expect(page.locator(".companion-surface")).not.toBeVisible();
+    await nativeClick(contentPoint);
+    await expect
+      .poll(() =>
+        app.evaluate(
+          ({ BrowserWindow }, id) =>
+            BrowserWindow.fromId(id).webContents.executeJavaScript(
+              "Number(document.body.dataset.clicks || 0)",
+            ),
+          background.id,
+        ),
+      )
+      .toBe(2);
     const character = page.locator(".pet-character");
     const characterPoint = async () => {
       const box = await character.boundingBox();
@@ -211,7 +239,7 @@ try {
     );
     await screenshot("windows-native-desktop");
     console.log(
-      "Windows system input passed: transparent-area click-through, character click, native drag and Ctrl+Shift+Space.",
+      "Windows system input passed: transparent-area and collapsed-panel click-through, character click, native drag and Ctrl+Shift+Space.",
     );
   }
   console.log(

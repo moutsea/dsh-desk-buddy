@@ -57,18 +57,6 @@ export function desktopLayout(
   const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
   const x = clamp(anchor.x, area.x, area.x + area.width - size.width);
   const y = clamp(anchor.y, area.y, area.y + area.height - size.height);
-  if (!section)
-    return {
-      bounds: { x, y, ...size },
-      surface: {
-        section: null,
-        side: "left",
-        pet: { x: 0, y: 0 },
-        contentWidth: 0,
-        contentHeight: 0,
-        contentTop: 0,
-      },
-    };
   const gap = 18,
     left = x - area.x,
     right = area.x + area.width - x - size.width;
@@ -77,16 +65,19 @@ export function desktopLayout(
     section === "chat"
       ? CHAT_SIZES[normalizeChatSize(chatSize)]
       : { width: 460, height: 720 };
-  const contentWidth = Math.min(
-    preferred.width,
-    Math.max(320, Math.max(left, right) - gap),
-    area.width - size.width - gap,
+  const reservedWidth = Math.max(
+    0,
+    Math.min(CHAT_SIZES.large.width, Math.max(left, right) - gap),
   );
-  const contentHeight = Math.min(preferred.height, area.height);
-  const width = size.width + gap + contentWidth,
-    height = Math.max(contentHeight, size.height);
+  const contentWidth = section ? Math.min(preferred.width, reservedWidth) : 0;
+  const contentHeight = section ? Math.min(preferred.height, area.height) : 0;
+  const width = size.width + gap + reservedWidth,
+    height = Math.max(
+      Math.min(CHAT_SIZES.large.height, area.height),
+      size.height,
+    );
   const bx = clamp(
-    side === "left" ? x - contentWidth - gap : x,
+    side === "left" ? x - reservedWidth - gap : x,
     area.x,
     area.x + area.width - width,
   );
@@ -95,7 +86,8 @@ export function desktopLayout(
     area.y,
     area.y + area.height - height,
   );
-  const petX = side === "left" ? contentWidth + gap : 0;
+  const petX = side === "left" ? reservedWidth + gap : 0;
+  const petY = Math.round(clamp(y - by, 0, height - size.height));
   return {
     bounds: {
       x: Math.round(bx),
@@ -108,11 +100,15 @@ export function desktopLayout(
       side,
       pet: {
         x: Math.round(petX),
-        y: Math.round(clamp(y - by, 0, height - size.height)),
+        y: petY,
       },
       contentWidth: Math.round(contentWidth),
       contentHeight,
-      contentTop: height - contentHeight,
+      contentTop: clamp(
+        petY + size.height - contentHeight,
+        0,
+        height - contentHeight,
+      ),
     },
   };
 }

@@ -182,8 +182,13 @@ try {
   const restored = await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].getBounds(),
   );
-  assert.equal(restored.x, final.x);
-  assert.equal(restored.y, final.y);
+  const restoredSurface = (
+    await (
+      await app.firstWindow()
+    ).evaluate(() => window.desktop.invoke("state"))
+  ).surface;
+  assert.equal(restored.x + restoredSurface.pet.x, final.x);
+  assert.equal(restored.y + restoredSurface.pet.y, final.y);
   assert.deepEqual(errors, []);
   console.log(
     "DSG drag passed: direct pointer movement, click/jitter separation, attached content, side changes, 50%/150% sizes, capture cancellation, reversal, screen boundaries and restored position.",

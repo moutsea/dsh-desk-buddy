@@ -77,7 +77,8 @@ test("attached content fits the work area, chooses roomier side and preserves DS
         { x: bounds.x + surface.pet.x, y: bounds.y + surface.pet.y },
         area,
       );
-      assert.deepEqual(closed.bounds, { ...anchor, ...PET_SIZE });
+      assert.deepEqual(closed.bounds, bounds);
+      assert.deepEqual(closed.surface.pet, surface.pet);
       assert.equal(closed.surface.section, null);
     }
   }
@@ -200,10 +201,43 @@ test("scaled characters and attached content stay inside each display and preser
           null,
           scale,
         );
-        assert.equal(closed.bounds.width, size.width);
-        assert.equal(closed.bounds.height, size.height);
-        assert.equal(closed.bounds.x, bounds.x + surface.pet.x);
-        assert.equal(closed.bounds.y, bounds.y + surface.pet.y);
+        assert.deepEqual(closed.bounds, bounds);
+        assert.deepEqual(closed.surface.pet, surface.pet);
       }
     }
+});
+
+test("all panel sizes share a native frame and pet position before their first opening", () => {
+  for (const area of [
+    { x: 0, y: 24, width: 1024, height: 744 },
+    { x: -1920, y: 0, width: 1920, height: 1080 },
+  ]) {
+    for (const scale of [50, 100, 150]) {
+      const size = petSize(scale);
+      for (const horizontal of [0, 0.5, 1]) {
+        for (const vertical of [0, 0.5, 1]) {
+          const anchor = {
+            x: Math.round(area.x + (area.width - size.width) * horizontal),
+            y: Math.round(area.y + (area.height - size.height) * vertical),
+          };
+          const closed = desktopLayout(anchor, area, null, scale);
+          for (const section of ["chat", "settings", "expressions"]) {
+            for (const chatSize of Object.keys(CHAT_SIZES)) {
+              const layout = desktopLayout(
+                anchor,
+                area,
+                section,
+                scale,
+                chatSize,
+              );
+              assert.deepEqual(layout.bounds, closed.bounds);
+              assert.deepEqual(layout.surface.pet, closed.surface.pet);
+              assert.equal(layout.bounds.x + layout.surface.pet.x, anchor.x);
+              assert.equal(layout.bounds.y + layout.surface.pet.y, anchor.y);
+            }
+          }
+        }
+      }
+    }
+  }
 });

@@ -131,21 +131,6 @@ function save() {
       });
   }, 250);
 }
-function clampBounds(bounds) {
-  const area = screen.getDisplayMatching(bounds).workArea;
-  return {
-    ...bounds,
-    x: Math.round(
-      Math.max(area.x, Math.min(bounds.x, area.x + area.width - bounds.width)),
-    ),
-    y: Math.round(
-      Math.max(
-        area.y,
-        Math.min(bounds.y, area.y + area.height - bounds.height),
-      ),
-    ),
-  };
-}
 function petAnchor() {
   const bounds = pet.getBounds();
   return {
@@ -162,7 +147,11 @@ function applyLayout(layout, fullState = false) {
   arranging = true;
   if (fullState) pet.webContents.send("desktop:state", state);
   else if (changed) pet.webContents.send("desktop:surface", state.surface);
-  pet.setBounds(layout.bounds);
+  const bounds = pet.getBounds();
+  if (
+    Object.keys(layout.bounds).some((key) => bounds[key] !== layout.bounds[key])
+  )
+    pet.setBounds(layout.bounds);
   arranging = false;
 }
 function finishPetDrag() {
@@ -250,9 +239,17 @@ function createWindows() {
           x: area.x + area.width - size.width - 10,
           y: area.y + area.height - size.height - 10,
         };
+  const layout = desktopLayout(
+    position,
+    screen.getDisplayMatching({ ...position, ...size }).workArea,
+    null,
+    config.petScale,
+    config.chatSize,
+  );
+  state.surface = layout.surface;
   pet = createWindow(
     {
-      ...clampBounds({ ...position, ...size }),
+      ...layout.bounds,
       frame: false,
       transparent: true,
       acceptFirstMouse: true,
