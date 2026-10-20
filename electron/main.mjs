@@ -52,6 +52,7 @@ let pet,
   saveTimer,
   pollTimer,
   balanceTimer,
+  pointerTimer,
   broadcastTimer;
 let connectRevision = 0,
   historyRevision = 0,
@@ -141,6 +142,30 @@ function petAnchor() {
 let arranging = false;
 let petDrag = null;
 let layoutBounds;
+let ignoringMouse = false;
+function setPassthrough(ignore) {
+  if (ignoringMouse === ignore) return;
+  ignoringMouse = ignore;
+  pet.setIgnoreMouseEvents(ignore, { forward: true });
+}
+function cursorOverPanel() {
+  const surface = state.surface;
+  if (!surface.section) return false;
+  const cursor = screen.getCursorScreenPoint();
+  const bounds = pet.getBounds();
+  const left =
+    bounds.x +
+    (surface.side === "left"
+      ? surface.pet.x - surface.contentWidth - 18
+      : surface.pet.x + petSize(config.petScale).width + 18);
+  const top = bounds.y + surface.contentTop;
+  return (
+    cursor.x >= left &&
+    cursor.x < left + surface.contentWidth &&
+    cursor.y >= top &&
+    cursor.y < top + surface.contentHeight
+  );
+}
 function applyLayout(layout, fullState = false) {
   const changed =
     JSON.stringify(state.surface) !== JSON.stringify(layout.surface);
@@ -194,7 +219,7 @@ function showSection(section, anchor) {
   applyLayout(layout, true);
   config.petPosition = petAnchor();
   save();
-  pet.setIgnoreMouseEvents(false);
+  setPassthrough(false);
   if (section) {
     pet.show();
     pet.focus();
@@ -269,6 +294,11 @@ function createWindows() {
     "pet",
   );
   pet.once("ready-to-show", () => pet.showInactive());
+  pointerTimer = setInterval(() => {
+    if (ignoringMouse && pet.isVisible() && cursorOverPanel())
+      setPassthrough(false);
+  }, 40);
+  pointerTimer.unref();
   pet.on("moved", () => {
     if (arranging || petDrag) return;
     config.petPosition = petAnchor();
@@ -781,7 +811,7 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
       finishPetDrag();
       const point = validDragPoint(payload);
       petDrag = { point, anchor: petAnchor(), moved: false };
-      pet.setIgnoreMouseEvents(false);
+      setPassthrough(false);
       return;
     }
     case "drag:move": {
@@ -848,24 +878,8 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
       return;
     case "passthrough": {
       if (event.sender !== pet.webContents) return;
-      const cursor = screen.getCursorScreenPoint();
-      const bounds = pet.getBounds();
-      const surface = state.surface;
-      const left =
-        bounds.x +
-        (surface.side === "left"
-          ? surface.pet.x - surface.contentWidth - 18
-          : surface.pet.x + petSize(config.petScale).width + 18);
-      const top = bounds.y + surface.contentTop;
-      const overPanel =
-        surface.section &&
-        cursor.x >= left &&
-        cursor.x < left + surface.contentWidth &&
-        cursor.y >= top &&
-        cursor.y < top + surface.contentHeight;
-      const ignore = !petDrag && !!payload && !overPanel;
-      pet.setIgnoreMouseEvents(ignore, { forward: true });
-      return ignore;
+      setPassthrough(!petDrag && !!payload && !cursorOverPanel());
+      return;
     }
     case "openDsh":
       await shell.openExternal(
@@ -890,6 +904,7 @@ app.on("before-quit", (event) => {
   finishPetDrag();
   quitting = true;
   client?.close();
+  clearInterval(pointerTimer);
   clearInterval(pollTimer);
   clearInterval(balanceTimer);
   clearTimeout(saveTimer);

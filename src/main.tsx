@@ -1271,26 +1271,13 @@ function App() {
   const { state, surface, ready } = useDesktop();
   const drag = usePetDrag();
   const pointer = useRef<{ x: number; y: number } | null>(null);
-  const passthrough = useRef<boolean | null>(null);
-  const pointerRevision = useRef(0);
   const setPassthrough = (ignore: boolean) => {
-    if (passthrough.current === ignore) return;
-    passthrough.current = ignore;
-    const revision = ++pointerRevision.current;
-    void invoke("passthrough", ignore)
-      .then((actual) => {
-        if (pointerRevision.current === revision && typeof actual === "boolean")
-          passthrough.current = actual;
-      })
-      .catch(() => {
-        if (pointerRevision.current === revision) passthrough.current = null;
-      });
+    void invoke("passthrough", ignore).catch(() => {});
   };
   useEffect(() => {
     setPassthrough(true);
   }, []);
   useLayoutEffect(() => {
-    passthrough.current = null;
     const target =
       pointer.current &&
       document.elementFromPoint(pointer.current.x, pointer.current.y);

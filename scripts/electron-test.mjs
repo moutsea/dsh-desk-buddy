@@ -11,9 +11,13 @@ export async function launchDesktop(env) {
   try {
     app.context().setDefaultTimeout(15000);
     app.context().setDefaultNavigationTimeout(30000);
+    const page = await app.firstWindow({ timeout: 15000 });
+    const window = await app.browserWindow(page);
+    await window.evaluate(async (window) => {
+      if (!window.isVisible())
+        await new Promise((resolve) => window.once("show", resolve));
+    });
     if (process.platform === "win32") {
-      const page = await app.firstWindow({ timeout: 15000 });
-      const window = await app.browserWindow(page);
       await window.evaluate((window) => {
         window.show();
         window.focus();
