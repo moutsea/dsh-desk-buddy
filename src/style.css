@@ -835,6 +835,47 @@ body,
   height: 7px;
   accent-color: #7b9dd0;
 }
+.sound-volume-heading {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #627493;
+}
+.sound-volume-heading output {
+  font-variant-numeric: tabular-nums;
+}
+.sound-event {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+.sound-event > div {
+  flex: 1;
+  min-width: 0;
+}
+.sound-event h3 {
+  font-size: 11px;
+  font-weight: 550;
+  margin: 0;
+}
+.sound-event p {
+  margin: 5px 0 0;
+}
+.sound-preview {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sound-event .switch {
+  flex-shrink: 0;
+}
+.settings-card .sound-error {
+  color: #b36565;
+  margin-bottom: 0;
+}
 .plugin-update-buttons {
   display: flex;
   flex-wrap: wrap;

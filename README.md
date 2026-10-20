@@ -26,8 +26,8 @@ https://github.com/moutsea/dsh-desk-buddy
 
 | 系统                | 插件包                                                                                                                                               |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows x64         | [dsh-desk-buddy-0.12.8-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.8/dsh-desk-buddy-0.12.8-win32-x64.tgz)       |
-| macOS Apple Silicon | [dsh-desk-buddy-0.12.8-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.8/dsh-desk-buddy-0.12.8-darwin-arm64.tgz) |
+| Windows x64         | [dsh-desk-buddy-0.13.0-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.13.0/dsh-desk-buddy-0.13.0-win32-x64.tgz)       |
+| macOS Apple Silicon | [dsh-desk-buddy-0.13.0-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.13.0/dsh-desk-buddy-0.13.0-darwin-arm64.tgz) |
 
 仓库根目录已声明 `dsh.bundle`，可直接安装。若仍提示“这个包没有声明组合包，不能作为插件管理”，删除失败的旧安装项后重新添加上面的仓库地址，确保获取最新提交。自 0.12.1 起，仓库安装和 Release 完整包统一使用 `dsh-desk-buddy` 包名。升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再添加同一个仓库地址；原有桌宠设置与位置继续保留。不要使用 GitHub 自动生成的 Source code 压缩包或源码子目录代替安装来源。
 
@@ -69,6 +69,7 @@ npm run dev
 - 对话与后台任务联动：读资料→学习、执行工具→工作、回复→开心、报错→震惊、成功→庆祝后开心。对话顶部小头像跟随当前会话，桌宠也关注后台会话。详见 [任务与表情联动](docs/task-behaviour.md)。
 - 任一普通会话成功完成后，桌宠无需悬停就会跳跃庆祝 6 秒，并短暂显示任务名称；多个完成会合并计数。即使固定了表情，完成提醒也会短暂出现，随后恢复原选择；下一轮立即开始也不会漏掉提醒。仅根据实时成功事件触发，失败、取消及历史加载不触发，重复事件不会重复提醒。动态效果开关与系统减少动态效果设置继续生效。
 - 点击比心、连续点 5 下生气、悬停 8 秒害羞；空闲时偶尔吃饭、读书或得意，1 分钟未互动会无聊、2 分钟犯困、4 分钟睡觉。可关闭空闲随机表情。
+- “设置 → 声音陪伴”提供总开关、0%–100% 音量、摸摸桌宠／任务完成／无聊时打招呼三个独立开关及试听，重启后保留。默认开启、音量 35%，使用本地合成的轻柔短提示音，无需下载音频。轻点角色回应啾啾，拖动不响；当前或后台普通会话成功完成时播放庆祝音，首次点击前也可提醒，历史、重连、失败和取消不响。快速连续事件合并，避免重叠。空闲约 75–105 秒后偶尔轻响，随后至少间隔 2 分钟；执行任务、等待回应、展开面板、隐藏和睡着时不播放闲置声音。关闭声音或把音量设为 0 会停止正在播放的提示音，重新开启不会补播。
 - 19 种表情的静态图和全部 76 个动作帧统一可见身高与脚底位置，切换不会忽大忽小。表情均提供逐帧循环动作：挥手眨眼、敲键盘、翻书、夹饭、举手欢呼等。桌宠、对话头像和表情预览使用同一套播放规则；“让她动起来”开关可暂停，系统减少动态效果也会生效。
 
 ## 余额插件
@@ -92,6 +93,7 @@ npm run test:settings-update # 桌宠设置内更新、独立管理地址、进�
 npm run test:expand      # 首次展开与收起连续帧、原生窗口位置稳定
 npm run test:stream      # Desktop 无游标流式回复、最终替换和断线清理
 npm run test:completion  # 独立完成提醒、后台会话、去重及动态效果
+npm run test:sound       # 实际音频信号、首次点击前完成音、音量/静音、试听、闲置和重启保存
 npm run test:desktop     # 官方 Desktop 隔离安装与连接检查（先构建插件包）
 DSG_TEST_MANUAL_UPDATE=1 npm run test:desktop # Mac 官方 Desktop 完整升级与配置保留
 npm run test:repository  # 隔离安装仓库入口、下载 Release、原生启动和缓存重启

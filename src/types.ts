@@ -80,6 +80,7 @@ export type AppState = {
     petScale?: number;
     chatSize?: "small" | "medium" | "large";
     progressBubbles?: boolean;
+    sounds?: import("./sounds").SoundSettings;
   };
 };
 declare global {

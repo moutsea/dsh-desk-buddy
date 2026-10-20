@@ -1,6 +1,6 @@
 {
   "name": "dsh-desk-buddy",
-  "version": "0.12.8",
+  "version": "0.13.0",
   "private": true,
   "author": "dsh-desk-buddy contributors",
   "license": "UNLICENSED",
@@ -38,6 +38,7 @@
     "test:size": "node scripts/smoke-size.mjs",
     "test:drag": "node scripts/smoke-drag.mjs",
     "test:completion": "node scripts/smoke-completion.mjs",
+    "test:sound": "node scripts/smoke-sound.mjs",
     "test:progress": "node scripts/smoke-progress.mjs",
     "pack:plugin": "npm run pack && node scripts/pack-plugin.mjs",
     "test:plugin": "node scripts/smoke-plugin.mjs",

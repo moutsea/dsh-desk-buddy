@@ -26,6 +26,8 @@ import { Expressions } from "./Expressions";
 import { Sessions } from "./Sessions";
 import { PetSizeSetting } from "./PetSizeSetting";
 import { PluginUpdates } from "./PluginUpdates";
+import { SoundProvider, useSounds } from "./SoundProvider";
+import { SoundSettings } from "./SoundSettings";
 import { usePetDrag, type PetDrag } from "./usePetDrag";
 import {
   PET_CHARACTER,
@@ -138,6 +140,7 @@ function useClock() {
   return now;
 }
 function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
+  const sounds = useSounds();
   const size = petSize(state.config.petScale),
     scale = normalizePetScale(state.config.petScale) / 100;
   const now = useClock();
@@ -204,6 +207,7 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
     nextIdle.current = now + 28000 + Math.random() * 20000;
   }, [now, mood, state.config.expression, state.config.idleExpressions]);
   const activity = () => {
+    sounds.engage();
     lastActive.current = Date.now();
     nextIdle.current = Date.now() + 28000 + Math.random() * 20000;
     setIdle((current) =>
@@ -230,6 +234,9 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
     idleExpression,
     now,
   });
+  useEffect(() => {
+    sounds.setSleeping(expression === "sleeping");
+  }, [expression, sounds]);
   const reactionText: Record<string, string> = {
     love: "嘿，我在呢 ♡",
     angry: "慢一点啦，哼！",
@@ -370,6 +377,7 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
         }}
         onClick={(event) => {
           if (drag.preventClick(event)) return;
+          void sounds.play("pet");
           const time = Date.now();
           activity();
           clicks.current = [
@@ -1057,6 +1065,10 @@ function Panel({ state }: { state: AppState }) {
             <Settings2 size={24} strokeWidth={1.3} />
           </div>
           <PluginUpdates />
+          <SoundSettings
+            settings={state.config.sounds}
+            onApply={(patch) => invoke("soundSettings", patch)}
+          />
           <PetSizeSetting
             scale={normalizePetScale(state.config.petScale)}
             onApply={async (next) => {
@@ -1301,58 +1313,60 @@ function App() {
   const size = petSize(state.config.petScale),
     scale = normalizePetScale(state.config.petScale) / 100;
   return (
-    <MotionContext.Provider value={state.config.animations !== false}>
-      <div
-        className="desktop-stage"
-        data-side={surface.side}
-        style={{ visibility: ready ? "visible" : "hidden" }}
-        onMouseMove={(event) => {
-          pointer.current = { x: event.clientX, y: event.clientY };
-          setPassthrough(
-            !drag.held &&
-              !(event.target as Element).closest(
-                "[data-interactive], .companion-surface.open",
-              ),
-          );
-        }}
-        onMouseLeave={() => {
-          pointer.current = null;
-          setPassthrough(!drag.held);
-        }}
-      >
+    <SoundProvider state={state} ready={ready}>
+      <MotionContext.Provider value={state.config.animations !== false}>
         <div
-          className={`companion-surface ${surface.section ? "open" : ""}`}
-          data-section={surface.section || undefined}
-          inert={!surface.section}
-          aria-hidden={!surface.section}
-          style={
-            {
-              left:
-                surface.side === "left"
-                  ? surface.pet.x - surface.contentWidth - 18
-                  : surface.pet.x + size.width + 18,
-              top: surface.contentTop,
-              width: surface.contentWidth,
-              height: surface.contentHeight,
-              "--tail-y": `${surface.pet.y + PET_CHARACTER.top + 95 * scale - surface.contentTop}px`,
-            } as React.CSSProperties
-          }
-        >
-          <ContentPanel state={state} />
-        </div>
-        <div
-          className="pet-position"
-          style={{
-            left: surface.pet.x,
-            top: surface.pet.y,
-            width: size.width,
-            height: size.height,
+          className="desktop-stage"
+          data-side={surface.side}
+          style={{ visibility: ready ? "visible" : "hidden" }}
+          onMouseMove={(event) => {
+            pointer.current = { x: event.clientX, y: event.clientY };
+            setPassthrough(
+              !drag.held &&
+                !(event.target as Element).closest(
+                  "[data-interactive], .companion-surface.open",
+                ),
+            );
+          }}
+          onMouseLeave={() => {
+            pointer.current = null;
+            setPassthrough(!drag.held);
           }}
         >
-          <Pet state={state} drag={drag} />
+          <div
+            className={`companion-surface ${surface.section ? "open" : ""}`}
+            data-section={surface.section || undefined}
+            inert={!surface.section}
+            aria-hidden={!surface.section}
+            style={
+              {
+                left:
+                  surface.side === "left"
+                    ? surface.pet.x - surface.contentWidth - 18
+                    : surface.pet.x + size.width + 18,
+                top: surface.contentTop,
+                width: surface.contentWidth,
+                height: surface.contentHeight,
+                "--tail-y": `${surface.pet.y + PET_CHARACTER.top + 95 * scale - surface.contentTop}px`,
+              } as React.CSSProperties
+            }
+          >
+            <ContentPanel state={state} />
+          </div>
+          <div
+            className="pet-position"
+            style={{
+              left: surface.pet.x,
+              top: surface.pet.y,
+              width: size.width,
+              height: size.height,
+            }}
+          >
+            <Pet state={state} drag={drag} />
+          </div>
         </div>
-      </div>
-    </MotionContext.Provider>
+      </MotionContext.Provider>
+    </SoundProvider>
   );
 }
 createRoot(document.getElementById("root")!).render(

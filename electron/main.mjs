@@ -17,6 +17,10 @@ import { mergeEvents } from "../shared/projection.mjs";
 import { EXPRESSIONS, isExpressionId } from "../shared/expressions.mjs";
 import { reduceActivity, reconcileActivity } from "../shared/activity.mjs";
 import { recordCompletion } from "../shared/completion.mjs";
+import {
+  normalizeSoundSettings,
+  patchSoundSettings,
+} from "../shared/sound.mjs";
 import { reduceAssistantStream } from "../shared/assistant-stream.mjs";
 import { managedLaunch, managedControl } from "./managed.mjs";
 import { PluginUpdates } from "./plugin-updates.mjs";
@@ -69,6 +73,7 @@ let config = {
   petScale: PET_SCALE.default,
   chatSize: "small",
   progressBubbles: true,
+  sounds: normalizeSoundSettings(null),
 };
 let state = {
   managed: !!managed,
@@ -243,6 +248,7 @@ function createWindow(options, view) {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
+      autoplayPolicy: "no-user-gesture-required",
     },
   });
   window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -650,6 +656,11 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
       save();
       broadcast();
       return;
+    case "soundSettings":
+      config.sounds = patchSoundSettings(config.sounds, payload);
+      save();
+      broadcast();
+      return config.sounds;
     case "expressionMenu": {
       const groups = [...new Set(EXPRESSIONS.map((item) => item.group))];
       const menu = Menu.buildFromTemplate([
@@ -947,6 +958,7 @@ app
       config.progressBubbles = true;
     config.petScale = normalizePetScale(config.petScale);
     config.chatSize = normalizeChatSize(config.chatSize);
+    config.sounds = normalizeSoundSettings(config.sounds);
     Menu.setApplicationMenu(
       process.platform === "darwin"
         ? Menu.buildFromTemplate([
