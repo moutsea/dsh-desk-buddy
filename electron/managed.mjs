@@ -9,6 +9,13 @@ export function managedLaunch(env = process.env) {
     throw new Error("插件启动缺少有效的数据目录");
   return {
     endpoint: normalizeEndpoint(env.DEEPSEEK_GIRL_ENDPOINT),
+    ...(env.DEEPSEEK_GIRL_MANAGER_ENDPOINT
+      ? {
+          managerEndpoint: normalizeEndpoint(
+            env.DEEPSEEK_GIRL_MANAGER_ENDPOINT,
+          ),
+        }
+      : {}),
     ...(env.DEEPSEEK_GIRL_CONNECTION_TOKEN
       ? { token: env.DEEPSEEK_GIRL_CONNECTION_TOKEN }
       : {}),

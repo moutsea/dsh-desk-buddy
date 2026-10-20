@@ -6,7 +6,7 @@
 
 工作流：[Desktop validation](https://github.com/moutsea/dsh-desk-buddy/actions/workflows/desktop.yml)。以具体提交对应的绿色任务为通过依据。
 
-每个平台执行 `npm ci`、`npm test`、`npm run test:manager`、`npm run test:repository`、`npm run pack:plugin` 和 `npm run test:packaged`。管理页检查使用模拟 Release 和宿主安装接口，覆盖最新版本、下载进度、校验失败、重试、刷新、重启提示和 logo 加载。单元检查另覆盖热加载卸载与安装、失败恢复旧版以及卸载期间更新继续完成。仓库入口检查使用含中文和空格的隔离目录，验证根包的插件导出与图标、真实 Release 下载、SHA-256 校验、原生启动、连接、显示/隐藏和缓存重启。完整包检查将实际 `.tgz` 安装到临时目录，校验组件、解压，然后直接运行该组件，而非开发环境 Electron：
+每个平台执行 `npm ci`、`npm test`、`npm run test:manager`、`npm run test:repository`、`npm run pack:plugin` 和 `npm run test:packaged`。管理页检查使用模拟 Release 和宿主安装接口，覆盖最新版本、下载进度、校验失败、重试、刷新、重启提示、logo、入口拖动、位置保存、键盘移动与窗口边界。打包应用另验证设置内更新，使用不同端口模拟桌宠协议与管理服务，检查版本、进度、错误重试、替换期间追踪及不支持的宿主。单元检查另覆盖热加载卸载与安装、失败恢复旧版以及卸载期间更新继续完成。仓库入口检查使用含中文和空格的隔离目录，验证根包的插件导出与图标、真实 Release 下载、SHA-256 校验、原生启动、连接、显示/隐藏和缓存重启。完整包检查将实际 `.tgz` 安装到临时目录，校验组件、解压，然后直接运行该组件，而非开发环境 Electron：
 
 - 私有管道启动、版本检查、双事件连接、显示/隐藏/对话、重复启动去重、正常退出、重启和父管道断开后退出。
 - 完整对话、会话切换、审批提问、流式回复、连接恢复、完成提醒和动画。

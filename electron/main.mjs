@@ -20,6 +20,7 @@ import { reduceActivity, reconcileActivity } from "../shared/activity.mjs";
 import { recordCompletion } from "../shared/completion.mjs";
 import { reduceAssistantStream } from "../shared/assistant-stream.mjs";
 import { managedLaunch, managedControl } from "./managed.mjs";
+import { PluginUpdates } from "./plugin-updates.mjs";
 import {
   desktopLayout,
   PET_SCALE,
@@ -31,6 +32,10 @@ import {
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const managed = managedLaunch();
+const pluginUpdates = new PluginUpdates(
+  managed?.managerEndpoint,
+  app.getVersion(),
+);
 let controller;
 app.setName("dsh-desk-buddy");
 const dataDirectory =
@@ -589,6 +594,12 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
   switch (action) {
     case "state":
       return state;
+    case "pluginUpdateStatus":
+      return pluginUpdates.request();
+    case "checkPluginUpdate":
+      return pluginUpdates.request("checkUpdate");
+    case "installPluginUpdate":
+      return pluginUpdates.request("installUpdate", payload);
     case "visibility": {
       const window = BrowserWindow.fromWebContents(event.sender);
       return window.isVisible() && !window.isMinimized();
@@ -839,7 +850,9 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
         });
       return;
     case "openDsh":
-      await shell.openExternal(normalizeEndpoint(config.endpoint));
+      await shell.openExternal(
+        managed?.managerEndpoint || normalizeEndpoint(config.endpoint),
+      );
       return;
     default:
       throw new Error("不支持的操作");

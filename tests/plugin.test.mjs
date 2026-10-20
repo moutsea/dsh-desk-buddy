@@ -68,6 +68,19 @@ test("managed launch validates local endpoints and strips credentials and Node/E
   });
   assert.equal(env.HOME, "/home/me");
   assert.deepEqual(managedLaunch(env), { endpoint });
+  assert.deepEqual(
+    managedLaunch({
+      ...env,
+      DEEPSEEK_GIRL_MANAGER_ENDPOINT: "http://127.0.0.1:4080",
+    }),
+    { endpoint, managerEndpoint: "http://127.0.0.1:4080" },
+  );
+  assert.throws(() =>
+    managedLaunch({
+      ...env,
+      DEEPSEEK_GIRL_MANAGER_ENDPOINT: "https://example.com",
+    }),
+  );
   assert.ok(!JSON.stringify(env).includes("private"));
   assert.equal(env.ELECTRON_RUN_AS_NODE, undefined);
   assert.equal(env.DEEPSEEK_GIRL_DEV_URL, undefined);

@@ -830,6 +830,23 @@ body,
   line-height: 1.8;
   margin: 8px 0 13px;
 }
+.plugin-updates progress {
+  width: 100%;
+  height: 7px;
+  accent-color: #7b9dd0;
+}
+.plugin-update-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.settings-card .plugin-update-error {
+  color: #b36565;
+  overflow-wrap: anywhere;
+}
+.settings-card .plugin-update-note {
+  margin-bottom: 0;
+}
 .text-input {
   width: 100%;
   border: 1px solid #d6dce6;

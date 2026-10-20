@@ -116,6 +116,7 @@ try {
   );
   const failures = [];
   for (const name of [
+    "settings-update",
     "ui",
     "size",
     "drag",
@@ -146,6 +147,7 @@ try {
         privatePipeControl: true,
         parentDisconnectCleanup: true,
         desktopInteractions: [
+          "settings-update",
           "ui",
           "size",
           "drag",

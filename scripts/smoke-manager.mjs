@@ -77,9 +77,16 @@ const files = new Map([
   ["/dsh-girl/manager.js", ["manager.js", "text/javascript"]],
   ["/dsh-girl/manager.css", ["manager.css", "text/css"]],
   ["/dsh-girl/icon.png", ["icon.png", "image/png"]],
+  ["/dsh-girl/launcher.js", ["launcher.js", "text/javascript"]],
 ]);
 const server = createServer(async (req, res) => {
   try {
+    if (req.url === "/") {
+      res.setHeader("Content-Type", "text/html");
+      return res.end(
+        '<!doctype html><html><body><button id="user-menu" style="position:fixed;bottom:12px;left:12px;width:220px;height:60px">user-menu</button><script src="/dsh-girl/launcher.js"></script></body></html>',
+      );
+    }
     if (req.url === "/dsh-girl/status.json") {
       res.setHeader("Content-Type", "application/json");
       return res.end(JSON.stringify(snapshot()));
@@ -175,8 +182,75 @@ try {
     path: "artifacts/plugin-update.png",
     fullPage: true,
   });
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await page.goto(`http://127.0.0.1:${server.address().port}/`);
+  const launcher = page.locator("deepseek-girl-manager button");
+  await expect(launcher).toBeVisible();
+  const initial = await launcher.boundingBox();
+  const menu = await page.locator("#user-menu").boundingBox();
+  assert.ok(
+    initial.x > menu.x + menu.width,
+    "default launcher avoids user menu",
+  );
+  await page.mouse.move(initial.x + 35, initial.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(320, 180, { steps: 12 });
+  await page.mouse.up();
+  await expect(launcher).toHaveAttribute("aria-expanded", "false");
+  const dragged = await launcher.boundingBox();
+  assert.ok(dragged.x < initial.x - 100);
+  await page.reload();
+  assert.deepEqual(
+    await launcher.boundingBox(),
+    dragged,
+    "dragged position survives reload",
+  );
+  await launcher.click();
+  await expect(launcher).toHaveAttribute("aria-expanded", "true");
+  const insideViewport = async () => {
+    await expect
+      .poll(async () => {
+        const panel = await page
+          .locator("deepseek-girl-manager iframe")
+          .boundingBox();
+        const viewport = page.viewportSize();
+        return (
+          panel.x >= 0 &&
+          panel.y >= 0 &&
+          panel.x + panel.width <= viewport.width &&
+          panel.y + panel.height <= viewport.height
+        );
+      })
+      .toBe(true);
+  };
+  await insideViewport();
+  await page.setViewportSize({ width: 380, height: 500 });
+  await insideViewport();
+  const resized = await launcher.boundingBox();
+  assert.ok(
+    resized.x >= 0 &&
+      resized.x + resized.width <= 380 &&
+      resized.y + resized.height <= 500,
+  );
+  await launcher.focus();
+  await page.keyboard.press("Home");
+  const reset = await launcher.boundingBox();
+  assert.ok(
+    Math.abs(reset.x + reset.width - 362) <= 1,
+    JSON.stringify({
+      reset,
+      viewport: await page.evaluate(() => ({
+        width: innerWidth,
+        active: document.activeElement?.tagName,
+        position: localStorage.getItem("dsh-desk-buddy-launcher-position"),
+      })),
+    }),
+  );
+  await page.keyboard.press("ArrowLeft");
+  assert.equal((await launcher.boundingBox()).x, reset.x - 10);
+  await page.screenshot({ path: "artifacts/plugin-launcher.png" });
   console.log(
-    "Manual update UI passed: current version, new release, progress, integrity failure, retry, refresh, restart prompt and logo.",
+    "Manual update UI and launcher passed: current version, progress, retry, logo, user menu clearance, drag, click suppression, persistence, keyboard and viewport bounds.",
   );
 } finally {
   releaseInstall?.();

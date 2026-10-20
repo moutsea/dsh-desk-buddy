@@ -25,6 +25,7 @@ import { Mascot } from "./Mascot";
 import { Expressions } from "./Expressions";
 import { Sessions } from "./Sessions";
 import { PetSizeSetting } from "./PetSizeSetting";
+import { PluginUpdates } from "./PluginUpdates";
 import { usePetDrag, type PetDrag } from "./usePetDrag";
 import {
   PET_CHARACTER,
@@ -1049,6 +1050,7 @@ function Panel({ state }: { state: AppState }) {
             </div>
             <Settings2 size={24} strokeWidth={1.3} />
           </div>
+          <PluginUpdates />
           <PetSizeSetting
             scale={normalizePetScale(state.config.petScale)}
             onApply={async (next) => {

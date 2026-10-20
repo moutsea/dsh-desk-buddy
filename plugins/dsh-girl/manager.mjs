@@ -108,6 +108,7 @@ export class DesktopManager {
               this.endpoint,
               join(this.storage, "settings"),
             ),
+            DEEPSEEK_GIRL_MANAGER_ENDPOINT: this.displayEndpoint,
             ...(this.token
               ? { DEEPSEEK_GIRL_CONNECTION_TOKEN: this.token }
               : {}),
