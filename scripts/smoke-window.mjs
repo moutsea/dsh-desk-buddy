@@ -173,6 +173,17 @@ try {
       { content, windowId: properties.windowId },
     );
     await nativeClick(contentPoint);
+    assert.equal(
+      await app.evaluate(
+        ({ BrowserWindow }, id) =>
+          BrowserWindow.fromId(id).webContents.executeJavaScript(
+            "Number(document.body.dataset.clicks || 0)",
+          ),
+        background.id,
+      ),
+      1,
+      "the open panel receives the first click",
+    );
     await page.evaluate(() => window.desktop.invoke("section", null));
     await expect(page.locator(".companion-surface")).not.toBeVisible();
     await nativeClick(contentPoint);

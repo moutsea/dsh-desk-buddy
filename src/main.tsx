@@ -1288,10 +1288,11 @@ function App() {
       pointer.current &&
       document.elementFromPoint(pointer.current.x, pointer.current.y);
     setPassthrough(
-      !drag.held &&
+      !surface.section &&
+        !drag.held &&
         !target?.closest("[data-interactive], .companion-surface.open"),
     );
-  }, [surface, state.config.petScale, drag.held, ready]);
+  }, [surface.section, state.config.petScale, drag.held, ready]);
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !event.defaultPrevented)
