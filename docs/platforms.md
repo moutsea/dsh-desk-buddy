@@ -6,7 +6,7 @@
 
 工作流：[Desktop validation](https://github.com/moutsea/dsh-desk-buddy/actions/workflows/desktop.yml)。以具体提交对应的绿色任务为通过依据。
 
-每个平台执行 `npm ci`、`npm test`、`npm run test:repository`、`npm run pack:plugin` 和 `npm run test:packaged`。仓库入口检查使用含中文和空格的隔离目录，验证根包的插件导出、真实 Release 下载、SHA-256 校验、原生启动、连接、显示/隐藏和缓存重启。完整包检查将实际 `.tgz` 安装到临时目录，校验组件、解压，然后直接运行该组件，而非开发环境 Electron：
+每个平台执行 `npm ci`、`npm test`、`npm run test:manager`、`npm run test:repository`、`npm run pack:plugin` 和 `npm run test:packaged`。管理页检查使用模拟 Release 和宿主安装接口，覆盖最新版本、下载进度、校验失败、重试、刷新、重启提示和 logo 加载。单元检查另覆盖热加载卸载与安装、失败恢复旧版以及卸载期间更新继续完成。仓库入口检查使用含中文和空格的隔离目录，验证根包的插件导出与图标、真实 Release 下载、SHA-256 校验、原生启动、连接、显示/隐藏和缓存重启。完整包检查将实际 `.tgz` 安装到临时目录，校验组件、解压，然后直接运行该组件，而非开发环境 Electron：
 
 - 私有管道启动、版本检查、双事件连接、显示/隐藏/对话、重复启动去重、正常退出、重启和父管道断开后退出。
 - 完整对话、会话切换、审批提问、流式回复、连接恢复、完成提醒和动画。
@@ -30,6 +30,10 @@ npm run test:desktop
 ```
 
 `DSG_PLUGIN_PACKAGE` 可指定完整插件包路径。此检查使用独立 DSH_HOME，不覆盖日常使用的配置。macOS 默认使用 `/Applications/DeepSeek Harness.app`。
+
+`DSG_TEST_MANUAL_UPDATE=1 npm run test:desktop` 在隔离环境中安装版本号为 `0.0.0` 的测试种子，然后点击更新按钮，下载真实 GitHub 最新正式版并交给官方宿主替换，验证重启后版本、自动启动选择与当前会话保留，以及官方插件列表 logo。测试种子不发布。Windows PowerShell 使用 `$env:DSG_TEST_MANUAL_UPDATE = '1'` 后运行同一检查；Windows CI 的模拟安装服务检查不等同于官方宿主完整升级验证。
+
+再设置 `DSG_TEST_UPDATE_ROLLBACK=1` 可在测试种子中注入一次安装失败，验证官方宿主真正卸载旧插件后，能够从本地备份恢复并重新连接。产品代码不包含故障注入开关。
 
 `DSG_PLUGIN_SPEC` 可直接指定安装框中的来源，包括 GitHub 仓库地址和 Release 下载链接；测试会在官方 Desktop 界面填写原始地址并验证安装、启用、重启及连接，避免仅测试下载后的本地文件。仓库和完整包默认名称均为 `dsh-desk-buddy`，`DSG_PLUGIN_NAME` 仅用于覆盖测试目标包名。例如 macOS：
 

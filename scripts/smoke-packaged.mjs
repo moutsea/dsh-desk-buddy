@@ -66,6 +66,9 @@ try {
   assert.deepEqual(installed.os, [process.platform]);
   assert.deepEqual(installed.cpu, [process.arch]);
   assert.equal(installed.dsh.bundle.patch, "./cordis.patch.yml");
+  assert.equal(installed.icon, "./web/icon.png");
+  assert.equal(installed.exports["./package.json"], "./package.json");
+  assert.ok((await readFile(join(root, installed.icon))).length < 256 * 1024);
   const plugin = await import(pathToFileURL(join(root, "index.mjs")).href);
   assert.equal(plugin.name, pkg.name);
   assert.equal(typeof plugin.apply, "function");

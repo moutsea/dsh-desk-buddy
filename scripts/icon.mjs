@@ -13,3 +13,7 @@ await writeFile(
   new URL("../build/icon.png", import.meta.url),
   new Resvg(svg).render().asPng(),
 );
+await writeFile(
+  new URL("../plugins/dsh-girl/web/icon.png", import.meta.url),
+  new Resvg(svg, { fitTo: { mode: "width", value: 128 } }).render().asPng(),
+);

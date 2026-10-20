@@ -4,13 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>dsh-desk-buddy · 桌宠管理</title>
+    <link rel="icon" href="/dsh-girl/icon.png" />
     <link rel="stylesheet" href="/dsh-girl/manager.css" />
     <script type="module" src="/dsh-girl/manager.js"></script>
   </head>
   <body>
     <main>
-      <span class="eyebrow">dsh-desk-buddy</span>
-      <h1>你的桌面小搭档</h1>
+      <header class="brand">
+        <img src="/dsh-girl/icon.png" width="54" height="54" alt="" />
+        <div>
+          <span class="eyebrow">dsh-desk-buddy</span>
+          <h1>你的桌面小搭档</h1>
+        </div>
+      </header>
       <p class="intro">从这里唤醒桌宠，一起对话、工作，也一起庆祝。</p>
       <section class="status-card" aria-live="polite">
         <span id="status-dot" class="dot"></span>
@@ -36,6 +42,31 @@
           role="switch"
           aria-label="随 DSH 启动"
       /></label>
+      <section class="update-card" aria-label="插件更新">
+        <div class="update-heading">
+          <strong>插件更新</strong><small id="plugin-version"></small>
+        </div>
+        <p id="update-status" role="status">手动检查新版本</p>
+        <progress
+          id="update-progress"
+          aria-label="更新包下载进度"
+          hidden
+        ></progress>
+        <p id="update-error" role="alert" hidden></p>
+        <div class="update-actions">
+          <button data-update="checkUpdate">检查更新</button>
+          <button data-update="installUpdate" class="primary" hidden>
+            下载并更新
+          </button>
+          <a id="release-link" target="_blank" rel="noopener noreferrer" hidden
+            >版本说明 ↗</a
+          >
+        </div>
+        <p class="note">
+          升级会短暂重启桌宠，请保持 DSH 打开。完成后重启
+          DSH；桌宠设置、对话记录和 DSH 中的任务会保留。
+        </p>
+      </section>
       <p class="note">
         角色大小、表情和置顶可在桌宠的设置气泡里调整。关闭桌宠不会停止 DSH
         中的任务。

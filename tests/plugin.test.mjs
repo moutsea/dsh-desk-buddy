@@ -353,6 +353,10 @@ test("plugin serves a discoverable manager and rejects cross-origin, remote and 
     const page = await fetch(base + "/dsh-girl/");
     assert.equal(page.status, 200);
     assert.match(await page.text(), /启动桌宠/);
+    const logo = await fetch(base + "/dsh-girl/icon.png");
+    assert.equal(logo.status, 200);
+    assert.match(logo.headers.get("content-type"), /image\/png/);
+    assert.ok((await logo.arrayBuffer()).byteLength < 256 * 1024);
     assert.match(
       page.headers.get("content-security-policy"),
       /frame-ancestors 'self'/,
@@ -362,6 +366,7 @@ test("plugin serves a discoverable manager and rejects cross-origin, remote and 
     );
     assert.equal(state.endpoint, base);
     assert.equal(state.autoStart, false);
+    assert.match(state.update.unavailable, /更新接口/);
     const control = (body, extra = {}) =>
       fetch(base + "/dsh-girl/control", {
         method: "POST",

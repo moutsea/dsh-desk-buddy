@@ -2,10 +2,11 @@ import { readFile } from "node:fs/promises";
 import { dirname, join, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { apply as applyBalance } from "../dsh-girl-bridge/index.mjs";
 import { desktopBridge } from "./desktop-bridge.mjs";
 import { DesktopManager } from "./manager.mjs";
+import { PluginUpdater, backupPlugin } from "./updater.mjs";
 
 export const name = "dsh-desk-buddy";
 export const inject = ["webServer", "credentials", "connection"];
@@ -64,6 +65,35 @@ export async function apply(ctx, options = {}) {
     root,
     autoStart: options.autoStart !== false,
   });
+  const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+  const updater = new PluginUpdater({
+    version: pkg.version,
+    storage,
+    service: () => ctx.get?.("pluginManager"),
+    hotReload: () => !!ctx.get?.("hmr"),
+    backup: (directory) => backupPlugin(root, directory),
+    trackJob: (job) => {
+      const webServer = ctx.webServer;
+      const path = `/dsh-desk-buddy-update/${randomUUID()}`;
+      const unregister = webServer.register({
+        kind: "exact",
+        path,
+        handler: (req, res) => {
+          if (req.method !== "GET" || !localRequest(req, webServer.port))
+            return json(res, 403, { error: "仅允许从当前 DSH 查看更新" });
+          json(res, 200, job.snapshot());
+        },
+      });
+      void job.operation.finally(() => {
+        setTimeout(unregister, 15 * 60 * 1000).unref();
+      });
+      return path;
+    },
+  });
+  const snapshot = () => ({
+    ...manager.snapshot(),
+    update: updater.snapshot(),
+  });
   const assets = new Map(
     await Promise.all(
       [
@@ -71,6 +101,7 @@ export async function apply(ctx, options = {}) {
         ["/dsh-girl/manager.js", "manager.js", "text/javascript"],
         ["/dsh-girl/manager.css", "manager.css", "text/css"],
         ["/dsh-girl/launcher.js", "launcher.js", "text/javascript"],
+        ["/dsh-girl/icon.png", "icon.png", "image/png"],
       ].map(async ([url, file, type]) => [
         url,
         { body: await readFile(join(root, "web", file)), type },
@@ -89,7 +120,7 @@ export async function apply(ctx, options = {}) {
       const path = new URL(req.url, "http://127.0.0.1").pathname;
       if (path === "/dsh-girl/status.json" && req.method === "GET")
         return json(res, 200, {
-          ...manager.snapshot(),
+          ...snapshot(),
           ...(manager.connection !== "connected" && bridge?.error
             ? { error: bridge.error }
             : {}),
@@ -111,8 +142,10 @@ export async function apply(ctx, options = {}) {
           }
           const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
           if (!manager.endpoint) throw new Error("DSH 正在启动，请稍后再试");
-          const result = await manager.control(body.action, body.value);
-          return json(res, 200, result);
+          if (body.action === "checkUpdate") updater.check();
+          else if (body.action === "installUpdate") updater.install(body.value);
+          else await manager.control(body.action, body.value);
+          return json(res, 200, snapshot());
         } catch (error) {
           return json(res, 400, { error: error.message });
         }
@@ -150,6 +183,7 @@ export async function apply(ctx, options = {}) {
   }
   ctx.effect(() => async () => {
     disposed = true;
+    await updater.dispose();
     await manager.dispose();
     await bridge?.dispose();
   });

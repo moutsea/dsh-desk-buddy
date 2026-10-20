@@ -10,6 +10,7 @@ import {
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import assert from "node:assert/strict";
+import { x as extractTar, c as createTar } from "tar";
 
 const executablePath =
   process.env.DSG_DESKTOP_EXECUTABLE ||
@@ -19,9 +20,44 @@ const archive = resolve(
   process.env.DSG_PLUGIN_PACKAGE ||
     `release/${pkg.name}-${pkg.version}-${process.platform}-${process.arch}.tgz`,
 );
-const installSpec = process.env.DSG_PLUGIN_SPEC || archive;
+let installSpec = process.env.DSG_PLUGIN_SPEC || archive;
 const bundleName = process.env.DSG_PLUGIN_NAME || pkg.name;
 const home = await mkdtemp(join(tmpdir(), "dsg-desktop-install-"));
+const testUpdate = process.env.DSG_TEST_MANUAL_UPDATE === "1";
+const testRollback = testUpdate && process.env.DSG_TEST_UPDATE_ROLLBACK === "1";
+if (testUpdate) {
+  const seed = join(home, "seed");
+  await mkdir(seed);
+  await extractTar({ file: archive, cwd: seed });
+  const manifest = join(seed, "package/package.json");
+  const metadata = JSON.parse(await readFile(manifest, "utf8"));
+  metadata.version = "0.0.0";
+  await writeFile(manifest, JSON.stringify(metadata));
+  if (testRollback) {
+    const entry = join(seed, "package/index.mjs");
+    const code = await readFile(entry, "utf8");
+    const original = 'service: () => ctx.get?.("pluginManager"),';
+    assert.ok(code.includes(original));
+    await writeFile(
+      entry,
+      code.replace(
+        original,
+        `service: () => {
+      const service = ctx.get("pluginManager");
+      return {
+        listBundles: () => service.listBundles(),
+        removeBundle: name => service.removeBundle(name),
+        installBundle: (archive, options) => archive.includes("rollback-")
+          ? service.installBundle(archive, options)
+          : Promise.resolve({ application: "failed", error: { code: "incompatible-version" } })
+      };
+    },`,
+      ),
+    );
+  }
+  installSpec = join(home, "update-seed.tgz");
+  await createTar({ file: installSpec, cwd: seed, gzip: true }, ["package"]);
+}
 const profile = join(home, "profiles/desktop");
 await mkdir(profile, { recursive: true });
 await writeFile(
@@ -45,7 +81,7 @@ for (const key of Object.keys(env))
     /^(ELECTRON_RUN_AS_NODE|DEEPSEEK_GIRL_)/.test(key)
   )
     delete env[key];
-let app, page, pid;
+let app, page, pid, updateResult;
 let diagnostic = "";
 const alive = (value) => {
   try {
@@ -130,6 +166,40 @@ try {
   assert.ok(alive(pid));
   assert.ok(!JSON.stringify(running).includes("token"));
   const frame = await manager();
+  assert.equal(
+    running.update.currentVersion,
+    testUpdate ? "0.0.0" : pkg.version,
+  );
+  assert.equal(running.update.unavailable, "");
+  await expect(
+    frame.getByRole("button", { name: "检查更新", exact: true }),
+  ).toBeEnabled();
+  assert.equal(
+    await frame
+      .locator(".brand img")
+      .evaluate((node) => node.complete && node.naturalWidth),
+    128,
+  );
+  await page
+    .getByRole("button", { name: "dsh-desk-buddy", exact: true })
+    .click();
+  await page.getByText("插件", { exact: true }).first().click();
+  const expectedLogo =
+    "data:image/png;base64," +
+    (await readFile("plugins/dsh-girl/web/icon.png")).toString("base64");
+  await expect
+    .poll(() =>
+      page
+        .locator("img")
+        .evaluateAll(
+          (nodes, src) => nodes.some((node) => node.src === src),
+          expectedLogo,
+        ),
+    )
+    .toBe(true);
+  await page
+    .getByRole("button", { name: "dsh-desk-buddy", exact: true })
+    .click();
   await frame.getByRole("button", { name: "暂时隐藏", exact: true }).click();
   await expect.poll(async () => (await status()).visible).toBe(false);
   await frame.getByRole("button", { name: "显示桌宠", exact: true }).click();
@@ -178,6 +248,72 @@ try {
   await frame.locator("#auto-start").check();
   await expect.poll(async () => (await status()).autoStart).toBe(true);
   await page.screenshot({ path: "artifacts/desktop-management.png" });
+  if (testUpdate) {
+    await frame.getByRole("button", { name: "检查更新", exact: true }).click();
+    await expect
+      .poll(async () => (await status()).update.phase, { timeout: 30000 })
+      .toBe("available");
+    const target = (await status()).update.latestVersion;
+    const installResponse = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/dsh-girl/control") &&
+        response.request().postDataJSON()?.action === "installUpdate",
+    );
+    await frame
+      .getByRole("button", { name: `下载并更新至 v${target}`, exact: true })
+      .click();
+    const updateJob = (await (await installResponse).json()).update.jobUrl;
+    assert.ok(updateJob);
+    await expect
+      .poll(
+        async () => {
+          const update = await page.evaluate(
+            async (path) => (await fetch(path)).json(),
+            updateJob,
+          );
+          if (update.phase === "error" && !testRollback)
+            throw new Error(update.error);
+          if (update.phase === "error")
+            assert.match(update.error, /已恢复旧版/);
+          return update.phase;
+        },
+        { timeout: 360000 },
+      )
+      .toBe(testRollback ? "error" : "restart-required");
+    await expect
+      .poll(async () => (await status()).connection, { timeout: 90000 })
+      .toBe("connected");
+    await expect(
+      frame.locator(testRollback ? "#update-error" : "#update-status"),
+    ).toContainText("重启 DSH");
+    await page.screenshot({
+      path: testRollback
+        ? "artifacts/desktop-update-rollback.png"
+        : "artifacts/desktop-manual-update.png",
+    });
+    await app.close();
+    app = null;
+    await boot();
+    await expect
+      .poll(async () => (await status()).connection, { timeout: 90000 })
+      .toBe("connected");
+    assert.equal((await status()).version, testRollback ? pkg.version : target);
+    if (testRollback)
+      assert.equal((await status()).update.currentVersion, "0.0.0");
+    assert.equal((await status()).autoStart, true);
+    assert.equal(
+      JSON.parse(await readFile(storage, "utf8")).selectedId,
+      created.sessionId,
+    );
+    pid = (await status()).pid;
+    updateResult = {
+      from: "0.0.0 test seed",
+      to: testRollback ? "0.0.0 restored test seed" : target,
+      hostCodeAndRuntime: true,
+      preferencesAndHistoryRetained: true,
+      failureRecovery: testRollback,
+    };
+  }
   await app.close();
   app = null;
   await expect.poll(() => alive(pid), { timeout: 10000 }).toBe(false);
@@ -192,6 +328,8 @@ try {
         connection: "connected",
         sessionCreationAndHistory: true,
         management: true,
+        pluginLogo: true,
+        manualUpdate: updateResult,
         hostExitCleanup: true,
         isolated: true,
         modelRequests: 0,

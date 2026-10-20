@@ -1,6 +1,6 @@
 {
   "name": "dsh-desk-buddy",
-  "version": "0.12.3",
+  "version": "0.12.4",
   "private": true,
   "author": "dsh-desk-buddy contributors",
   "license": "UNLICENSED",
@@ -8,8 +8,11 @@
   "type": "module",
   "main": "electron/main.mjs",
   "exports": {
-    ".": "./plugins/dsh-girl/index.mjs"
+    ".": "./plugins/dsh-girl/index.mjs",
+    "./package.json": "./package.json",
+    "./icon": "./plugins/dsh-girl/web/icon.png"
   },
+  "icon": "./plugins/dsh-girl/web/icon.png",
   "files": [
     "cordis.patch.yml",
     "plugins/dsh-girl",
@@ -38,6 +41,7 @@
     "pack:plugin": "npm run pack && node scripts/pack-plugin.mjs",
     "test:plugin": "node scripts/smoke-plugin.mjs",
     "test:desktop": "node scripts/smoke-desktop.mjs",
+    "test:manager": "node scripts/smoke-manager.mjs",
     "test:packaged": "node scripts/smoke-packaged.mjs",
     "test:repository": "node scripts/smoke-repository.mjs",
     "test:stream": "node scripts/smoke-stream.mjs"

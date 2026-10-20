@@ -20,6 +20,20 @@ main {
   margin: auto;
   padding: 28px 24px;
 }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.brand img {
+  flex-shrink: 0;
+  border-radius: 14px;
+}
+.brand h1 {
+  font-size: 21px;
+  margin-bottom: 0;
+}
 .eyebrow {
   font-size: 10px;
   letter-spacing: 2px;
@@ -37,6 +51,46 @@ p {
 .note {
   color: #7b8da9;
   font-size: 12px;
+}
+.update-card {
+  margin: 20px 0 14px;
+  padding: 15px;
+  border: 1px solid #dce5f4;
+  border-radius: 16px;
+  background: white;
+  font-size: 12px;
+}
+.update-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+#plugin-version {
+  color: #8291aa;
+}
+#update-status,
+#update-error {
+  overflow-wrap: anywhere;
+}
+#update-error {
+  color: #a26e49;
+  margin-top: 8px;
+}
+.update-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.update-actions a {
+  color: #4b6caa;
+}
+progress {
+  width: 100%;
+  margin-top: 10px;
+  accent-color: #7294ce;
 }
 .status-card {
   display: flex;

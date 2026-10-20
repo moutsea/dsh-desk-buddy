@@ -55,6 +55,13 @@ try {
   );
   const require = createRequire(join(directory, "profile/package.json"));
   const entry = require.resolve(pkg.name);
+  const metadata = JSON.parse(
+    await readFile(require.resolve(`${pkg.name}/package.json`), "utf8"),
+  );
+  assert.equal(metadata.icon, "./plugins/dsh-girl/web/icon.png");
+  assert.ok(
+    (await readFile(require.resolve(`${pkg.name}/icon`))).length < 256 * 1024,
+  );
   assert.ok(entry.endsWith(join("plugins", "dsh-girl", "index.mjs")));
   const plugin = await import(pathToFileURL(entry).href);
   assert.equal(typeof plugin.apply, "function");

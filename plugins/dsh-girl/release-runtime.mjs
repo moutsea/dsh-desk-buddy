@@ -14,6 +14,42 @@ import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { x as extractTar } from "tar";
 
+export async function downloadVerifiedPackage(
+  asset,
+  archive,
+  {
+    fetcher = fetch,
+    signal = AbortSignal.timeout(300000),
+    onProgress = () => {},
+  } = {},
+) {
+  const response = await fetcher(asset.url, { signal });
+  if (!response.ok || !response.body) {
+    await response.body?.cancel();
+    throw new Error(`HTTP ${response.status}`);
+  }
+  const hash = createHash("sha256");
+  let bytes = 0;
+  const verify = new Transform({
+    transform(chunk, encoding, callback) {
+      bytes += chunk.length;
+      if (bytes > 512 * 1024 * 1024)
+        return callback(new Error("桌宠组件下载大小超出限制"));
+      hash.update(chunk);
+      onProgress(bytes);
+      callback(null, chunk);
+    },
+  });
+  await pipeline(
+    Readable.fromWeb(response.body),
+    verify,
+    createWriteStream(archive, { flags: "wx" }),
+    { signal },
+  );
+  if (hash.digest("hex") !== asset.sha256)
+    throw new Error("桌宠组件下载校验失败");
+}
+
 export async function downloadRuntimePackage(
   root,
   cache,
@@ -71,33 +107,8 @@ export async function downloadRuntimePackage(
   const staging = await mkdtemp(join(packages, ".download-"));
   try {
     const archive = join(staging, "plugin.tgz");
-    const signal = AbortSignal.timeout(300000);
-    let response;
     try {
-      response = await fetcher(url.href, { signal });
-      if (!response.ok || !response.body) {
-        await response.body?.cancel();
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const hash = createHash("sha256");
-      let bytes = 0;
-      const verify = new Transform({
-        transform(chunk, encoding, callback) {
-          bytes += chunk.length;
-          if (bytes > 512 * 1024 * 1024)
-            return callback(new Error("桌宠组件下载大小超出限制"));
-          hash.update(chunk);
-          callback(null, chunk);
-        },
-      });
-      await pipeline(
-        Readable.fromWeb(response.body),
-        verify,
-        createWriteStream(archive, { flags: "wx" }),
-        { signal },
-      );
-      if (hash.digest("hex") !== asset.sha256)
-        throw new Error("桌宠组件下载校验失败");
+      await downloadVerifiedPackage(asset, archive, { fetcher });
     } catch (error) {
       throw new Error(
         `无法准备桌宠组件：${error.message}。请检查 GitHub 连接后在「dsh-desk-buddy」中重试，或安装 Release 完整插件包。`,

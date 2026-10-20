@@ -1,15 +1,19 @@
 {
   "name": "dsh-desk-buddy",
-  "version": "0.12.3",
+  "version": "0.12.4",
   "description": "dsh-desk-buddy：安装、启动和管理桌宠，并自动连接当前 DSH",
   "type": "module",
   "main": "index.mjs",
   "exports": {
-    ".": "./index.mjs"
+    ".": "./index.mjs",
+    "./package.json": "./package.json",
+    "./icon": "./web/icon.png"
   },
+  "icon": "./web/icon.png",
   "files": [
     "index.mjs",
     "manager.mjs",
+    "updater.mjs",
     "runtime.mjs",
     "release-runtime.mjs",
     "release-runtime.json",

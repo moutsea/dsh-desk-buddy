@@ -18,12 +18,16 @@ https://github.com/moutsea/dsh-desk-buddy
 
 首次下载约 200–230 MB，需要能够访问 GitHub Release；成功后缓存到当前用户目录，后续启动无需再次下载。可在左下角“dsh-desk-buddy”查看准备状态；下载失败时，检查网络后点击“启动桌宠”重试。
 
+自 0.12.4 起，左下角“dsh-desk-buddy → 插件更新”提供“检查更新”和“下载并更新”。只在点击后访问 GitHub，自动选择当前系统的正式版完整包、显示下载进度并校验 SHA-256，再通过 DSH 安装。升级会短暂重启桌宠，请保持 DSH 打开；完成后重启 DSH。桌宠设置、窗口位置、对话记录和 DSH 中已接受的任务均保留；安装失败会尝试恢复旧版。每次下载约 200–230 MB。
+
+0.12.3 及更早版本还没有更新按钮，需要先在 DSH 插件管理中卸载旧插件，再使用同一个 GitHub 仓库地址安装一次 0.12.4；此后可直接在管理页更新。插件列表、管理入口和管理页统一显示鲸鱼娘 logo。未提供插件管理接口的旧版 DSH Web 仍需通过原安装方式升级。
+
 也可以在 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择对应的完整 `.tgz`，将附件链接或本地文件的绝对路径填入同一安装框。完整包已包含组件，启用时无需额外下载：
 
 | 系统                | 插件包                                                                                                                                               |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows x64         | [dsh-desk-buddy-0.12.3-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.3/dsh-desk-buddy-0.12.3-win32-x64.tgz)       |
-| macOS Apple Silicon | [dsh-desk-buddy-0.12.3-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.3/dsh-desk-buddy-0.12.3-darwin-arm64.tgz) |
+| Windows x64         | [dsh-desk-buddy-0.12.4-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.4/dsh-desk-buddy-0.12.4-win32-x64.tgz)       |
+| macOS Apple Silicon | [dsh-desk-buddy-0.12.4-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.4/dsh-desk-buddy-0.12.4-darwin-arm64.tgz) |
 
 仓库根目录已声明 `dsh.bundle`，可直接安装。若仍提示“这个包没有声明组合包，不能作为插件管理”，删除失败的旧安装项后重新添加上面的仓库地址，确保获取最新提交。自 0.12.1 起，仓库安装和 Release 完整包统一使用 `dsh-desk-buddy` 包名。升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再添加同一个仓库地址；原有桌宠设置与位置继续保留。不要使用 GitHub 自动生成的 Source code 压缩包或源码子目录代替安装来源。
 
@@ -83,9 +87,11 @@ dsh plugin --profile web add link:/absolute/path/to/dsh-girl/plugins/dsh-girl-br
 
 ```sh
 npm test                 # 协议、流式解析、状态投影、余额插件
+npm run test:manager     # 手动更新界面、下载校验、失败重试与 logo
 npm run test:stream      # Desktop 无游标流式回复、最终替换和断线清理
 npm run test:completion  # 独立完成提醒、后台会话、去重及动态效果
 npm run test:desktop     # 官方 Desktop 隔离安装与连接检查（先构建插件包）
+DSG_TEST_MANUAL_UPDATE=1 npm run test:desktop # Mac 官方 Desktop 完整升级与配置保留
 npm run test:repository  # 隔离安装仓库入口、下载 Release、原生启动和缓存重启
 npm run test:plugin      # 真实 DSH 完整插件包安装、原生组件和管理流程（先构建插件包）
 npm run test:packaged    # 安装完整包、解压和启动组件，再验证打包后的桌面交互
