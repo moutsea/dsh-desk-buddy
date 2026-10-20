@@ -47,6 +47,7 @@ try {
     );
   const bubble = () =>
     page.getByRole("button", { name: "查看进度：后台检查项目" });
+  await page.mouse.move(-10, -10);
   await expect.poll(async () => (await state()).connection).toBe("connected");
   assert.equal((await state()).config.progressBubbles, true);
   await expect(bubble()).toHaveCount(0);
@@ -72,6 +73,10 @@ try {
     arguments: JSON.stringify({ command: "git status --short\nnpm test" }),
   });
   await expect(bubble()).toContainText("git status --short npm test");
+  await page.locator(".pet-character").hover();
+  await expect(bubble()).toBeHidden();
+  await page.mouse.move(-10, -10);
+  await expect(bubble()).toBeVisible();
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({
     path: "artifacts/progress-bubble.png",
@@ -91,6 +96,7 @@ try {
     message: { content: [{ type: "tool-result", toolCallId: "check" }] },
   });
   await invoke("section", null);
+  await page.mouse.move(-10, -10);
   await expect(bubble()).toBeVisible();
   await expect(bubble()).not.toContainText("npm test");
   fixture.push("mux", {
@@ -136,12 +142,14 @@ try {
   await app.close();
   app = await launchDesktop(env);
   page = await app.firstWindow({ timeout: 15000 });
+  await page.mouse.move(-10, -10);
   await expect.poll(async () => (await state()).connection).toBe("connected");
   assert.equal((await state()).config.progressBubbles, false);
   await expect(bubble()).toHaveCount(0);
   await invoke("section", "settings");
   await page.getByRole("switch", { name: "执行进度气泡", exact: true }).click();
   await invoke("section", null);
+  await page.mouse.move(-10, -10);
   await expect(bubble()).toBeVisible();
   fixture.sessions.get("back").running = false;
   fixture.event("back", "turn/end", { reason: { kind: "completed" } });
