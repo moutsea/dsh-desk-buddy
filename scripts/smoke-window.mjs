@@ -220,6 +220,7 @@ try {
         BrowserWindow.fromId(windowId).getBounds(),
       properties.windowId,
     );
+    const beforeSurface = (await state()).surface;
     const point = await characterPoint();
     await nativeClick(point, { x: point.x + 40, y: point.y - 25 });
     await expect
@@ -229,7 +230,11 @@ try {
             BrowserWindow.fromId(windowId).getBounds(),
           properties.windowId,
         );
-        return after.x > before.x && after.y < before.y;
+        const afterSurface = (await state()).surface;
+        return (
+          after.x + afterSurface.pet.x > before.x + beforeSurface.pet.x &&
+          after.y + afterSurface.pet.y < before.y + beforeSurface.pet.y
+        );
       })
       .toBe(true);
     await powershell(

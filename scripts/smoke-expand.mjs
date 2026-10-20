@@ -53,6 +53,12 @@ try {
       const window = BrowserWindow.getAllWindows()[0];
       globalThis.expansionGeometry = [];
       globalThis.expansionHidden = false;
+      globalThis.expansionBoundsRequests = [];
+      const setBounds = window.setBounds.bind(window);
+      window.setBounds = (...args) => {
+        globalThis.expansionBoundsRequests.push(args[0]);
+        return setBounds(...args);
+      };
       window.on("hide", () => {
         globalThis.expansionHidden = true;
       });
@@ -130,6 +136,7 @@ try {
       return {
         bounds: globalThis.expansionGeometry,
         hidden: globalThis.expansionHidden,
+        requests: globalThis.expansionBoundsRequests,
       };
     });
     reports.push({ ...scenario, originalBounds, frames, native });
@@ -148,9 +155,15 @@ try {
     assert.ok(frames.every((frame) => frame.visible));
     assert.ok(
       native.bounds.every(
-        (bounds) => JSON.stringify(bounds) === JSON.stringify(originalBounds),
+        (bounds) =>
+          bounds.x === originalBounds.x && bounds.y === originalBounds.y,
       ),
-      "opening, switching and closing never move or resize the native window",
+      "opening, switching and closing never move the native window",
+    );
+    assert.deepEqual(
+      native.requests,
+      [],
+      "panel changes never request a native move or resize",
     );
     assert.equal(
       native.hidden,
