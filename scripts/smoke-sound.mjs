@@ -240,6 +240,10 @@ try {
   await settings
     .getByRole("switch", { name: "摸摸桌宠声音", exact: true })
     .click();
+  await expect.poll(async () => (await state()).config.sounds.pet).toBe(false);
+  await expect(
+    settings.getByRole("switch", { name: "摸摸桌宠声音", exact: true }),
+  ).toHaveAttribute("aria-checked", "false");
   await invoke("section", null);
   await pet.click();
   await quiet(18);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Volume2 } from "lucide-react";
 import { normalizeSoundSettings } from "../shared/sound.mjs";
 import { useSounds } from "./SoundProvider";
@@ -31,10 +31,14 @@ export function SoundSettings({
 }) {
   const value = normalizeSoundSettings(settings);
   const [volume, setVolume] = useState(value.volume);
+  const submittedVolume = useRef(value.volume);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const sounds = useSounds();
-  useEffect(() => setVolume(value.volume), [value.volume]);
+  useEffect(() => {
+    submittedVolume.current = value.volume;
+    setVolume(value.volume);
+  }, [value.volume]);
   const apply = async (patch: Partial<Settings>) => {
     setBusy(true);
     setError("");
@@ -42,13 +46,16 @@ export function SoundSettings({
       await onApply(patch);
     } catch {
       setError("声音设置未保存，请重试。");
+      submittedVolume.current = value.volume;
       setVolume(value.volume);
     } finally {
       setBusy(false);
     }
   };
   const applyVolume = (next: number) => {
-    if (next !== value.volume) void apply({ volume: next });
+    if (next === submittedVolume.current) return;
+    submittedVolume.current = next;
+    void apply({ volume: next });
   };
   return (
     <section className="settings-card sound-settings" aria-label="声音设置">
