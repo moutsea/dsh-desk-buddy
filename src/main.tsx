@@ -1272,12 +1272,19 @@ function App() {
   const drag = usePetDrag();
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const passthrough = useRef<boolean | null>(null);
+  const pointerRevision = useRef(0);
   const setPassthrough = (ignore: boolean) => {
     if (passthrough.current === ignore) return;
     passthrough.current = ignore;
-    void invoke("passthrough", ignore).catch(() => {
-      passthrough.current = null;
-    });
+    const revision = ++pointerRevision.current;
+    void invoke("passthrough", ignore)
+      .then((actual) => {
+        if (pointerRevision.current === revision && typeof actual === "boolean")
+          passthrough.current = actual;
+      })
+      .catch(() => {
+        if (pointerRevision.current === revision) passthrough.current = null;
+      });
   };
   useEffect(() => {
     setPassthrough(true);

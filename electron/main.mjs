@@ -140,6 +140,7 @@ function petAnchor() {
 }
 let arranging = false;
 let petDrag = null;
+let layoutBounds;
 function applyLayout(layout, fullState = false) {
   const changed =
     JSON.stringify(state.surface) !== JSON.stringify(layout.surface);
@@ -147,11 +148,15 @@ function applyLayout(layout, fullState = false) {
   arranging = true;
   if (fullState) pet.webContents.send("desktop:state", state);
   else if (changed) pet.webContents.send("desktop:surface", state.surface);
-  const bounds = pet.getBounds();
   if (
-    Object.keys(layout.bounds).some((key) => bounds[key] !== layout.bounds[key])
-  )
+    !layoutBounds ||
+    Object.keys(layout.bounds).some(
+      (key) => layoutBounds[key] !== layout.bounds[key],
+    )
+  ) {
     pet.setBounds(layout.bounds);
+    layoutBounds = layout.bounds;
+  }
   arranging = false;
 }
 function finishPetDrag() {
@@ -247,6 +252,7 @@ function createWindows() {
     config.chatSize,
   );
   state.surface = layout.surface;
+  layoutBounds = layout.bounds;
   pet = createWindow(
     {
       ...layout.bounds,
@@ -840,12 +846,27 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
         throw new Error("未知入口");
       showSection(payload);
       return;
-    case "passthrough":
-      if (event.sender === pet.webContents)
-        pet.setIgnoreMouseEvents(petDrag ? false : !!payload, {
-          forward: true,
-        });
-      return;
+    case "passthrough": {
+      if (event.sender !== pet.webContents) return;
+      const cursor = screen.getCursorScreenPoint();
+      const bounds = pet.getBounds();
+      const surface = state.surface;
+      const left =
+        bounds.x +
+        (surface.side === "left"
+          ? surface.pet.x - surface.contentWidth - 18
+          : surface.pet.x + petSize(config.petScale).width + 18);
+      const top = bounds.y + surface.contentTop;
+      const overPanel =
+        surface.section &&
+        cursor.x >= left &&
+        cursor.x < left + surface.contentWidth &&
+        cursor.y >= top &&
+        cursor.y < top + surface.contentHeight;
+      const ignore = !petDrag && !!payload && !overPanel;
+      pet.setIgnoreMouseEvents(ignore, { forward: true });
+      return ignore;
+    }
     case "openDsh":
       await shell.openExternal(
         managed?.managerEndpoint || normalizeEndpoint(config.endpoint),

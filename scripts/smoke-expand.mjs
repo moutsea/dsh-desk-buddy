@@ -132,7 +132,7 @@ try {
         hidden: globalThis.expansionHidden,
       };
     });
-    reports.push({ ...scenario, frames, native });
+    reports.push({ ...scenario, originalBounds, frames, native });
     await mkdir("artifacts", { recursive: true });
     await writeFile(
       "artifacts/expand-frames.json",
