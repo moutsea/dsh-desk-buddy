@@ -35,7 +35,8 @@ export function SoundSettings({
   const [volume, setVolume] = useState(value.volume);
   const submittedVolume = useRef(value.volume);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<Partial<Settings> | null>(null);
+  const busy = pending !== null;
   const sounds = useSounds();
   const auditionRequest = useRef<{
     kind: SoundKind | "preview";
@@ -54,6 +55,15 @@ export function SoundSettings({
   };
   useEffect(() => {
     invalidateAudition(value);
+    // Saving returns before the coalesced state broadcast reaches the player.
+    // Keep controls disabled until the new settings are rendered and applied.
+    if (
+      pending &&
+      Object.entries(pending).every(
+        ([key, next]) => value[key as keyof Settings] === next,
+      )
+    )
+      setPending(null);
   }, [
     value.voice,
     value.enabled,
@@ -61,6 +71,7 @@ export function SoundSettings({
     value.pet,
     value.completion,
     value.idle,
+    pending,
   ]);
   useEffect(
     () => () => {
@@ -91,7 +102,7 @@ export function SoundSettings({
   }, [value.volume]);
   const apply = async (patch: Partial<Settings>) => {
     invalidateAudition(normalizeSoundSettings({ ...value, ...patch }));
-    setBusy(true);
+    setPending(patch);
     setError("");
     try {
       await onApply(patch);
@@ -99,8 +110,7 @@ export function SoundSettings({
       setError("声音设置未保存，请重试。");
       submittedVolume.current = value.volume;
       setVolume(value.volume);
-    } finally {
-      setBusy(false);
+      setPending(null);
     }
   };
   const applyVolume = (next: number) => {

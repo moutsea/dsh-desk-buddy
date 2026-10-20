@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef } from "react";
 import { SoundCues } from "../shared/sound.mjs";
+import { observeWindowVisibility } from "../shared/window-visibility.mjs";
 import { PetAudio, type SoundKind } from "./sounds";
 import type { AppState } from "./types";
 
@@ -82,13 +83,7 @@ export function SoundProvider({
       policy.engage();
       tick.current();
     };
-    const unsubscribe = window.desktop?.subscribeVisibility?.(visibility);
-    void window.desktop
-      ?.invoke("visibility")
-      .then((value) => {
-        if (live) visibility(value);
-      })
-      .catch(() => {});
+    const unsubscribe = observeWindowVisibility(window.desktop, visibility);
     const changed = () => {
       policy.engage();
       tick.current();
@@ -99,7 +94,7 @@ export function SoundProvider({
     return () => {
       live = false;
       clearInterval(timer);
-      unsubscribe?.();
+      unsubscribe();
       document.removeEventListener("visibilitychange", changed);
       tick.current = () => {};
       audio.current = null;

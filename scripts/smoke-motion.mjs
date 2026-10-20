@@ -44,6 +44,23 @@ try {
     })),
   );
   await pet.emulateMedia({ reducedMotion: "no-preference" });
+  // Model the native window becoming visible after React's first render but
+  // before its visibility listener is installed. Later reads/events are native.
+  await pet.addInitScript(() => {
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      get: () => true,
+    });
+    const add = document.addEventListener.bind(document);
+    document.addEventListener = (type, ...args) => {
+      if (type === "visibilitychange") {
+        delete document.hidden;
+        document.addEventListener = add;
+      }
+      return add(type, ...args);
+    };
+  });
+  await pet.reload();
   await mkdir("artifacts/motion", { recursive: true });
   for (const id of ids) {
     await pet.evaluate(

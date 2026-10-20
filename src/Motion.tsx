@@ -13,6 +13,7 @@ import {
 } from "../shared/motions.mjs";
 import registration from "../public/characters/deepseek-girl/animations/registration.json";
 import { CHARACTER_LAYOUT } from "../shared/character-layout.mjs";
+import { observeWindowVisibility } from "../shared/window-visibility.mjs";
 
 export const MotionContext = createContext(true);
 const characterRoot = `${import.meta.env.BASE_URL}characters/deepseek-girl/`;
@@ -45,22 +46,17 @@ export function MotionSprite({ expression }: { expression: string }) {
     if (root.current) observer.observe(root.current);
     const visibility = () => setForeground(!document.hidden);
     document.addEventListener("visibilitychange", visibility);
-    let live = true;
-    const unsubscribe = window.desktop?.subscribeVisibility?.((value) => {
-      if (live) setWindowVisible(value);
-    });
-    window.desktop
-      ?.invoke("visibility")
-      .then((value) => {
-        if (live) setWindowVisible(value);
-      })
-      .catch(() => {});
+    // The first show event can occur between render and effect setup.
+    visibility();
+    const unsubscribe = observeWindowVisibility(
+      window.desktop,
+      setWindowVisible,
+    );
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const change = () => setReduced(media.matches);
     media.addEventListener("change", change);
     return () => {
-      live = false;
-      unsubscribe?.();
+      unsubscribe();
       observer.disconnect();
       document.removeEventListener("visibilitychange", visibility);
       media.removeEventListener("change", change);

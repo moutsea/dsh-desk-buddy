@@ -434,6 +434,41 @@ export async function checkSoundRaces() {
       .getByRole("button", { name: "试听无聊时打招呼", exact: true })
       .click();
     await expect.poll(starts).toEqual([...beforeIdle, 1.28]);
+    // A settings IPC reply may beat its state broadcast. Audition must wait
+    // for the renderer/player to apply the new voice, even under that delay.
+    const beforeSettings = await starts();
+    await app.evaluate(({ BrowserWindow }) => {
+      const contents = BrowserWindow.getAllWindows()[0].webContents;
+      const send = contents.send.bind(contents);
+      globalThis.soundSettingsHold = { release: null };
+      contents.send = (channel, ...args) => {
+        if (
+          channel === "desktop:state" &&
+          args[0]?.config.sounds.voice === "longanlingxi_v3.1"
+        ) {
+          const captured = structuredClone(args);
+          globalThis.soundSettingsHold.release = () => {
+            contents.send = send;
+            send(channel, ...captured);
+          };
+          return;
+        }
+        return send(channel, ...args);
+      };
+    });
+    await voice.selectOption(SOUND_VOICES[1].id);
+    await expect
+      .poll(() =>
+        app.evaluate(() => typeof globalThis.soundSettingsHold.release),
+      )
+      .toBe("function");
+    await expect(preview).toBeDisabled();
+    assert.deepEqual(await starts(), beforeSettings);
+    await app.evaluate(() => globalThis.soundSettingsHold.release());
+    await expect(preview).toBeEnabled();
+    await expect(voice).toHaveValue(SOUND_VOICES[1].id);
+    await preview.click();
+    await expect.poll(starts).toEqual([...beforeSettings, 2.24]);
     assert.deepEqual(errors, []);
     await mkdir("artifacts", { recursive: true });
     await writeFile(
@@ -459,6 +494,7 @@ export async function checkSoundRaces() {
           idleCancelledWhenPanelOpens: true,
           idleDoesNotReviveWhenPanelCloses: true,
           manualIdlePreviewWorks: true,
+          previewWaitsForAppliedSettings: true,
           idleLoadElapsedMs: elapsed,
         },
         null,
