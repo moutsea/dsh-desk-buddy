@@ -86,10 +86,37 @@ try {
     0,
     "historical completion creates no reminder",
   );
-  const original = await bounds();
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].blur(),
   );
+  // On macOS, launching/blurring an app can animate the Dock and change the
+  // work area. That legitimately relayouts this screen-height window. Take
+  // the reaction baseline after those display changes have settled.
+  await app.evaluate(
+    ({ screen }) =>
+      new Promise((resolve, reject) => {
+        let quiet;
+        const cleanup = () => {
+          clearTimeout(quiet);
+          clearTimeout(deadline);
+          screen.removeListener("display-metrics-changed", changed);
+        };
+        const changed = () => {
+          clearTimeout(quiet);
+          quiet = setTimeout(() => {
+            cleanup();
+            resolve();
+          }, 800);
+        };
+        const deadline = setTimeout(() => {
+          cleanup();
+          reject(new Error("Display work area did not stabilize"));
+        }, 5000);
+        screen.on("display-metrics-changed", changed);
+        changed();
+      }),
+  );
+  const original = await bounds();
   start("front");
   const completed = finish("front");
   await expect(notice).toHaveText("当前验收任务 完成啦！");

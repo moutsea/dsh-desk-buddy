@@ -44,8 +44,8 @@ try {
     })),
   );
   await pet.emulateMedia({ reducedMotion: "no-preference" });
-  // Model the native window becoming visible after React's first render but
-  // before its visibility listener is installed. Later reads/events are native.
+  // Model visibility and reduced-motion changes between React's first render
+  // and listener setup. Later reads/events use the real browser state.
   await pet.addInitScript(() => {
     Object.defineProperty(document, "hidden", {
       configurable: true,
@@ -58,6 +58,25 @@ try {
         document.addEventListener = add;
       }
       return add(type, ...args);
+    };
+    const match = window.matchMedia.bind(window);
+    window.matchMedia = (query) => {
+      const media = match(query);
+      if (query !== "(prefers-reduced-motion: reduce)") return media;
+      Object.defineProperty(media, "matches", {
+        configurable: true,
+        get: () => true,
+      });
+      const listen = media.addEventListener.bind(media);
+      media.addEventListener = (type, ...args) => {
+        if (type === "change") {
+          delete media.matches;
+          media.addEventListener = listen;
+          window.matchMedia = match;
+        }
+        return listen(type, ...args);
+      };
+      return media;
     };
   });
   await pet.reload();

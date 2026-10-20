@@ -27,6 +27,9 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   assert.ok(panel, "single desktop window exists");
+  // This suite tests the explicit animation toggle. System accessibility
+  // preferences are covered independently by smoke-motion.
+  await panel.emulateMedia({ reducedMotion: "no-preference" });
   const errors = [];
   panel.on("pageerror", (error) => errors.push(error.message));
   panel.on("console", (message) => {

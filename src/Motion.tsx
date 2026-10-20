@@ -55,6 +55,7 @@ export function MotionSprite({ expression }: { expression: string }) {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const change = () => setReduced(media.matches);
     media.addEventListener("change", change);
+    change();
     return () => {
       unsubscribe();
       observer.disconnect();

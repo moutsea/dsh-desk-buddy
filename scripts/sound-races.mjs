@@ -63,6 +63,10 @@ export async function checkSoundRaces() {
       };
       const NativeAudio = window.AudioContext;
       window.AudioContext = class extends NativeAudio {
+        constructor(options = {}) {
+          // Exercise resampling on every platform, including macOS runners.
+          super({ ...options, sampleRate: 44100 });
+        }
         createGain() {
           const gain = super.createGain();
           window.raceProbe.output ??= gain;
@@ -80,7 +84,12 @@ export async function checkSoundRaces() {
           const start = source.start.bind(source);
           source.start = (...args) => {
             window.raceProbe.active++;
-            window.raceProbe.starts.push(source.buffer.duration);
+            // Decoding at the output rate may round by one sample (e.g.
+            // 0.72s becomes 0.719977s at 44.1kHz). Milliseconds still
+            // distinguish these clips without depending on the audio device.
+            window.raceProbe.starts.push(
+              Math.round(source.buffer.duration * 1000) / 1000,
+            );
             return start(...args);
           };
           source.addEventListener("ended", () => window.raceProbe.active--);
