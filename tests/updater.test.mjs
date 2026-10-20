@@ -295,7 +295,13 @@ test("unload cancels a download and unsupported hosts expose an explanation", as
 });
 
 test("hot-reload hosts replace through official removal and restore the old plugin on failure", async () => {
-  for (const failure of [false, true]) {
+  for (const scenario of [
+    { failure: false, removal: "restart-required" },
+    { failure: true, removal: "restart-required" },
+    { failure: false, removal: "applied" },
+    { failure: true, removal: "applied" },
+  ]) {
+    const { failure, removal } = scenario;
     await withUpdater(async ({ updater, fixture, service }) => {
       const calls = [];
       let installed = true;
@@ -309,16 +315,16 @@ test("hot-reload hosts replace through official removal and restore the old plug
         calls.push(["remove", name]);
         await updater.dispose();
         installed = false;
-        return { application: "applied" };
+        return { application: removal };
       };
       service.installBundle = async (archive) => {
         calls.push(["install", archive]);
+        installed = true;
         if (failure && archive !== "rollback.tgz")
           return {
             application: "failed",
             error: { code: "incompatible-version" },
           };
-        installed = true;
         return {
           application: "applied",
           bundle: "dsh-desk-buddy",
@@ -333,8 +339,49 @@ test("hot-reload hosts replace through official removal and restore the old plug
       assert.equal(installed, true);
       assert.equal(updater.abort.signal.aborted, false);
       assert.deepEqual(calls[0], ["remove", "dsh-desk-buddy"]);
-      assert.equal(calls.length, failure ? 3 : 2);
-      if (failure) assert.match(updater.error, /已恢复旧版/);
+      assert.equal(calls.length, failure ? 4 : 2);
+      if (failure) {
+        assert.match(updater.error, /已恢复旧版/);
+        assert.ok(!updater.error.includes("网络"));
+      }
+    });
+  }
+});
+
+test("failed or cancelled removal never installs the new version", async () => {
+  for (const result of [
+    { application: "failed" },
+    { application: "cancelled" },
+    { application: "restart-required", error: { code: "permission" } },
+  ]) {
+    await withUpdater(async ({ updater, fixture, service }) => {
+      let installed = true;
+      const archives = [];
+      updater.hotReload = () => true;
+      updater.backup = async () => "rollback.tgz";
+      service.listBundles = async () =>
+        installed
+          ? [{ name: "dsh-desk-buddy", removable: true, installed }]
+          : [];
+      service.removeBundle = async () => {
+        installed = false;
+        return result;
+      };
+      service.installBundle = async (archive) => {
+        archives.push(archive);
+        return {
+          application: "restart-required",
+          bundle: "dsh-desk-buddy",
+          version: "0.12.3",
+        };
+      };
+      updater.check();
+      await updater.operation;
+      updater.install(fixture.version);
+      await updater.operation;
+      assert.equal(updater.phase, "error");
+      assert.match(updater.error, /未能卸载旧插件/);
+      assert.deepEqual(archives, ["rollback.tgz"]);
     });
   }
 });

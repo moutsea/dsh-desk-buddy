@@ -20,14 +20,14 @@ https://github.com/moutsea/dsh-desk-buddy
 
 桌宠“设置 → 插件更新”和 DSH 页面“dsh-desk-buddy → 插件更新”均提供“检查更新”和“下载并更新”。只在点击后访问 GitHub，自动选择当前系统的正式版完整包、显示下载进度并校验 SHA-256，再通过 DSH 安装。升级会短暂重启桌宠，请保持 DSH 打开；可在 DSH 管理页查看更新结果，完成后重启 DSH。桌宠设置、窗口位置、对话记录和 DSH 中已接受的任务均保留；安装失败会尝试恢复旧版。每次下载约 200–230 MB。
 
-0.12.3 及更早版本还没有更新按钮，需要先在 DSH 插件管理中卸载旧插件，再使用同一个 GitHub 仓库地址安装一次 0.12.4；此后可直接在管理页更新。插件列表、管理入口和管理页统一显示鲸鱼娘 logo。未提供插件管理接口的旧版 DSH Web 仍需通过原安装方式升级。
+0.12.4–0.12.5 若更新时报“DSH 未能卸载旧插件；已恢复旧版”，是旧更新器误判了 DSH 的“操作成功、需要重启”状态。请先重启 DSH，再在 DSH 插件管理中卸载桌宠，使用同一个 GitHub 仓库地址安装最新版并重启；原有设置和对话保留。0.12.6 起修复此问题。0.12.3 及更早版本也需重新安装一次新版才能获得更新按钮。插件列表、管理入口和管理页统一显示鲸鱼娘 logo。未提供插件管理接口的旧版 DSH Web 仍需通过原安装方式升级。
 
 也可以在 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择对应的完整 `.tgz`，将附件链接或本地文件的绝对路径填入同一安装框。完整包已包含组件，启用时无需额外下载：
 
 | 系统                | 插件包                                                                                                                                               |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows x64         | [dsh-desk-buddy-0.12.5-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.5/dsh-desk-buddy-0.12.5-win32-x64.tgz)       |
-| macOS Apple Silicon | [dsh-desk-buddy-0.12.5-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.5/dsh-desk-buddy-0.12.5-darwin-arm64.tgz) |
+| Windows x64         | [dsh-desk-buddy-0.12.6-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.6/dsh-desk-buddy-0.12.6-win32-x64.tgz)       |
+| macOS Apple Silicon | [dsh-desk-buddy-0.12.6-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.6/dsh-desk-buddy-0.12.6-darwin-arm64.tgz) |
 
 仓库根目录已声明 `dsh.bundle`，可直接安装。若仍提示“这个包没有声明组合包，不能作为插件管理”，删除失败的旧安装项后重新添加上面的仓库地址，确保获取最新提交。自 0.12.1 起，仓库安装和 Release 完整包统一使用 `dsh-desk-buddy` 包名。升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再添加同一个仓库地址；原有桌宠设置与位置继续保留。不要使用 GitHub 自动生成的 Source code 压缩包或源码子目录代替安装来源。
 

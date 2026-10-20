@@ -33,6 +33,8 @@ npm run test:desktop
 
 `DSG_TEST_MANUAL_UPDATE=1 npm run test:desktop` 在隔离环境中安装版本号为 `0.0.0` 的测试种子，然后点击更新按钮，下载真实 GitHub 最新正式版并交给官方宿主替换，验证重启后版本、自动启动选择与当前会话保留，以及官方插件列表 logo。测试种子不发布。Windows PowerShell 使用 `$env:DSG_TEST_MANUAL_UPDATE = '1'` 后运行同一检查；Windows CI 的模拟安装服务检查不等同于官方宿主完整升级验证。
 
+额外设置 `DSG_TEST_UPDATE_RESTART=1`，在官方卸载实际成功后模拟宿主返回 `restart-required`，验证更新器继续安装并在重启后使用新版本；可与 `DSG_TEST_UPDATE_ROLLBACK=1` 组合验证恢复旧版。单元检查覆盖卸载与回滚均返回需要重启的情况，并确保真正失败、取消或携带错误的卸载结果仍会阻止新版本安装。
+
 再设置 `DSG_TEST_UPDATE_ROLLBACK=1` 可在测试种子中注入一次安装失败，验证官方宿主真正卸载旧插件后，能够从本地备份恢复并重新连接。产品代码不包含故障注入开关。
 
 `DSG_PLUGIN_SPEC` 可直接指定安装框中的来源，包括 GitHub 仓库地址和 Release 下载链接；测试会在官方 Desktop 界面填写原始地址并验证安装、启用、重启及连接，避免仅测试下载后的本地文件。仓库和完整包默认名称均为 `dsh-desk-buddy`，`DSG_PLUGIN_NAME` 仅用于覆盖测试目标包名。例如 macOS：

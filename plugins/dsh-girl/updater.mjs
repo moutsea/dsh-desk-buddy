@@ -171,7 +171,7 @@ export class PluginUpdater {
         this.phase = "error";
         this.error = this.abort.signal.aborted
           ? "更新已取消"
-          : `更新未完成：${error.message}。可以检查网络后重试。`;
+          : `更新未完成：${error.message}`;
       })
       .finally(() => {
         this.operation = null;
@@ -244,7 +244,10 @@ export class PluginUpdater {
           if (replace) {
             this.replacing = true;
             const removed = await service.removeBundle("dsh-desk-buddy");
-            if (removed.error || removed.application !== "applied")
+            if (
+              removed.error ||
+              !["applied", "restart-required"].includes(removed.application)
+            )
               throw new Error("DSH 未能卸载旧插件，更新已停止");
           }
           result = await service.installBundle(archive, options);
@@ -258,7 +261,10 @@ export class PluginUpdater {
               );
               if (installed) {
                 const removed = await service.removeBundle("dsh-desk-buddy");
-                if (removed.error || removed.application !== "applied")
+                if (
+                  removed.error ||
+                  !["applied", "restart-required"].includes(removed.application)
+                )
                   throw new Error("无法恢复旧插件");
               }
               this.validateResult(

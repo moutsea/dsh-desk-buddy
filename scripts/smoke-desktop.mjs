@@ -25,6 +25,8 @@ const bundleName = process.env.DSG_PLUGIN_NAME || pkg.name;
 const home = await mkdtemp(join(tmpdir(), "dsg-desktop-install-"));
 const testUpdate = process.env.DSG_TEST_MANUAL_UPDATE === "1";
 const testRollback = testUpdate && process.env.DSG_TEST_UPDATE_ROLLBACK === "1";
+const testRemovalRestart =
+  testUpdate && process.env.DSG_TEST_UPDATE_RESTART === "1";
 if (testUpdate) {
   const seed = join(home, "seed");
   await mkdir(seed);
@@ -33,7 +35,7 @@ if (testUpdate) {
   const metadata = JSON.parse(await readFile(manifest, "utf8"));
   metadata.version = "0.0.0";
   await writeFile(manifest, JSON.stringify(metadata));
-  if (testRollback) {
+  if (testRollback || testRemovalRestart) {
     const entry = join(seed, "package/index.mjs");
     const code = await readFile(entry, "utf8");
     const original = 'service: () => ctx.get?.("pluginManager"),';
@@ -46,8 +48,13 @@ if (testUpdate) {
       const service = ctx.get("pluginManager");
       return {
         listBundles: () => service.listBundles(),
-        removeBundle: name => service.removeBundle(name),
-        installBundle: (archive, options) => archive.includes("rollback-")
+        removeBundle: async name => {
+          const result = await service.removeBundle(name);
+          return ${testRemovalRestart} && result.application === "applied" && !result.error
+            ? { ...result, application: "restart-required", restartReason: "pending-entry" }
+            : result;
+        },
+        installBundle: (archive, options) => !${testRollback} || archive.includes("rollback-")
           ? service.installBundle(archive, options)
           : Promise.resolve({ application: "failed", error: { code: "incompatible-version" } })
       };
@@ -312,6 +319,7 @@ try {
       hostCodeAndRuntime: true,
       preferencesAndHistoryRetained: true,
       failureRecovery: testRollback,
+      removalRequiresRestart: testRemovalRestart,
     };
   }
   await app.close();
