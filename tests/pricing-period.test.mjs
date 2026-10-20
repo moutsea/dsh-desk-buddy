@@ -71,3 +71,42 @@ test("unavailable annual holiday calendars are disclosed instead of claiming cer
   assert.equal(at("2027-10-02", "10:00:00").label, "谷时");
   assert.equal(at("2027-10-01", "20:00:00").label, "谷时");
 });
+
+test("countdowns end at the next actual pricing change, skipping weekends and holidays", () => {
+  for (const [date, time, countdown, transition] of [
+    ["2026-10-19", "08:59:59.999", "00:00:01", "2026-10-19T09:00:00"],
+    ["2026-10-19", "09:00:00", "03:00:00", "2026-10-19T12:00:00"],
+    ["2026-10-19", "11:59:59.001", "00:00:01", "2026-10-19T12:00:00"],
+    ["2026-10-19", "12:00:00", "02:00:00", "2026-10-19T14:00:00"],
+    ["2026-10-19", "14:00:00", "04:00:00", "2026-10-19T18:00:00"],
+    ["2026-10-19", "18:00:00", "15:00:00", "2026-10-20T09:00:00"],
+    ["2026-10-19", "23:59:59", "09:00:01", "2026-10-20T09:00:00"],
+    ["2026-10-16", "18:00:00", "2天 15:00:00", "2026-10-19T09:00:00"],
+    ["2026-10-01", "10:00:00", "6天 23:00:00", "2026-10-08T09:00:00"],
+    ["2026-02-13", "18:00:00", "10天 15:00:00", "2026-02-24T09:00:00"],
+  ]) {
+    const period = at(date, time);
+    assert.equal(period.countdown, countdown, `${date} ${time}`);
+    assert.equal(period.nextTransitionAt, Date.parse(`${transition}+08:00`));
+    const next = deepseekPricingPeriod(period.nextTransitionAt);
+    assert.notEqual(period.id, next.id);
+    assert.match(
+      period.countdownDescription,
+      new RegExp(`距${next.label}还有`),
+    );
+    assert.equal(
+      deepseekPricingPeriod(period.nextTransitionAt - 1).countdown,
+      "00:00:01",
+    );
+  }
+});
+
+test("estimated countdowns disclose unknown calendars even in off-peak and across years", () => {
+  const crossingYear = at("2026-12-31", "18:00:00");
+  assert.equal(crossingYear.label, "谷时");
+  assert.equal(crossingYear.countdown, "约15:00:00");
+  assert.match(crossingYear.description, /2027 年节假日日历尚未收录/);
+  assert.equal(at("2026-12-31", "17:00:00").countdown, "01:00:00");
+  assert.equal(at("2027-10-02", "10:00:00").countdown, "约1天 23:00:00");
+  assert.equal(at("2027-10-01", "10:00:00").countdown, "约02:00:00");
+});

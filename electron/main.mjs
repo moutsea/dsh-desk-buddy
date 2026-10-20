@@ -5,7 +5,6 @@ import {
   screen,
   Tray,
   Menu,
-  nativeImage,
   globalShortcut,
   dialog,
   shell,
@@ -21,6 +20,7 @@ import { recordCompletion } from "../shared/completion.mjs";
 import { reduceAssistantStream } from "../shared/assistant-stream.mjs";
 import { managedLaunch, managedControl } from "./managed.mjs";
 import { PluginUpdates } from "./plugin-updates.mjs";
+import { createTrayIcon } from "./tray-icon.mjs";
 import {
   desktopLayout,
   PET_SCALE,
@@ -316,18 +316,7 @@ function createWindows() {
   screen.on("display-metrics-changed", () =>
     showSection(state.surface.section),
   );
-  const pixels = Buffer.alloc(18 * 18 * 4);
-  for (let y = 0; y < 18; y++)
-    for (let x = 0; x < 18; x++) {
-      if (
-        (x - 10) ** 2 / 45 + (y - 10) ** 2 / 23 < 1 ||
-        (x < 6 && y > 4 && y < 13 && Math.abs(y - 8) > x - 1)
-      )
-        pixels.set([67, 100, 214, 255], (y * 18 + x) * 4);
-    }
-  const icon = nativeImage.createFromBitmap(pixels, { width: 18, height: 18 });
-  icon.setTemplateImage(true);
-  tray = new Tray(icon);
+  tray = new Tray(createTrayIcon());
   tray.setToolTip("dsh-desk-buddy");
   tray.setContextMenu(
     Menu.buildFromTemplate([

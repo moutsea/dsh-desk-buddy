@@ -1511,11 +1511,17 @@ body,
   text-overflow: ellipsis;
 }
 .pet-pricing-period {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   flex-shrink: 0;
   border-radius: 8px;
   padding: 2px 7px;
   line-height: 14px;
   font-weight: 550;
+}
+.pet-pricing-countdown {
+  font-variant-numeric: tabular-nums;
 }
 .pet-pricing-period.off-peak {
   background: #dcefe8;

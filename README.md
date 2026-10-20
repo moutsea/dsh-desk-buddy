@@ -26,8 +26,8 @@ https://github.com/moutsea/dsh-desk-buddy
 
 | 系统                | 插件包                                                                                                                                               |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows x64         | [dsh-desk-buddy-0.12.7-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.7/dsh-desk-buddy-0.12.7-win32-x64.tgz)       |
-| macOS Apple Silicon | [dsh-desk-buddy-0.12.7-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.7/dsh-desk-buddy-0.12.7-darwin-arm64.tgz) |
+| Windows x64         | [dsh-desk-buddy-0.12.8-win32-x64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.8/dsh-desk-buddy-0.12.8-win32-x64.tgz)       |
+| macOS Apple Silicon | [dsh-desk-buddy-0.12.8-darwin-arm64.tgz](https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.12.8/dsh-desk-buddy-0.12.8-darwin-arm64.tgz) |
 
 仓库根目录已声明 `dsh.bundle`，可直接安装。若仍提示“这个包没有声明组合包，不能作为插件管理”，删除失败的旧安装项后重新添加上面的仓库地址，确保获取最新提交。自 0.12.1 起，仓库安装和 Release 完整包统一使用 `dsh-desk-buddy` 包名。升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再添加同一个仓库地址；原有桌宠设置与位置继续保留。不要使用 GitHub 自动生成的 Source code 压缩包或源码子目录代替安装来源。
 
@@ -55,10 +55,10 @@ npm run dev
 
 打开设置，填写本机 DSH 地址（默认 `http://127.0.0.1:3080`），点击连接。选择项目目录，新建对话，发送任务。执行中的输入进入 DSH 队列；停止按钮取消当前轮次，DSH 原有排队消息可能继续执行。
 
-- 平时只显示桌宠；鼠标悬停在她身上时，浮现“对话、表情、设置”三个气泡及带有“DeepSeek 余额”说明的金额标签，旁边以暖色“峰时”和绿色“谷时”显示 DeepSeek 官方 API 当前计价时段。按北京时间自动切换，移开后一起隐去。
+- 平时只显示桌宠；鼠标悬停在她身上时，浮现“对话、表情、设置”三个气泡及带有“DeepSeek 余额”说明的金额标签，旁边以暖色“峰时”和绿色“谷时”显示 DeepSeek 官方 API 当前计价时段，并逐秒显示距下次切换的倒计时（如“峰时 02:15:30”）。超过一天时显示天数，自动跨过周末和节假日。按北京时间自动切换，移开后一起隐去。
 - 点击气泡，在桌宠身旁的同一个窗口展开对应内容；设置中的“对话框大小”提供小（默认 360 × 460）、中（480 × 620）、大（600 × 760）三档，选择后自动保存，重启继续使用。屏幕空间不足时自动缩小适配，不改变文字和桌宠大小。再次点击同一气泡、右上角关闭或按 Escape 可收起，草稿保留。可用空间决定在左侧还是右侧展开。
 - 直接按住桌宠身体即可自由拖动，松开后记住位置；轻点仍是摸摸她。展开的内容会跟随角色，靠近边缘时自动换到有空间的一侧，收起后保持角色位置。
-- `Command/Ctrl+Shift+Space` 展开/收起对话；系统托盘可显示、隐藏桌宠或退出。
+- `Command/Ctrl+Shift+Space` 展开/收起对话；系统托盘可显示、隐藏桌宠或退出。图标使用当前鲸鱼娘角色的剪影；Mac 提供普通与 Retina 分辨率，由系统自动适配深浅色菜单栏，Windows 使用蓝色剪影。
 - 在对话标题旁切换已有会话，也可点击加号新建会话，历史支持向前加载。聊天、讨论与执行都使用同一个 DSH 会话。
 - 聊天中的助手名称统一为“dsh-desk-buddy”。工具调用直接显示实际命令、文件路径或查询内容，点击可展开完整参数，不再只显示 `bash` 等工具名。
 - 收起内容时，执行中的会话会在桌宠上方显示进度气泡，包括工具命令、实时回复或待回答事项；点击气泡直接打开对应对话。优先提示待回应事项，其次为当前运行会话，再展示后台进度。气泡默认开启，可在“设置 → 执行进度气泡”中关闭，重启后保留选择；不会自动展开窗口或抢占焦点。
@@ -81,7 +81,7 @@ dsh plugin --profile web add link:/absolute/path/to/dsh-girl/plugins/dsh-girl-br
 
 重启 DSH Web 后，在应用中刷新余额。插件读取 DSH 中的 `DEEPSEEK_API_KEY`，返回按币种区分的官方余额，不返回密钥。余额表示这个 Key 所属账号，与会话使用的第三方模型余额无关。没有插件、没有凭证、数据过期等情况均明确展示。不需要安装鲸鱼参考插件。
 
-峰谷时段按 [DeepSeek 官方规则](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)（2026-10-18 核对）显示：北京时间周一至周五 09:00–12:00、14:00–18:00 为峰时，周末、中国节假日及其余时段为谷时。悬停金额可查看规则；时段提示不依赖余额连接，也不代表第三方供应商的实际计费。已内置 [2026 年节假日日历](https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html)；新年份需更新日历，未收录年份在可能的峰时明确显示“峰时·估算”。
+峰谷时段按 [DeepSeek 官方规则](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)（2026-10-18 核对）显示：北京时间周一至周五 09:00–12:00、14:00–18:00 为峰时，周末、中国节假日及其余时段为谷时。倒计时指向下一次实际峰谷切换，悬停金额可查看目标时段、具体切换时间与规则；时段提示不依赖余额连接，也不代表第三方供应商的实际计费。已内置 [2026 年节假日日历](https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html)；新年份需更新日历，未收录年份在可能的峰时明确显示“峰时·估算”，涉及未知日历的倒计时加“约”，跨年时同样说明估算原因。
 
 ## 构建与检查
 

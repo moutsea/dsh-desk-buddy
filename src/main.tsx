@@ -307,7 +307,7 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
         <button
           data-interactive
           className={`pet-balance ${state.balanceError ? "stale" : ""}`}
-          aria-label={`DeepSeek 余额 ${balanceLabel(state)} · 当前${pricingPeriod.label}`}
+          aria-label={`DeepSeek 余额 ${balanceLabel(state)} · 当前${pricingPeriod.label} · ${pricingPeriod.countdownDescription}`}
           title={[
             `DeepSeek 余额 ${balanceLabel(state)}`,
             state.balanceError,
@@ -321,7 +321,10 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
           <span className="pet-balance-label">DeepSeek 余额</span>
           <span className="pet-balance-value">{balanceLabel(state)}</span>
           <span className={`pet-pricing-period ${pricingPeriod.id}`}>
-            {pricingPeriod.label}
+            <span className="pet-pricing-label">{pricingPeriod.label}</span>
+            <span className="pet-pricing-countdown">
+              {pricingPeriod.countdown}
+            </span>
           </span>
         </button>
       </div>

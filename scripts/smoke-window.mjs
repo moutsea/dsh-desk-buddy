@@ -104,6 +104,45 @@ try {
   assert.equal(properties.topmost, true);
   assert.equal(properties.shortcut, true);
   assert.equal(properties.cornerAlpha, 0);
+  const trayIcon = await app.evaluate(({ app }) => {
+    const require = process
+      .getBuiltinModule("module")
+      .createRequire(`${app.getAppPath()}/package.json`);
+    const { createTrayIcon } = require("./electron/tray-icon.mjs");
+    const icon = createTrayIcon();
+    const pixels = icon.toBitmap({ scaleFactor: 1 });
+    let visible = 0;
+    let transparent = 0;
+    let colored = 0;
+    for (let offset = 0; offset < pixels.length; offset += 4) {
+      if (pixels[offset + 3] > 0) {
+        visible++;
+        if (pixels[offset] || pixels[offset + 1] || pixels[offset + 2])
+          colored++;
+      } else transparent++;
+    }
+    return {
+      empty: icon.isEmpty(),
+      template: icon.isTemplateImage(),
+      size: icon.getSize(),
+      scales: icon.getScaleFactors(),
+      visible,
+      transparent,
+      colored,
+    };
+  });
+  assert.equal(trayIcon.empty, false);
+  assert.ok(trayIcon.visible > 50 && trayIcon.transparent > 50);
+  if (process.platform === "darwin") {
+    assert.equal(trayIcon.template, true);
+    assert.deepEqual(trayIcon.size, { width: 18, height: 18 });
+    assert.deepEqual(trayIcon.scales, [1, 2]);
+    assert.equal(trayIcon.colored, 0);
+  } else {
+    assert.equal(trayIcon.template, false);
+    assert.deepEqual(trayIcon.size, { width: 32, height: 32 });
+    assert.ok(trayIcon.colored > 50);
+  }
   await page.evaluate(() => window.desktop.invoke("alwaysOnTop", false));
   assert.equal(
     await app.evaluate(({ BrowserWindow }) =>

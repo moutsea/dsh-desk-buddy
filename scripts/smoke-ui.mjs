@@ -436,17 +436,20 @@ try {
     "aria-hidden",
     "false",
   );
-  for (const [time, label] of [
-    ["2026-10-19T08:59:59+08:00", "谷时"],
-    ["2026-10-19T09:00:00+08:00", "峰时"],
-    ["2026-10-19T12:00:00+08:00", "谷时"],
-    ["2026-10-19T14:00:00+08:00", "峰时"],
-    ["2026-10-19T18:00:00+08:00", "谷时"],
-    ["2026-10-01T10:00:00+08:00", "谷时"],
+  for (const [time, label, countdown] of [
+    ["2026-10-19T08:59:59+08:00", "谷时", "00:00:01"],
+    ["2026-10-19T09:00:00+08:00", "峰时", "03:00:00"],
+    ["2026-10-19T12:00:00+08:00", "谷时", "02:00:00"],
+    ["2026-10-19T14:00:00+08:00", "峰时", "04:00:00"],
+    ["2026-10-19T18:00:00+08:00", "谷时", "15:00:00"],
+    ["2026-10-01T10:00:00+08:00", "谷时", "6天 23:00:00"],
+    ["2026-02-13T18:00:00+08:00", "谷时", "10天 15:00:00"],
+    ["2027-10-01T10:00:00+08:00", "峰时·估算", "约02:00:00"],
   ]) {
     await panel.clock.setFixedTime(new Date(time));
     await panel.clock.fastForward(600);
-    await expect(panel.locator(".pet-pricing-period")).toHaveText(label);
+    await expect(panel.locator(".pet-pricing-label")).toHaveText(label);
+    await expect(panel.locator(".pet-pricing-countdown")).toHaveText(countdown);
     await expect(panel.locator(".pet-balance")).toBeVisible();
     await expect(panel.locator(".pet-balance")).toHaveAccessibleName(
       new RegExp(`DeepSeek 余额 .*当前${label}`),
@@ -471,6 +474,14 @@ try {
         omitBackground: true,
       });
   }
+  await panel.clock.setSystemTime(new Date("2026-10-19T11:59:58+08:00"));
+  await panel.clock.pauseAt(new Date("2026-10-19T11:59:58.750+08:00"));
+  await expect(panel.locator(".pet-pricing-countdown")).toHaveText("00:00:02");
+  await panel.clock.runFor(1000);
+  await expect(panel.locator(".pet-pricing-countdown")).toHaveText("00:00:01");
+  await panel.clock.runFor(1000);
+  await expect(panel.locator(".pet-pricing-label")).toHaveText("谷时");
+  await expect(panel.locator(".pet-pricing-countdown")).toHaveText("02:00:00");
   await panel.locator(".pet-balance").click();
   await expect(panel.locator(".surface-title strong")).toHaveText("设置");
   await panel.locator(".surface-title").hover();

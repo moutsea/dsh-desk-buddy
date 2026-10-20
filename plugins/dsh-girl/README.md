@@ -14,7 +14,7 @@ https://github.com/moutsea/dsh-desk-buddy
 
 安装后点击“立即启用”，再重启 Desktop。Mac 和 Windows 使用同一个地址，插件自动选择组件。首次下载约 200–230 MB，需要能够访问 GitHub Release；之后使用本地缓存。右下角“dsh-desk-buddy”提供准备状态、启动、关闭、显示、隐藏、对话和自动启动设置；支持拖动并保存位置，避开左下角 user-menu。聚焦后方向键移动，Home 恢复默认位置。下载失败可检查网络后重试。无需另开 DSH Web 服务，也无需手填地址。Desktop 的插件由应用管理，不能使用 `dsh plugin --profile desktop` 修改。
 
-也可从 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择完整 `.tgz`，将附件链接或下载后文件的绝对路径作为安装来源。macOS ARM64 使用 `dsh-desk-buddy-0.12.7-darwin-arm64.tgz`，Windows x64 使用 `dsh-desk-buddy-0.12.7-win32-x64.tgz`。完整包无需额外下载组件。两种方式的包名均为 `dsh-desk-buddy`；升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再安装新版。用户设置和窗口位置保留。
+也可从 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择完整 `.tgz`，将附件链接或下载后文件的绝对路径作为安装来源。macOS ARM64 使用 `dsh-desk-buddy-0.12.8-darwin-arm64.tgz`，Windows x64 使用 `dsh-desk-buddy-0.12.8-win32-x64.tgz`。完整包无需额外下载组件。两种方式的包名均为 `dsh-desk-buddy`；升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再安装新版。用户设置和窗口位置保留。
 
 ## 手动更新与图标
 
@@ -27,6 +27,8 @@ https://github.com/moutsea/dsh-desk-buddy
 0.12.4–0.12.5 若提示“DSH 未能卸载旧插件；已恢复旧版”，请先重启 DSH，再在 DSH 插件管理中卸载桌宠，使用原 GitHub 地址安装最新版并重启。0.12.6 修复了旧更新器将“卸载成功、需要重启”误判为失败的问题；重新安装保留原有设置与对话。
 
 仓库入口和完整包均通过 `package.json` 的 `icon` 字段及导出提供 128 × 128 PNG 图标；插件列表、可拖动入口和管理页使用相同的鲸鱼娘 logo。
+
+桌面系统托盘使用角色剪影，Mac 自动适配深浅色菜单栏并提供 Retina 图标，Windows 使用蓝色版本。悬停桌宠时，余额旁的峰谷时段带有逐秒倒计时，指向下次实际切换并跳过周末、节假日；悬停可查看具体北京时间。未知年份的日历会标明估算。
 
 ## DSH Web 安装
 
@@ -42,7 +44,7 @@ dsh plugin --profile web add https://github.com/moutsea/dsh-desk-buddy
 
 ## 从项目构建
 
-在目标系统的项目根目录执行 `npm ci` 和 `npm run pack:plugin`，输出 `release/dsh-desk-buddy-0.12.7-<platform>-<arch>.tgz` 和带版本、平台、架构名的插件目录。完整包包含桌面组件，源码子目录和 GitHub Source code 压缩包都不能代替构建产物。Windows 使用原生 `.exe` 及其完整依赖目录，macOS 使用 `.app`。
+在目标系统的项目根目录执行 `npm ci` 和 `npm run pack:plugin`，输出 `release/dsh-desk-buddy-0.12.8-<platform>-<arch>.tgz` 和带版本、平台、架构名的插件目录。完整包包含桌面组件，源码子目录和 GitHub Source code 压缩包都不能代替构建产物。Windows 使用原生 `.exe` 及其完整依赖目录，macOS 使用 `.app`。
 
 仓库根目录声明 `dsh.bundle` 并导出插件，首次启动读取 `release-runtime.json`，下载固定版本的官方 Release 附件并校验 SHA-256。完整包则不触发运行时下载。两种方式都不执行 npm 安装脚本、不要求本机编译，也没有后台更新器。发布新版本时，应在 Release 验证完成后同步清单中的版本、平台 URL 和 SHA-256。插件卸载后保留用户设置和组件缓存，方便重新安装。未发布到 npm 或插件市场。
 
