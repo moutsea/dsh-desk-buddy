@@ -1,3 +1,4 @@
+import { checkCompanionSounds } from "./companion-sounds.mjs";
 import { expect } from "@playwright/test";
 import assert from "node:assert/strict";
 import { mkdtemp, writeFile, readFile, mkdir, rm } from "node:fs/promises";
@@ -7,6 +8,9 @@ import { launchDesktop } from "./electron-test.mjs";
 import { createFixture } from "../tests/fixture.mjs";
 import { SOUND_VOICES, SOUND_PHRASES } from "../shared/voices.mjs";
 import { checkSoundRaces } from "./sound-races.mjs";
+import { checkTaskSounds } from "./task-sounds.mjs";
+import { checkFailureSounds } from "./failure-sounds.mjs";
+import { checkAngrySound } from "./angry-sound.mjs";
 
 const fixture = await createFixture();
 const data = await mkdtemp(join(tmpdir(), "dsg-sound-"));
@@ -172,6 +176,11 @@ try {
   await rest();
   const lowPeak = await page.evaluate(() => window.audioProbe.peak);
   assert.ok(lowPeak > 0.005);
+  assert.ok(
+    Math.abs(
+      (await page.evaluate(() => window.audioProbe.output.gain.value)) - 0.35,
+    ) < 0.001,
+  );
   await invoke("soundSettings", { volume: 70 });
   await expect.poll(async () => (await state()).config.sounds.volume).toBe(70);
   await page.waitForTimeout(100);
@@ -183,8 +192,13 @@ try {
   await rest();
   const highPeak = await page.evaluate(() => window.audioProbe.peak);
   assert.ok(
-    highPeak > lowPeak * 1.6 && highPeak < lowPeak * 2.4,
-    `volume scales voice playback: ${lowPeak} -> ${highPeak}`,
+    Math.abs(
+      (await page.evaluate(() => window.audioProbe.output.gain.value)) - 0.7,
+    ) < 0.001,
+  );
+  assert.ok(
+    highPeak > 0.005,
+    `both randomized phrases produce an audible signal: ${lowPeak}, ${highPeak}`,
   );
   await pet.dispatchEvent("click");
   await pet.dispatchEvent("click");
@@ -345,13 +359,30 @@ try {
       kinds: Object.keys(SOUND_PHRASES),
     },
   );
-  assert.equal(decoded.length, SOUND_VOICES.length * 4);
+  assert.equal(
+    decoded.length,
+    SOUND_VOICES.length * Object.keys(SOUND_PHRASES).length,
+  );
   assert.ok(decoded.every((clip) => clip.duration > 0.25 && clip.duration < 6));
   await expect
     .poll(() => page.evaluate(() => window.audioProbe.active))
     .toBe(0);
   // A voice preview is independent of the individual event switches.
-  await invoke("soundSettings", { pet: false, completion: false, idle: false });
+  await invoke("soundSettings", {
+    pet: false,
+    angry: false,
+    completion: false,
+    idle: false,
+    started: false,
+    attention: false,
+    failure: false,
+    shy: false,
+    wake: false,
+    sleep: false,
+    welcome: false,
+    moved: false,
+    reconnected: false,
+  });
   await preview.click();
   await expect.poll(count).toBe(++previewCount);
   await invoke("soundSettings", { enabled: false });
@@ -392,8 +423,18 @@ try {
     volume: 0,
     voice: SOUND_VOICES.at(-1).id,
     pet: false,
+    angry: false,
     completion: true,
     idle: false,
+    started: false,
+    attention: false,
+    failure: false,
+    shy: false,
+    wake: false,
+    sleep: false,
+    welcome: false,
+    moved: false,
+    reconnected: false,
   });
   assert.equal(
     fixture.calls.some((call) => call.path === "/api/session.prompt"),
@@ -420,7 +461,7 @@ try {
     ),
   );
   console.log(
-    "Sound passed: real local TTS signal before first gesture, background completion, click/drag distinction, cooldown, volume, mute, event switches, 8 selectable voices, 32 decoded local clips, independent voice preview, sparse idle and sleeping/hidden suppression, restart persistence. No model calls.",
+    `Sound passed: real local TTS signal before first gesture, background completion, click/drag distinction, cooldown, volume, mute, event switches, ${SOUND_VOICES.length} selectable voices, ${decoded.length} decoded local clips, independent voice preview, sparse idle and sleeping/hidden suppression, restart persistence. No model calls.`,
   );
 } finally {
   await app?.close();
@@ -434,3 +475,8 @@ try {
 }
 
 await checkSoundRaces();
+await checkTaskSounds();
+await checkFailureSounds();
+await checkAngrySound();
+
+await checkCompanionSounds();

@@ -144,13 +144,24 @@ try {
   await expect(
     page.getByRole("button", { name: "试听当前声线" }),
   ).toBeEnabled();
-  await capture("sound-settings.png", [".sound-settings"]);
+  await capture("sound-settings.png", [
+    ".sound-settings > .toggle-row",
+    ".sound-voice-picker",
+    "#sound-volume",
+  ]);
+  // Capture the interaction group at its natural position; all 13 scenes
+  // remain available by scrolling, without compressing the actual UI.
+  const group = page.locator('[data-sound-group="interaction"]');
+  await group.evaluate((node) =>
+    node.scrollIntoView({ block: "start", behavior: "instant" }),
+  );
+  await capture("sound-events.png", ['[data-sound-group="interaction"]']);
   assert.equal(
     fixture.calls.some((call) => call.path === "/api/session.prompt"),
     false,
   );
   console.log(
-    `Saved three README screenshots to ${output}; demonstration data only.`,
+    `Saved four README screenshots to ${output}; demonstration data only.`,
   );
 } finally {
   await app?.close();

@@ -9,18 +9,87 @@ const events: { kind: SoundKind; label: string; description: string }[] = [
   {
     kind: "pet",
     label: "摸摸桌宠",
-    description: "轻点角色时，轻声回应「嗯？嘿嘿」。",
+    description: "轻点角色时轻声回应，三句台词轮换。",
+  },
+  {
+    kind: "angry",
+    label: "连点小脾气",
+    description: "连点惹她生气时说「慢一点啦，哼！」；持续连点不重复说。",
+  },
+  {
+    kind: "shy",
+    label: "害羞回应",
+    description: "停留看她 8 秒，轻声说「一直看着我做什么呀……」。",
+  },
+  {
+    kind: "wake",
+    label: "点击叫醒",
+    description: "点醒睡着的她时说「唔……我醒啦」。",
+  },
+  {
+    kind: "moved",
+    label: "搬家回应",
+    description: "拖到新位置放下时说「这里也不错嘛」。默认关闭。",
+  },
+  {
+    kind: "sleep",
+    label: "准备睡觉",
+    description: "闲置入睡时说「有点困了，我眯一会儿哦」。默认关闭。",
+  },
+  {
+    kind: "welcome",
+    label: "久别欢迎",
+    description:
+      "10 分钟没互动后再点她，说「你回来啦，我在呢」；与叫醒只说一句。",
+  },
+  {
+    kind: "reconnected",
+    label: "重新连上",
+    description: "断线超过 10 秒、恢复稳定后说「又连上啦」。默认关闭。",
   },
   {
     kind: "completion",
     label: "任务完成",
-    description: "当前或后台任务成功完成时，告诉你「做好啦」。",
+    description: "当前或后台任务成功完成时轻声报喜，三句台词轮换。",
+  },
+  {
+    kind: "started",
+    label: "开始任务",
+    description: "接到新任务时轻声回应，三句台词轮换。默认关闭。",
+  },
+  {
+    kind: "attention",
+    label: "需要你回应",
+    description: "有审批或提问等待处理时轻声提醒，三句台词轮换。",
+  },
+  {
+    kind: "failure",
+    label: "任务出错",
+    description: "任务失败时温柔提醒，三句台词轮换。主动停止不提醒。",
   },
   {
     kind: "idle",
     label: "无聊时打招呼",
     description:
-      "空闲时偶尔说「陪我玩一会儿嘛」；工作、展开窗口、隐藏或睡着时安静。",
+      "空闲时偶尔打招呼，三句台词轮换；工作、展开窗口、隐藏或睡着时安静。",
+  },
+];
+
+const groups = [
+  {
+    id: "interaction",
+    title: "互动回应",
+    kinds: ["pet", "angry", "shy", "wake", "moved"],
+  },
+  {
+    id: "companionship",
+    title: "日常陪伴",
+    kinds: ["idle", "sleep", "welcome"],
+  },
+  {
+    id: "tasks",
+    title: "任务与连接",
+    kinds: ["completion", "started", "attention", "failure", "reconnected"],
   },
 ];
 
@@ -69,8 +138,18 @@ export function SoundSettings({
     value.enabled,
     value.volume,
     value.pet,
+    value.angry,
     value.completion,
     value.idle,
+    value.started,
+    value.attention,
+    value.failure,
+    value.shy,
+    value.wake,
+    value.sleep,
+    value.welcome,
+    value.moved,
+    value.reconnected,
     pending,
   ]);
   useEffect(
@@ -164,7 +243,8 @@ export function SoundSettings({
         </button>
       </div>
       <p id="sound-voice-note" className="sound-voice-note">
-        {SOUND_VOICES.length} 种声线，选择后自动保存。语音可离线播放。
+        {SOUND_VOICES.length}{" "}
+        种声线，选择后自动保存。语音可离线播放，标有轮换的场景可多次试听不同台词。
       </p>
       <div className="sound-volume-heading">
         <label htmlFor="sound-volume">音量</label>
@@ -202,34 +282,41 @@ export function SoundSettings({
         }}
         onBlur={(event) => applyVolume(Number(event.currentTarget.value))}
       />
-      {events.map(({ kind, label, description }) => (
-        <div className="sound-event" key={kind}>
-          <div>
-            <h3>{label}</h3>
-            <p>{description}</p>
-          </div>
-          <button
-            className="secondary sound-preview"
-            aria-label={`试听${label}`}
-            title={`试听${label}`}
-            disabled={
-              busy || !value.enabled || !value[kind] || value.volume === 0
-            }
-            onClick={() => void audition(kind)}
-          >
-            <Volume2 size={13} />
-            <span>试听</span>
-          </button>
-          <button
-            role="switch"
-            aria-label={`${label}声音`}
-            aria-checked={value[kind]}
-            className={`switch ${value[kind] ? "on" : ""}`}
-            disabled={busy || !value.enabled}
-            onClick={() => void apply({ [kind]: !value[kind] })}
-          >
-            <span />
-          </button>
+      {groups.map((group) => (
+        <div className="sound-group" data-sound-group={group.id} key={group.id}>
+          <h2>{group.title}</h2>
+          {group.kinds
+            .map((kind) => events.find((item) => item.kind === kind)!)
+            .map(({ kind, label, description }) => (
+              <div className="sound-event" key={kind}>
+                <div>
+                  <h3>{label}</h3>
+                  <p>{description}</p>
+                </div>
+                <button
+                  className="secondary sound-preview"
+                  aria-label={`试听${label}`}
+                  title={`试听${label}`}
+                  disabled={
+                    busy || !value.enabled || !value[kind] || value.volume === 0
+                  }
+                  onClick={() => void audition(kind)}
+                >
+                  <Volume2 size={13} />
+                  <span>试听</span>
+                </button>
+                <button
+                  role="switch"
+                  aria-label={`${label}声音`}
+                  aria-checked={value[kind]}
+                  className={`switch ${value[kind] ? "on" : ""}`}
+                  disabled={busy || !value.enabled}
+                  onClick={() => void apply({ [kind]: !value[kind] })}
+                >
+                  <span />
+                </button>
+              </div>
+            ))}
         </div>
       ))}
       {error && (

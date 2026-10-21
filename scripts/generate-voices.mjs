@@ -84,7 +84,10 @@ function normalizeWav(data, kind) {
   const rms = Math.sqrt(power / count);
   if (rms < 0.001 || count < 6000 || count > 144000)
     throw new Error("Silent or unexpectedly long/short voice clip");
-  const scale = Math.min(0.75 / peak, (kind === "idle" ? 0.075 : 0.11) / rms);
+  const scale = Math.min(
+    0.75 / peak,
+    (kind.startsWith("idle") || kind === "sleep" ? 0.075 : 0.11) / rms,
+  );
   const output = Buffer.alloc(44 + pcm.length);
   output.write("RIFF", 0);
   output.writeUInt32LE(output.length - 8, 4);
@@ -127,6 +130,44 @@ export async function generateVoicePack({
         sample_rate: 24000,
         instruction: `为桌面陪伴角色配音。声线${voice.style}，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。${kind === "idle" ? "像轻轻招呼朋友，声音更轻一些。" : kind === "completion" ? "带一点做完事情的小开心。" : "俏皮自然，不要刻意夹嗓。"}不要播音腔，不要大喊。`,
       };
+      if (["started", "attention", "failure", "angry"].includes(kind))
+        input.instruction =
+          `为桌面陪伴角色配音。声线${voice.style}，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。` +
+          {
+            started: "像轻快地接过朋友交代的小任务，可靠又有一点小开心。",
+            attention: "像轻轻提醒朋友需要确认一件事，亲切清楚，不催促。",
+            failure: "温柔地说明遇到小问题，语气平静安慰，不惊慌、不卖惨。",
+            angry:
+              "被朋友连续戳了几下，鼓着脸轻轻闹别扭。用可爱娇嗔的小抱怨说「慢一点啦」，最后短短地哼一下。略有不满但亲近柔和，不凶、不尖叫。",
+          }[kind] +
+          "俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。";
+      const extraStyle = {
+        shy: "被朋友一直看着，有一点害羞，像微微脸红的小声询问，尾音轻软含蓄。",
+        wake: "刚被轻轻叫醒，先迷迷糊糊地唔一声，再柔和地回应，慵懒但吐字清楚。",
+        sleep:
+          "有一点困了，温柔地道声小别，越说越轻，像准备眯一小会儿，不夸张打哈欠。",
+        welcome: "朋友回来时开心地轻声欢迎，温暖自然，有一点小惊喜。",
+        moved: "被搬到新位置后好奇地看看周围，轻快满意，尾音柔和。",
+        reconnected: "连接恢复后轻轻松一口气，简短清楚，开心但不兴奋大喊。",
+        pet_2: "朋友轻轻点了点你，温柔亲近地回应，像轻轻答应一声。",
+        pet_3: "被朋友轻轻点了一下，先自然轻笑，再俏皮地问怎么啦。",
+        idle_2: "像轻轻招呼朋友休息，语气关心而不催促，声音更轻一些。",
+        idle_3: "安静温柔地陪着朋友，语速舒缓，声音更轻一些。",
+        started_2: "轻快地接过朋友的小任务，温柔爽快，像微笑着答应马上开始。",
+        started_3:
+          "先轻轻答应一声，再亲切地表示接下这件事，可靠又有一点小开心。",
+        completion_2:
+          "事情完成后开心地招呼朋友来看结果，轻柔俏皮，不夸张庆祝。",
+        completion_3: "做完事情后带一点小满足，温柔自然地告诉朋友已经办好了。",
+        attention_2: "有一处需要朋友确认，轻声提醒，吐字清楚，亲近而不催促。",
+        attention_3: "轻轻招呼朋友来回应，耐心柔和，尾音轻软，不催促不着急。",
+        failure_2:
+          "温柔地说明这次没有完成，请朋友一起查看原因，平静清楚，不惊慌不卖惨。",
+        failure_3:
+          "遇到问题后温柔地邀请朋友一起看看，语气平静，不夸大也不承诺已经解决。",
+      }[kind];
+      if (extraStyle)
+        input.instruction = `为桌面陪伴角色配音。声线${voice.style}，用普通话轻声说话，起声轻柔，短句干净利落。${extraStyle}自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。`;
       const source = join(sourceRoot, voice.id, kind);
       let raw;
       let metadata;

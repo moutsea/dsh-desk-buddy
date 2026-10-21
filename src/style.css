@@ -942,6 +942,13 @@ body,
 .sound-volume-heading output {
   font-variant-numeric: tabular-nums;
 }
+.sound-group {
+  margin-top: 22px;
+}
+.sound-group > h2 {
+  font-size: 12px;
+  color: var(--muted);
+}
 .sound-event {
   display: flex;
   align-items: center;

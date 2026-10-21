@@ -7,7 +7,8 @@ import type { AppState } from "./types";
 const SoundContext = createContext({
   engage: () => {},
   setSleeping: (_sleeping: boolean) => {},
-  play: async (_kind: SoundKind): Promise<string> => "unavailable",
+  play: async (_kind: SoundKind, _isCurrent?: () => boolean): Promise<string> =>
+    "unavailable",
   preview: async (
     _voice: string,
     _kind: SoundKind | "preview" = "preview",
@@ -34,6 +35,7 @@ export function SoundProvider({
   const audio = useRef<PetAudio | null>(null);
   const cues = useRef<SoundCues | null>(null);
   const sleeping = useRef(false);
+  const visibleWindow = useRef(!document.hidden);
   const tick = useRef(() => {});
   useEffect(() => {
     const engine = new PetAudio();
@@ -52,12 +54,15 @@ export function SoundProvider({
       const next = policy.update(
         snapshot,
         Date.now(),
-        visible && !document.hidden && !sleeping.current,
+        visible && !document.hidden,
+        !sleeping.current,
       );
       engine.refresh();
       for (const kind of next) {
         const idleRevision = policy.idleRevision;
         const completionCue = policy.completionCue;
+        const taskCue = policy.taskCues[kind];
+        const reconnectCue = policy.reconnection.cue;
         void engine.play(
           kind as SoundKind,
           () =>
@@ -70,16 +75,30 @@ export function SoundProvider({
                   visible && !document.hidden && !sleeping.current,
                   idleRevision,
                 )
-              : policy.completionIsCurrent(
-                  current.current.state,
-                  Date.now(),
-                  completionCue,
-                )),
+              : kind === "completion"
+                ? policy.completionIsCurrent(
+                    current.current.state,
+                    Date.now(),
+                    completionCue,
+                  )
+                : kind === "reconnected"
+                  ? policy.reconnection.isCurrent(
+                      current.current.state,
+                      Date.now(),
+                      visible && !document.hidden,
+                      reconnectCue,
+                    )
+                  : policy.taskIsCurrent(
+                      current.current.state,
+                      Date.now(),
+                      taskCue,
+                    )),
         );
       }
     };
     const visibility = (value: boolean) => {
       visible = value;
+      visibleWindow.current = value;
       policy.engage();
       tick.current();
     };
@@ -113,8 +132,15 @@ export function SoundProvider({
         sleeping.current = value;
         tick.current();
       },
-      play: async (kind: SoundKind) =>
-        (await audio.current?.play(kind)) || "unavailable",
+      play: async (kind: SoundKind, isCurrent?: () => boolean) =>
+        (await audio.current?.play(
+          kind,
+          () =>
+            current.current.ready &&
+            visibleWindow.current &&
+            !document.hidden &&
+            (isCurrent?.() ?? true),
+        )) || "unavailable",
       preview: async (
         voice: string,
         kind: SoundKind | "preview" = "preview",

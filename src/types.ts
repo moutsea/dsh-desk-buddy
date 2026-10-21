@@ -65,6 +65,12 @@ export type AppState = {
   >;
   lastInteractionAt?: number;
   completions: { id: string; sessionId: string; at: number }[];
+  taskSounds?: {
+    id: string;
+    kind: "started" | "failure";
+    sessionId: string;
+    at: number;
+  }[];
   balance: {
     balances: { currency: string; total: number }[];
     updatedAt: number;

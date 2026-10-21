@@ -29,6 +29,8 @@ import { PetSizeSetting } from "./PetSizeSetting";
 import { PluginUpdates } from "./PluginUpdates";
 import { SoundProvider, useSounds } from "./SoundProvider";
 import { SoundSettings } from "./SoundSettings";
+import { normalizeSoundSettings } from "../shared/sound.mjs";
+import { GreetingCues } from "../shared/companion-sounds.mjs";
 import { usePetDrag, type PetDrag } from "./usePetDrag";
 import {
   PET_CHARACTER,
@@ -143,6 +145,9 @@ function useClock() {
 }
 function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
   const sounds = useSounds();
+  const greetings = useRef(new GreetingCues());
+  const cueRevision = useRef(0);
+  const shyUntil = useRef(0);
   const size = petSize(state.config.petScale),
     scale = normalizePetScale(state.config.petScale) / 100;
   const now = useClock();
@@ -168,6 +173,7 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
     hover = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastIdle = useRef("");
   const call = (action: string, payload?: any) => {
+    greetings.current.engage();
     void invoke(action, payload).catch(() => {});
   };
   const mood = overallMood(state, now),
@@ -176,6 +182,13 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
   const progress = state.surface.section ? null : activeProgress(state);
   const celebrate =
     !!completion && !["offline", "waiting", "error", "shocked"].includes(mood);
+  const canReact =
+    (!state.config.expression || state.config.expression === "auto") &&
+    ["idle", "done"].includes(mood) &&
+    !celebrate;
+  const reactionAllowed = useRef(canReact);
+  reactionAllowed.current = canReact;
+  const angryUntil = useRef(0);
   useEffect(() => {
     return () => {
       if (hover.current) clearTimeout(hover.current);
@@ -184,11 +197,15 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
   }, []);
   useEffect(() => {
     if (mood !== "idle") lastActive.current = Date.now();
-    if (state.lastInteractionAt)
+    if (state.lastInteractionAt) {
       lastActive.current = Math.max(
         lastActive.current,
         state.lastInteractionAt,
       );
+      greetings.current.engage(
+        Math.max(greetings.current.lastInteraction, state.lastInteractionAt),
+      );
+    }
     nextIdle.current = Date.now() + 28000 + Math.random() * 20000;
     setIdle({ id: "idle", until: 0 });
   }, [mood, state.lastInteractionAt]);
@@ -209,6 +226,8 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
     nextIdle.current = now + 28000 + Math.random() * 20000;
   }, [now, mood, state.config.expression, state.config.idleExpressions]);
   const activity = () => {
+    cueRevision.current++;
+    shyUntil.current = 0;
     sounds.engage();
     lastActive.current = Date.now();
     nextIdle.current = Date.now() + 28000 + Math.random() * 20000;
@@ -236,6 +255,46 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
     idleExpression,
     now,
   });
+  const naturalSleeping =
+    canReact &&
+    expression === "sleeping" &&
+    state.config.idleExpressions !== false;
+  const petState = useRef({
+    canReact,
+    naturalSleeping,
+    held: drag.held,
+    section: state.surface.section,
+  });
+  petState.current = {
+    canReact,
+    naturalSleeping,
+    held: drag.held,
+    section: state.surface.section,
+  };
+  const wasSleeping = useRef(naturalSleeping);
+  useEffect(() => {
+    const entering = naturalSleeping && !wasSleeping.current;
+    wasSleeping.current = naturalSleeping;
+    if (entering && !drag.held && !state.surface.section)
+      void sounds.play(
+        "sleep",
+        () =>
+          petState.current.naturalSleeping &&
+          !petState.current.held &&
+          !petState.current.section,
+      );
+  }, [naturalSleeping, drag.held, state.surface.section, sounds]);
+  useEffect(() => {
+    const cancel = () => {
+      cueRevision.current++;
+      shyUntil.current = 0;
+      greetings.current.prepared = null;
+      if (hover.current) clearTimeout(hover.current);
+      sounds.engage();
+    };
+    window.addEventListener("blur", cancel);
+    return () => window.removeEventListener("blur", cancel);
+  }, [sounds]);
   useEffect(() => {
     sounds.setSleeping(expression === "sleeping");
   }, [expression, sounds]);
@@ -349,28 +408,75 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
         aria-label="摸摸桌宠"
         title="按住拖动 · 点击摸摸 · 右键切换表情"
         onPointerDown={(event) => {
+          if (event.button !== 0 || !event.isPrimary) return;
+          greetings.current.prepare(naturalSleeping);
           drag.onPointerDown(event);
           if (hover.current) clearTimeout(hover.current);
           activity();
         }}
         onPointerMove={drag.onPointerMove}
-        onPointerUp={drag.onPointerUp}
-        onPointerCancel={drag.onPointerCancel}
-        onLostPointerCapture={drag.onLostPointerCapture}
+        onPointerUp={async () => {
+          const revision = cueRevision.current;
+          const at = Date.now();
+          const result = await drag.onPointerUp();
+          if (revision !== cueRevision.current) return;
+          if (result.dragged) greetings.current.engage();
+          if (result.moved) {
+            void sounds.play(
+              "moved",
+              () =>
+                revision === cueRevision.current &&
+                petState.current.canReact &&
+                !petState.current.held &&
+                Date.now() >= at &&
+                Date.now() - at < 6000,
+            );
+          }
+        }}
+        onPointerCancel={() => {
+          greetings.current.engage();
+          cueRevision.current++;
+          void drag.onPointerCancel();
+        }}
+        onLostPointerCapture={() => {
+          if (drag.isHeld()) {
+            greetings.current.engage();
+            cueRevision.current++;
+          }
+          void drag.onLostPointerCapture();
+        }}
         onDragStart={(event) => event.preventDefault()}
         onFocus={reveal}
         onMouseEnter={() => {
           reveal();
-          activity();
           if (hover.current) clearTimeout(hover.current);
+          // Hovering should not wake a sleeping pet before the click can greet.
+          if (naturalSleeping) return;
+          activity();
           if (!drag.held)
-            hover.current = setTimeout(
-              () => setInteraction({ id: "shy", until: Date.now() + 5000 }),
-              8000,
-            );
+            hover.current = setTimeout(() => {
+              if (
+                !petState.current.canReact ||
+                petState.current.held ||
+                petState.current.naturalSleeping ||
+                document.hidden
+              )
+                return;
+              shyUntil.current = Date.now() + 5000;
+              setInteraction({ id: "shy", until: shyUntil.current });
+              void sounds.play(
+                "shy",
+                () =>
+                  petState.current.canReact &&
+                  !petState.current.held &&
+                  shyUntil.current > Date.now(),
+              );
+            }, 8000);
         }}
         onMouseLeave={() => {
           if (hover.current) clearTimeout(hover.current);
+          shyUntil.current = 0;
+          sounds.engage();
         }}
         onContextMenu={(event) => {
           event.preventDefault();
@@ -379,15 +485,48 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
         }}
         onClick={(event) => {
           if (drag.preventClick(event)) return;
-          void sounds.play("pet");
           const time = Date.now();
-          activity();
-          clicks.current = [
-            ...clicks.current.filter((value) => time - value < 1800),
+          if (hover.current) clearTimeout(hover.current);
+          const greeting = greetings.current.click(
+            naturalSleeping,
+            canReact,
+            normalizeSoundSettings(state.config.sounds),
             time,
-          ];
+          );
+          activity();
+          const revision = cueRevision.current;
+          clicks.current = [
+            ...clicks.current.filter(
+              (value) => time >= value && time - value < 1800,
+            ),
+            time,
+          ].slice(-5);
+          const angry = clicks.current.length >= 5;
+          if (angry && canReact) {
+            const entering = angryUntil.current <= time;
+            angryUntil.current = time + 6000;
+            if (entering)
+              void sounds.play(
+                "angry",
+                () =>
+                  reactionAllowed.current &&
+                  angryUntil.current > Date.now() &&
+                  !document.hidden,
+              );
+          } else {
+            angryUntil.current = 0;
+            if (greeting)
+              void sounds.play(
+                greeting,
+                () =>
+                  petState.current.canReact &&
+                  revision === cueRevision.current &&
+                  Date.now() - time < 6000,
+              );
+            else void sounds.play("pet");
+          }
           setInteraction({
-            id: clicks.current.length >= 5 ? "angry" : "love",
+            id: angry ? "angry" : "love",
             until: time + 6000,
           });
         }}

@@ -15,6 +15,16 @@
     },
     {
       "voice": "qiaoxiaojiao_v3.1",
+      "kind": "angry",
+      "text": "慢一点啦，哼！",
+      "file": "qiaoxiaojiao_v3.1/angry.wav",
+      "duration": 1.68,
+      "sha256": "adca239e7faf35f8b6c74471de79bddb6e5c949996994a5dca086cea18aec822",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。被朋友连续戳了几下，鼓着脸轻轻闹别扭。用可爱娇嗔的小抱怨说「慢一点啦」，最后短短地哼一下。略有不满但亲近柔和，不凶、不尖叫。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "e42edfce-84d2-9499-a402-3dc588c6823e"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
       "kind": "completion",
       "text": "做好啦！",
       "file": "qiaoxiaojiao_v3.1/completion.wav",
@@ -32,6 +42,216 @@
       "sha256": "f356c78b00f3d7c98e513ce1efa571975edc83ea8b8258912fa8071c21e958f8",
       "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
       "requestId": "82e38f70-0834-95fb-a69a-34692be2180f"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "started",
+      "text": "收到，交给我吧。",
+      "file": "qiaoxiaojiao_v3.1/started.wav",
+      "duration": 1.44,
+      "sha256": "a21132b9588e6f290ca27cca4626faa36097307f99112f772a866a9b5ee042b0",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻快地接过朋友交代的小任务，可靠又有一点小开心。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "81eb9fae-974c-9826-a244-7882fd35758c"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "attention",
+      "text": "需要你看一下哦。",
+      "file": "qiaoxiaojiao_v3.1/attention.wav",
+      "duration": 1.52,
+      "sha256": "4e5cd34a51e3acf38b6edc7e6f1c4e998afd77dffc5a0769033e459116151e88",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻轻提醒朋友需要确认一件事，亲切清楚，不催促。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "1010ea67-23a8-9c2d-a35c-a9a99c6707db"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "failure",
+      "text": "遇到一点问题，来看看嘛。",
+      "file": "qiaoxiaojiao_v3.1/failure.wav",
+      "duration": 2.24,
+      "sha256": "fdc3639cdecf42d9b4892b79cdd39d491c952c15ec99a1c9065ea0a47d2d4635",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。温柔地说明遇到小问题，语气平静安慰，不惊慌、不卖惨。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "70cc90d5-83f6-9ac9-a5ac-5e75514d8b2e"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "started_2",
+      "text": "好呀，我这就开始。",
+      "file": "qiaoxiaojiao_v3.1/started_2.wav",
+      "duration": 1.84,
+      "sha256": "36b9353455a58dc3a861584a66e171b13766984f1d567169a8b24db3132ccec5",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。轻快地接过朋友的小任务，温柔爽快，像微笑着答应马上开始。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "83a14c96-8756-92bd-9660-75cf85922c8d"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "started_3",
+      "text": "嗯，我来处理啦。",
+      "file": "qiaoxiaojiao_v3.1/started_3.wav",
+      "duration": 1.6,
+      "sha256": "105e001a291723a99b3efef9f2c622188530485f5f17932c367e261e3d68f82f",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。先轻轻答应一声，再亲切地表示接下这件事，可靠又有一点小开心。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "cf5a7cf7-adb4-9313-a7b6-189e9d953bc3"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "completion_2",
+      "text": "完成啦，来看看吧。",
+      "file": "qiaoxiaojiao_v3.1/completion_2.wav",
+      "duration": 1.68,
+      "sha256": "a874043940690a8bf2696780b0a5078fa0230f8ed891834274cc5354af5868d3",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。事情完成后开心地招呼朋友来看结果，轻柔俏皮，不夸张庆祝。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "7c7bc8ed-1454-9e1f-b940-2b6403f22e39"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "completion_3",
+      "text": "这件事办好啦。",
+      "file": "qiaoxiaojiao_v3.1/completion_3.wav",
+      "duration": 1.6,
+      "sha256": "c14177af42fc139107cfb8782bbb6c0a2a5edd6b5bffb6019fb8a6f796731ca6",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。做完事情后带一点小满足，温柔自然地告诉朋友已经办好了。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "7f19567d-1699-92f0-80dd-5852da22d285"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "attention_2",
+      "text": "这里要请你确认一下。",
+      "file": "qiaoxiaojiao_v3.1/attention_2.wav",
+      "duration": 1.92,
+      "sha256": "0c98a17b30269a388ef0381579610d4c0a23b8c940c4d5d38c20f9d0e501552e",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。有一处需要朋友确认，轻声提醒，吐字清楚，亲近而不催促。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "c525a059-67aa-9d00-8514-79b94c4e65ac"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "attention_3",
+      "text": "等你回应一下哦。",
+      "file": "qiaoxiaojiao_v3.1/attention_3.wav",
+      "duration": 1.44,
+      "sha256": "b370a64497e6eb27e8810da08061f1111249d30190796415fa2cb56d14ad69ee",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。轻轻招呼朋友来回应，耐心柔和，尾音轻软，不催促不着急。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "c66119b8-c3b1-9869-b726-d977258b07c7"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "failure_2",
+      "text": "这次没完成，来看看原因吧。",
+      "file": "qiaoxiaojiao_v3.1/failure_2.wav",
+      "duration": 2.88,
+      "sha256": "d4e57e05e70df58e77778e798a3c8b356b2b42b7a908f0ca27d66388d3b76da2",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。温柔地说明这次没有完成，请朋友一起查看原因，平静清楚，不惊慌不卖惨。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "70fce76c-b414-9ace-a462-7c2dd52d547d"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "failure_3",
+      "text": "出了点小状况，我们看看吧。",
+      "file": "qiaoxiaojiao_v3.1/failure_3.wav",
+      "duration": 2.4,
+      "sha256": "237032b49d52e7ea7f029bc1da8491008d9031003f138df9cce8b47bb4c549ef",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。遇到问题后温柔地邀请朋友一起看看，语气平静，不夸大也不承诺已经解决。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "d1f163de-468b-96bc-a6f7-73f7de5f4b30"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "shy",
+      "text": "一直看着我做什么呀……",
+      "file": "qiaoxiaojiao_v3.1/shy.wav",
+      "duration": 2,
+      "sha256": "1d0fdc72e34afa8a6dbae89c820a5de06f8bf5cb0bc88d93793be1c558d8cc2b",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。被朋友一直看着，有一点害羞，像微微脸红的小声询问，尾音轻软含蓄。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "5f20fc25-d7bd-97b7-991e-2db668e4b2d5"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "wake",
+      "text": "唔……我醒啦。",
+      "file": "qiaoxiaojiao_v3.1/wake.wav",
+      "duration": 2.16,
+      "sha256": "fa4c71458b84fc05f1c72bcea81065d4467aff7dadda418dc6691f63828021ac",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。刚被轻轻叫醒，先迷迷糊糊地唔一声，再柔和地回应，慵懒但吐字清楚。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "06d679c6-7537-9360-a12c-036b5a1cedcb"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "sleep",
+      "text": "有点困了，我眯一会儿哦。",
+      "file": "qiaoxiaojiao_v3.1/sleep.wav",
+      "duration": 2.72,
+      "sha256": "38c2b72871061a7bb334e193663eb4053552bf1cfa9f18a2f1290f1cf1c97a08",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。有一点困了，温柔地道声小别，越说越轻，像准备眯一小会儿，不夸张打哈欠。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "d6b067fb-a184-9f05-9fd0-3b2dea43db09"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "welcome",
+      "text": "你回来啦，我在呢。",
+      "file": "qiaoxiaojiao_v3.1/welcome.wav",
+      "duration": 1.84,
+      "sha256": "fec43bcf7938fc51f022e893a63ae9145beb73d2349e42c7c85fe2f6a56bd9d3",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。朋友回来时开心地轻声欢迎，温暖自然，有一点小惊喜。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "ccd5aedd-ac8a-9b53-8c2c-49cc7843346d"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "moved",
+      "text": "这里也不错嘛。",
+      "file": "qiaoxiaojiao_v3.1/moved.wav",
+      "duration": 1.44,
+      "sha256": "2be737c83d37c1ad7d65623ff325d361f6007493b965c02c688f33d4e19a1123",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。被搬到新位置后好奇地看看周围，轻快满意，尾音柔和。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "671a1001-3523-9ad8-8180-9c68d642318b"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "reconnected",
+      "text": "又连上啦。",
+      "file": "qiaoxiaojiao_v3.1/reconnected.wav",
+      "duration": 1.12,
+      "sha256": "0552118f9fc737a69a3c34fe8a0d31ffd9df1d0fc7d6cfabacc6f1634bef2a1b",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。连接恢复后轻轻松一口气，简短清楚，开心但不兴奋大喊。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "6607668d-08f1-9509-a705-7d5762bd841c"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "pet_2",
+      "text": "我在呢。",
+      "file": "qiaoxiaojiao_v3.1/pet_2.wav",
+      "duration": 0.96,
+      "sha256": "c1010bb9bf73fddd888a3b2814d9e9e96e44098b891292474ebe5fc39ad93465",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。朋友轻轻点了点你，温柔亲近地回应，像轻轻答应一声。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "050d41af-946b-92d4-97a7-d90e4d474f65"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "pet_3",
+      "text": "嘿嘿，怎么啦？",
+      "file": "qiaoxiaojiao_v3.1/pet_3.wav",
+      "duration": 1.44,
+      "sha256": "7b4c278efbec423b3a76eac19562d52fde9bb4830c1e8ad33a830a6680fcb451",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。被朋友轻轻点了一下，先自然轻笑，再俏皮地问怎么啦。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "a686e212-9150-9910-9547-6850689073d7"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "idle_2",
+      "text": "要不要休息一下呀？",
+      "file": "qiaoxiaojiao_v3.1/idle_2.wav",
+      "duration": 1.44,
+      "sha256": "944938fccf151ce053e243154bde5b66d403926751c31a33ac36ff2f32c21d8a",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。像轻轻招呼朋友休息，语气关心而不催促，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "b2adec3b-ca84-94ed-96f8-f72d0f1f3a2f"
+    },
+    {
+      "voice": "qiaoxiaojiao_v3.1",
+      "kind": "idle_3",
+      "text": "我就在这里陪着你。",
+      "file": "qiaoxiaojiao_v3.1/idle_3.wav",
+      "duration": 1.68,
+      "sha256": "f6bcd264a287d2ea6da9f77ed9eabff3ef8d0d564db8a58d7b35576df2331f96",
+      "instruction": "为桌面陪伴角色配音。声线俏丽可爱，用普通话轻声说话，起声轻柔，短句干净利落。安静温柔地陪着朋友，语速舒缓，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "ec7c31f3-8a87-9ca0-9450-7c62e2b97676"
     },
     {
       "voice": "qiaoxiaojiao_v3.1",
@@ -55,6 +275,16 @@
     },
     {
       "voice": "longanlingxi_v3.1",
+      "kind": "angry",
+      "text": "慢一点啦，哼！",
+      "file": "longanlingxi_v3.1/angry.wav",
+      "duration": 1.84,
+      "sha256": "1149466b0b8ddbbe7c36473f8dd862dd7ed6128cbe13ec827166ab4dbf8dae2c",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。被朋友连续戳了几下，鼓着脸轻轻闹别扭。用可爱娇嗔的小抱怨说「慢一点啦」，最后短短地哼一下。略有不满但亲近柔和，不凶、不尖叫。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "ec326d0c-df52-9386-8ff9-a5078e1e2f60"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
       "kind": "completion",
       "text": "做好啦！",
       "file": "longanlingxi_v3.1/completion.wav",
@@ -72,6 +302,216 @@
       "sha256": "896d346731ad229c815a22baaa7cd35eb14e3455760088c40edee3676f3ba2bd",
       "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
       "requestId": "6f625884-697b-9670-b645-165f3c8f14bc"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "started",
+      "text": "收到，交给我吧。",
+      "file": "longanlingxi_v3.1/started.wav",
+      "duration": 1.6,
+      "sha256": "7eb56dfe6180aadcab9ecb0fe644e8d3377d70db4481a95b91d487131572bffc",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻快地接过朋友交代的小任务，可靠又有一点小开心。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "fac1b6d8-1c2a-9ae7-b96f-bf74c67dd3cf"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "attention",
+      "text": "需要你看一下哦。",
+      "file": "longanlingxi_v3.1/attention.wav",
+      "duration": 1.44,
+      "sha256": "8af73db670c8320469bf95359196b4f0bcfad1a9c91dd11a8a25266d8c989c79",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻轻提醒朋友需要确认一件事，亲切清楚，不催促。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "66fbe827-82c4-9c3c-85df-9a1522511b7c"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "failure",
+      "text": "遇到一点问题，来看看嘛。",
+      "file": "longanlingxi_v3.1/failure.wav",
+      "duration": 2.16,
+      "sha256": "f7a46a246b2da6a4046919610b39b37610fbc211aac7829fd3f92bee5877044b",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。温柔地说明遇到小问题，语气平静安慰，不惊慌、不卖惨。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "12e47b57-f094-9dd4-abaa-6a6d743be674"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "started_2",
+      "text": "好呀，我这就开始。",
+      "file": "longanlingxi_v3.1/started_2.wav",
+      "duration": 1.92,
+      "sha256": "3dc8e7642863c6a3e99f4b202101feb12a7ec06fdc68d7c4239dd238fe1a516d",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。轻快地接过朋友的小任务，温柔爽快，像微笑着答应马上开始。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "5412e437-1345-9696-9408-c607885f763a"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "started_3",
+      "text": "嗯，我来处理啦。",
+      "file": "longanlingxi_v3.1/started_3.wav",
+      "duration": 1.76,
+      "sha256": "6893ea97a243865daa3f7486bb6f0224309666a68ff56bd53968465934cefa7c",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。先轻轻答应一声，再亲切地表示接下这件事，可靠又有一点小开心。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "7007b940-d450-9938-9295-5b3a807cdc0c"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "completion_2",
+      "text": "完成啦，来看看吧。",
+      "file": "longanlingxi_v3.1/completion_2.wav",
+      "duration": 1.92,
+      "sha256": "f9cadc3c4c6f1b43ed7fb3d648d4dc1649ab2f458431a3b673ba42f64acb4ca6",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。事情完成后开心地招呼朋友来看结果，轻柔俏皮，不夸张庆祝。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "acec7c58-7bd9-91ee-aae5-0fb2f40f6567"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "completion_3",
+      "text": "这件事办好啦。",
+      "file": "longanlingxi_v3.1/completion_3.wav",
+      "duration": 1.36,
+      "sha256": "a9074d47ccfdd638c4fee2e6d98ed238601708930bc369dccc0fd4ef1a1d2674",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。做完事情后带一点小满足，温柔自然地告诉朋友已经办好了。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "8d69f1db-aba6-9a70-a077-642ec4472449"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "attention_2",
+      "text": "这里要请你确认一下。",
+      "file": "longanlingxi_v3.1/attention_2.wav",
+      "duration": 1.92,
+      "sha256": "5b7b4c91849120d94f1a5f05318b77d5975bd33f52885e2c9108e63ec27324a7",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。有一处需要朋友确认，轻声提醒，吐字清楚，亲近而不催促。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "667acd8b-caf6-95be-954d-844f7df3c94a"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "attention_3",
+      "text": "等你回应一下哦。",
+      "file": "longanlingxi_v3.1/attention_3.wav",
+      "duration": 1.44,
+      "sha256": "0fca3669cb351c01a2201e77821cf7ffced1f9dd368ed63645388bd861effe88",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。轻轻招呼朋友来回应，耐心柔和，尾音轻软，不催促不着急。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "5c59d3fb-bb1a-94dd-be82-520c2f68b009"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "failure_2",
+      "text": "这次没完成，来看看原因吧。",
+      "file": "longanlingxi_v3.1/failure_2.wav",
+      "duration": 2.8,
+      "sha256": "b1a0faea5a69b2db9e3927ceb2899e35706ae66216afeedeb73a3162711b7ce8",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。温柔地说明这次没有完成，请朋友一起查看原因，平静清楚，不惊慌不卖惨。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "1208785d-b7ab-9ce5-a670-47af8909a9b7"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "failure_3",
+      "text": "出了点小状况，我们看看吧。",
+      "file": "longanlingxi_v3.1/failure_3.wav",
+      "duration": 2.48,
+      "sha256": "3d607486dbabc7fb162c15ef93bc2c3964b01ee43a28259a837d7e74bb7c9d0a",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。遇到问题后温柔地邀请朋友一起看看，语气平静，不夸大也不承诺已经解决。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "35757be8-d3cd-9793-93d7-9e336d11df34"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "shy",
+      "text": "一直看着我做什么呀……",
+      "file": "longanlingxi_v3.1/shy.wav",
+      "duration": 2.08,
+      "sha256": "5db3610829cf734132c0929dd9a67f1ad379bf8360ee877ecc983eeaf0b2a732",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。被朋友一直看着，有一点害羞，像微微脸红的小声询问，尾音轻软含蓄。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "92aa60bf-9c7f-9d90-818e-6375b394cb70"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "wake",
+      "text": "唔……我醒啦。",
+      "file": "longanlingxi_v3.1/wake.wav",
+      "duration": 2.96,
+      "sha256": "b78184d103ad108419eb35bbecb4ce6c1c503c6ad406ef260b9356b7ec634954",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。刚被轻轻叫醒，先迷迷糊糊地唔一声，再柔和地回应，慵懒但吐字清楚。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "ed7a34bf-eb5c-9039-98e3-39a8230e1051"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "sleep",
+      "text": "有点困了，我眯一会儿哦。",
+      "file": "longanlingxi_v3.1/sleep.wav",
+      "duration": 2.56,
+      "sha256": "b9a1430b554639f92f390ad6e4b865ebd18ac97f6002c57e29428a583a62a21b",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。有一点困了，温柔地道声小别，越说越轻，像准备眯一小会儿，不夸张打哈欠。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "019770e7-23fa-9830-9129-61848234212b"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "welcome",
+      "text": "你回来啦，我在呢。",
+      "file": "longanlingxi_v3.1/welcome.wav",
+      "duration": 1.84,
+      "sha256": "c3b252ec8de6fa7bcbd1885b52aaf8842f29d89316621ede2144239f434fb8b8",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。朋友回来时开心地轻声欢迎，温暖自然，有一点小惊喜。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "ebb70457-b60c-90b6-b221-2c88680622d7"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "moved",
+      "text": "这里也不错嘛。",
+      "file": "longanlingxi_v3.1/moved.wav",
+      "duration": 1.44,
+      "sha256": "cb64a338cbc636b0cd024e469d65fb25e89a24c257b912d03da711ca6655d4cd",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。被搬到新位置后好奇地看看周围，轻快满意，尾音柔和。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "6d17a523-148f-97e0-a809-078382fa8ac4"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "reconnected",
+      "text": "又连上啦。",
+      "file": "longanlingxi_v3.1/reconnected.wav",
+      "duration": 1.04,
+      "sha256": "1ebb49be78fdd21abbf6b0383da5fa0f7857556f6ba590a48f718c6693199ceb",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。连接恢复后轻轻松一口气，简短清楚，开心但不兴奋大喊。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "1280313f-36f7-9c79-8b0e-60d9002ec404"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "pet_2",
+      "text": "我在呢。",
+      "file": "longanlingxi_v3.1/pet_2.wav",
+      "duration": 0.96,
+      "sha256": "da153f2df5a8a1d83ba53a7a40cbeee4d1f738768094ff0ddd6fb27b62dfaf20",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。朋友轻轻点了点你，温柔亲近地回应，像轻轻答应一声。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "5359df31-dc01-96c8-a598-74c4708520d1"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "pet_3",
+      "text": "嘿嘿，怎么啦？",
+      "file": "longanlingxi_v3.1/pet_3.wav",
+      "duration": 1.52,
+      "sha256": "25f22463eb26525c16f5e522f58fa57b2821ced1f544847252f63a1daaf14ac8",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。被朋友轻轻点了一下，先自然轻笑，再俏皮地问怎么啦。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "9b9e450a-00f5-9c02-951f-5a94297c4556"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "idle_2",
+      "text": "要不要休息一下呀？",
+      "file": "longanlingxi_v3.1/idle_2.wav",
+      "duration": 1.52,
+      "sha256": "cb842ba3b69504fc1b2c7f9b718668c7025a2111e80e7f91b837229117e96941",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。像轻轻招呼朋友休息，语气关心而不催促，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "726e522f-1472-90d0-812a-f07969cf8256"
+    },
+    {
+      "voice": "longanlingxi_v3.1",
+      "kind": "idle_3",
+      "text": "我就在这里陪着你。",
+      "file": "longanlingxi_v3.1/idle_3.wav",
+      "duration": 1.68,
+      "sha256": "207b563ad89185a5a38f78b97a30c369c328a9737577ca30e3f89113a934711a",
+      "instruction": "为桌面陪伴角色配音。声线软萌甜美，用普通话轻声说话，起声轻柔，短句干净利落。安静温柔地陪着朋友，语速舒缓，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "6cbfac7f-7331-9beb-bbc9-78a66c1b92e8"
     },
     {
       "voice": "longanlingxi_v3.1",
@@ -95,6 +535,16 @@
     },
     {
       "voice": "anyuqing_v3.1",
+      "kind": "angry",
+      "text": "慢一点啦，哼！",
+      "file": "anyuqing_v3.1/angry.wav",
+      "duration": 1.92,
+      "sha256": "88a682b072e0cd3fa8c7fc81595902651f8dfcab9b59b52759b4b80fa1741763",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。被朋友连续戳了几下，鼓着脸轻轻闹别扭。用可爱娇嗔的小抱怨说「慢一点啦」，最后短短地哼一下。略有不满但亲近柔和，不凶、不尖叫。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "9ca8169c-d32c-9889-8dcc-5eca3cd81523"
+    },
+    {
+      "voice": "anyuqing_v3.1",
       "kind": "completion",
       "text": "做好啦！",
       "file": "anyuqing_v3.1/completion.wav",
@@ -112,6 +562,216 @@
       "sha256": "4d302fdb2e86c036cd399148f33d631f1dfbecec8198124afc740d9dc5dbecb7",
       "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
       "requestId": "b4da86eb-4423-9b39-a5fb-ff8f86e5425a"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "started",
+      "text": "收到，交给我吧。",
+      "file": "anyuqing_v3.1/started.wav",
+      "duration": 1.76,
+      "sha256": "d2e26115d3ab5775683934a9a4ea13fdec1fef62a1e74756177f2f08279269cd",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻快地接过朋友交代的小任务，可靠又有一点小开心。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "9efc7b85-6fed-9db5-b47b-b43283faf59c"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "attention",
+      "text": "需要你看一下哦。",
+      "file": "anyuqing_v3.1/attention.wav",
+      "duration": 1.36,
+      "sha256": "92a1989bd4bb2a4e47818046b0982d9a981d32a24abb64818388e3f3f19efe95",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻轻提醒朋友需要确认一件事，亲切清楚，不催促。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "fe44133c-406d-91bf-9cce-608955abdd6f"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "failure",
+      "text": "遇到一点问题，来看看嘛。",
+      "file": "anyuqing_v3.1/failure.wav",
+      "duration": 2.16,
+      "sha256": "f729bd8b2cf85d27b442bdc28115fbbe5d04f710a1a63b401631ae5676b73322",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。温柔地说明遇到小问题，语气平静安慰，不惊慌、不卖惨。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "68e90036-da4c-93ae-8fb2-25f2b16a587a"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "started_2",
+      "text": "好呀，我这就开始。",
+      "file": "anyuqing_v3.1/started_2.wav",
+      "duration": 1.76,
+      "sha256": "84317589831b08959b972fd70c16f6aaa38d607a163ff0b3b57f9e0a81ce8da5",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。轻快地接过朋友的小任务，温柔爽快，像微笑着答应马上开始。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "48db9a13-489a-9e68-b844-58dd8ab9ebc7"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "started_3",
+      "text": "嗯，我来处理啦。",
+      "file": "anyuqing_v3.1/started_3.wav",
+      "duration": 1.76,
+      "sha256": "1b0220583b7b61dcfc7c14ee70001f33160b55625b52e98fc25be09a23064e98",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。先轻轻答应一声，再亲切地表示接下这件事，可靠又有一点小开心。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "7da32745-e11f-92d7-92be-426fe90f55d5"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "completion_2",
+      "text": "完成啦，来看看吧。",
+      "file": "anyuqing_v3.1/completion_2.wav",
+      "duration": 2.24,
+      "sha256": "b2605d2716255fd745b853ea1a4557906577320dd98bae46ae839037477fde1c",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。事情完成后开心地招呼朋友来看结果，轻柔俏皮，不夸张庆祝。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "5337d0a3-467e-9e8a-8026-a4c35e87cb97"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "completion_3",
+      "text": "这件事办好啦。",
+      "file": "anyuqing_v3.1/completion_3.wav",
+      "duration": 1.36,
+      "sha256": "6987fae89477c176d6f09f4020b82210a629208eccab32cf7455888626952774",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。做完事情后带一点小满足，温柔自然地告诉朋友已经办好了。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "a78b655c-74e3-9bda-a256-91e525aafc32"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "attention_2",
+      "text": "这里要请你确认一下。",
+      "file": "anyuqing_v3.1/attention_2.wav",
+      "duration": 2.08,
+      "sha256": "dce0c67bc9cd2d29431c402a817540d59b71ec5591c242eb3df5ff657dc65ed8",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。有一处需要朋友确认，轻声提醒，吐字清楚，亲近而不催促。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "255a905c-91e1-9ea2-b130-00f7402d83ee"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "attention_3",
+      "text": "等你回应一下哦。",
+      "file": "anyuqing_v3.1/attention_3.wav",
+      "duration": 1.36,
+      "sha256": "3d53661e9af029a9ab28b67316b77cad70facaf25c7f7dd009bfcbc10b8bdcad",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。轻轻招呼朋友来回应，耐心柔和，尾音轻软，不催促不着急。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "dd983cf0-577a-9ac6-8842-d49a8fb787b5"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "failure_2",
+      "text": "这次没完成，来看看原因吧。",
+      "file": "anyuqing_v3.1/failure_2.wav",
+      "duration": 2.64,
+      "sha256": "8a821ca5d0b2c6a59ec4ad23463f044b05f5a08a2184da0a8fce0fd76056570e",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。温柔地说明这次没有完成，请朋友一起查看原因，平静清楚，不惊慌不卖惨。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "2557f5f4-1540-951c-9877-0a3cacb38508"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "failure_3",
+      "text": "出了点小状况，我们看看吧。",
+      "file": "anyuqing_v3.1/failure_3.wav",
+      "duration": 2.88,
+      "sha256": "b8edf8007bb7f1a80f0f3f48d343940d5756cd3b384a8763dc218bfdb9ad4da6",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。遇到问题后温柔地邀请朋友一起看看，语气平静，不夸大也不承诺已经解决。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "96ed0f79-90d3-9193-85ac-e33f4b15cf03"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "shy",
+      "text": "一直看着我做什么呀……",
+      "file": "anyuqing_v3.1/shy.wav",
+      "duration": 2.08,
+      "sha256": "e9fe00f32e31a4d63beece03f539819ad7149ee3e82c7e2d11b4c6c0c542dc34",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。被朋友一直看着，有一点害羞，像微微脸红的小声询问，尾音轻软含蓄。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "d1188bf5-92d0-97ff-bbcb-7506502db547"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "wake",
+      "text": "唔……我醒啦。",
+      "file": "anyuqing_v3.1/wake.wav",
+      "duration": 2.08,
+      "sha256": "9b52c2603362ac1da9effce650b4fb1f96a04912b4620657a9a00759faac90a0",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。刚被轻轻叫醒，先迷迷糊糊地唔一声，再柔和地回应，慵懒但吐字清楚。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "37121774-1eea-9e13-9feb-d5a3e607a9ce"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "sleep",
+      "text": "有点困了，我眯一会儿哦。",
+      "file": "anyuqing_v3.1/sleep.wav",
+      "duration": 3.2,
+      "sha256": "058252881af1a3416494160fdd712bf1732e2a7fcee89832d911a4f7cef82616",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。有一点困了，温柔地道声小别，越说越轻，像准备眯一小会儿，不夸张打哈欠。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "9341bf82-7ced-90d2-aac3-f3cf3fa4951d"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "welcome",
+      "text": "你回来啦，我在呢。",
+      "file": "anyuqing_v3.1/welcome.wav",
+      "duration": 1.92,
+      "sha256": "55f9371c7e3ebf797b55eccb097988f5fb0d34932c976f8a36d2c7c29dfbcbcf",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。朋友回来时开心地轻声欢迎，温暖自然，有一点小惊喜。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "6f20771f-f5d3-9d18-96f1-4d4df0cf6a8d"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "moved",
+      "text": "这里也不错嘛。",
+      "file": "anyuqing_v3.1/moved.wav",
+      "duration": 1.36,
+      "sha256": "cbcf5d346ffe63ab9928e9d7520fc4fe6a24b997f825cca0429cad4bf72bc408",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。被搬到新位置后好奇地看看周围，轻快满意，尾音柔和。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "d37bd24f-5e55-9bd9-9ad0-042477740c29"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "reconnected",
+      "text": "又连上啦。",
+      "file": "anyuqing_v3.1/reconnected.wav",
+      "duration": 1.2,
+      "sha256": "b650eab1a12213a681871ce05e37833f96b74bd4d709a872c1b4741ea685304b",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。连接恢复后轻轻松一口气，简短清楚，开心但不兴奋大喊。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "16987def-423e-94ee-8eec-8bbf30790ee4"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "pet_2",
+      "text": "我在呢。",
+      "file": "anyuqing_v3.1/pet_2.wav",
+      "duration": 1.2,
+      "sha256": "dbb0ac9ff5950f4864feb124af68cf3fbe4c9c30fabb58b142e23d433e0a2d11",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。朋友轻轻点了点你，温柔亲近地回应，像轻轻答应一声。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "9f2d8aa7-f4e4-960d-8024-d483c2dbc725"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "pet_3",
+      "text": "嘿嘿，怎么啦？",
+      "file": "anyuqing_v3.1/pet_3.wav",
+      "duration": 1.6,
+      "sha256": "b4f0add60b6ba0d8c99fc5ba877aa7be924baaed504ac53876d8a2115bad18f0",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。被朋友轻轻点了一下，先自然轻笑，再俏皮地问怎么啦。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "34c4c3bb-463b-9ce8-be87-ca39c6697704"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "idle_2",
+      "text": "要不要休息一下呀？",
+      "file": "anyuqing_v3.1/idle_2.wav",
+      "duration": 1.6,
+      "sha256": "bbe194246f921685f6096301e9c9f7d40121acfed5425c971e13d1dd19dd404f",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。像轻轻招呼朋友休息，语气关心而不催促，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "08839d1e-43f5-9fca-b63c-2c02364011ac"
+    },
+    {
+      "voice": "anyuqing_v3.1",
+      "kind": "idle_3",
+      "text": "我就在这里陪着你。",
+      "file": "anyuqing_v3.1/idle_3.wav",
+      "duration": 1.76,
+      "sha256": "43264c31b118b88311a1ccee196d05154171db1a839c9f53830cb9bcda5b0ebb",
+      "instruction": "为桌面陪伴角色配音。声线明亮甜妹，用普通话轻声说话，起声轻柔，短句干净利落。安静温柔地陪着朋友，语速舒缓，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "e7fcaead-2e81-9b46-a6ee-682a953d2911"
     },
     {
       "voice": "anyuqing_v3.1",
@@ -135,6 +795,16 @@
     },
     {
       "voice": "anxiaolan_v3.1",
+      "kind": "angry",
+      "text": "慢一点啦，哼！",
+      "file": "anxiaolan_v3.1/angry.wav",
+      "duration": 1.52,
+      "sha256": "02b6b14652ee9109f245aa4dfa1ae67560f0a5a82a5abbc7de501342ca196778",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。被朋友连续戳了几下，鼓着脸轻轻闹别扭。用可爱娇嗔的小抱怨说「慢一点啦」，最后短短地哼一下。略有不满但亲近柔和，不凶、不尖叫。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "82ac6b33-0b85-9aa8-8e83-cb2ae8d12f60"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
       "kind": "completion",
       "text": "做好啦！",
       "file": "anxiaolan_v3.1/completion.wav",
@@ -152,6 +822,216 @@
       "sha256": "1dc04d94d4ec40fd46c97ccc337d81547bc486251d62a086cae97ccd9d4234cc",
       "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
       "requestId": "0d3faf26-79bc-9850-bba3-87884ae27f6e"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "started",
+      "text": "收到，交给我吧。",
+      "file": "anxiaolan_v3.1/started.wav",
+      "duration": 1.52,
+      "sha256": "4df73745457c0e8ea64e141d2a6a072db3594e6d2caa1b2695837ce5539cf24e",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻快地接过朋友交代的小任务，可靠又有一点小开心。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "0dc768c3-7d4e-9a61-896f-b85095164dc9"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "attention",
+      "text": "需要你看一下哦。",
+      "file": "anxiaolan_v3.1/attention.wav",
+      "duration": 1.2,
+      "sha256": "a18df6a9153d121d59460a3869ff85a97fa28cc14fbfb8681694f4677155ef83",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻轻提醒朋友需要确认一件事，亲切清楚，不催促。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "4fdcfad2-7c4c-94a3-8f9a-a4d9854925ff"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "failure",
+      "text": "遇到一点问题，来看看嘛。",
+      "file": "anxiaolan_v3.1/failure.wav",
+      "duration": 2.08,
+      "sha256": "71c3da6a8934dd85567dcda8cec978906749883e305895d875db9c39801689e1",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。温柔地说明遇到小问题，语气平静安慰，不惊慌、不卖惨。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "f99c849e-6bc2-9139-9ee5-a58f76c6b9ef"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "started_2",
+      "text": "好呀，我这就开始。",
+      "file": "anxiaolan_v3.1/started_2.wav",
+      "duration": 1.6,
+      "sha256": "0fc6e0246f1aa6f33967ede3230bc86279999a5c5d76b5becf2220851050507a",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。轻快地接过朋友的小任务，温柔爽快，像微笑着答应马上开始。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "962978be-6827-97ff-94c7-3ed21cba08d1"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "started_3",
+      "text": "嗯，我来处理啦。",
+      "file": "anxiaolan_v3.1/started_3.wav",
+      "duration": 1.52,
+      "sha256": "8861168a49c1c65c5008b1c66a2a031bdd553cfd136c09dc34c4fca2b1142331",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。先轻轻答应一声，再亲切地表示接下这件事，可靠又有一点小开心。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "8e00fe6d-ba33-978f-9c5e-ca6bcf43b625"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "completion_2",
+      "text": "完成啦，来看看吧。",
+      "file": "anxiaolan_v3.1/completion_2.wav",
+      "duration": 1.84,
+      "sha256": "656c7bf2259280adba8e7b3918aa35649f06c2ed5e43e3d86fb20b9d38b6c445",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。事情完成后开心地招呼朋友来看结果，轻柔俏皮，不夸张庆祝。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "25a496b7-7f9d-9568-980c-9bd5d760807c"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "completion_3",
+      "text": "这件事办好啦。",
+      "file": "anxiaolan_v3.1/completion_3.wav",
+      "duration": 1.28,
+      "sha256": "c4487e3e1a256638402c6ea047a6c5abe025ca8ffc93902b586dc13c000a0804",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。做完事情后带一点小满足，温柔自然地告诉朋友已经办好了。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "ac11cdae-763a-97e3-a6c4-f8de0618c861"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "attention_2",
+      "text": "这里要请你确认一下。",
+      "file": "anxiaolan_v3.1/attention_2.wav",
+      "duration": 1.6,
+      "sha256": "ebfebcb051ba4ecf32c642e77acc4ada9498afed4199cb575207913fe3d696fe",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。有一处需要朋友确认，轻声提醒，吐字清楚，亲近而不催促。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "7ff1f3d0-026c-9911-9846-f77a55291e83"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "attention_3",
+      "text": "等你回应一下哦。",
+      "file": "anxiaolan_v3.1/attention_3.wav",
+      "duration": 1.28,
+      "sha256": "00d0959ff33171733c459174d736182102f3ac717283f15359a1e63b6efbb74e",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。轻轻招呼朋友来回应，耐心柔和，尾音轻软，不催促不着急。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "eb73ed38-f578-98ca-8300-fc03e4237ef2"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "failure_2",
+      "text": "这次没完成，来看看原因吧。",
+      "file": "anxiaolan_v3.1/failure_2.wav",
+      "duration": 2.24,
+      "sha256": "db0aa375cf43a7ec6954b3da43b9a1239258ed3576ffb8788eadb5109b8fc5be",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。温柔地说明这次没有完成，请朋友一起查看原因，平静清楚，不惊慌不卖惨。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "824f58b4-c67d-95ba-bd59-f10f5c46e4f6"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "failure_3",
+      "text": "出了点小状况，我们看看吧。",
+      "file": "anxiaolan_v3.1/failure_3.wav",
+      "duration": 2.16,
+      "sha256": "d8198ac3681f4dc88fba0c21768de2d5b4e7480397f4748a8c9ff7f3ec5581ec",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。遇到问题后温柔地邀请朋友一起看看，语气平静，不夸大也不承诺已经解决。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "f11c7ab3-3c86-906f-bcee-dc145919f2e7"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "shy",
+      "text": "一直看着我做什么呀……",
+      "file": "anxiaolan_v3.1/shy.wav",
+      "duration": 2,
+      "sha256": "855966c20d833018c821ad98f74abd5799385a7297d7442e6d79063b7e10a127",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。被朋友一直看着，有一点害羞，像微微脸红的小声询问，尾音轻软含蓄。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "0f05c82b-e296-9f26-b828-0ecf0d71f1ed"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "wake",
+      "text": "唔……我醒啦。",
+      "file": "anxiaolan_v3.1/wake.wav",
+      "duration": 2.08,
+      "sha256": "68d6856606afedb4d75293a22e7bfca5eae7b5b10716c94c1184deb73c7080a8",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。刚被轻轻叫醒，先迷迷糊糊地唔一声，再柔和地回应，慵懒但吐字清楚。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "8ecb8e41-452e-9d30-abb4-19b60d1dd84d"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "sleep",
+      "text": "有点困了，我眯一会儿哦。",
+      "file": "anxiaolan_v3.1/sleep.wav",
+      "duration": 2.56,
+      "sha256": "5b89e6249c20814fc78294b5644748b4a36adf301b6cc0c335c9192a0fcd9edc",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。有一点困了，温柔地道声小别，越说越轻，像准备眯一小会儿，不夸张打哈欠。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "f180300e-65f0-9d5b-b000-875c10325101"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "welcome",
+      "text": "你回来啦，我在呢。",
+      "file": "anxiaolan_v3.1/welcome.wav",
+      "duration": 1.68,
+      "sha256": "0a2be2177dca3f5192167ba348c00277ffb18647a90881589faea0d182073582",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。朋友回来时开心地轻声欢迎，温暖自然，有一点小惊喜。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "8d4ef56d-210d-95d3-b727-6b8b20784c95"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "moved",
+      "text": "这里也不错嘛。",
+      "file": "anxiaolan_v3.1/moved.wav",
+      "duration": 1.36,
+      "sha256": "e4efe561592ef56365914d20698744f0a1087cc2302cf13733a390a43eaebadf",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。被搬到新位置后好奇地看看周围，轻快满意，尾音柔和。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "240e7c48-315e-950f-8895-598843d347d4"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "reconnected",
+      "text": "又连上啦。",
+      "file": "anxiaolan_v3.1/reconnected.wav",
+      "duration": 0.96,
+      "sha256": "4aa009e5866dd655f6ffa9717faa0aed8e0182555369d9815a84f94ad0f08172",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。连接恢复后轻轻松一口气，简短清楚，开心但不兴奋大喊。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "1208bef7-4f7b-933d-a387-b238db450ec0"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "pet_2",
+      "text": "我在呢。",
+      "file": "anxiaolan_v3.1/pet_2.wav",
+      "duration": 0.88,
+      "sha256": "44a13b729aacd7abe7f1cbb798aef70d04f16ceb7ba3a6420b2bbbad7b7304de",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。朋友轻轻点了点你，温柔亲近地回应，像轻轻答应一声。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "b23586f2-5954-9033-97c7-e62f7a581ace"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "pet_3",
+      "text": "嘿嘿，怎么啦？",
+      "file": "anxiaolan_v3.1/pet_3.wav",
+      "duration": 1.36,
+      "sha256": "98e26365c172383cf5b2668e502be719b26741cd0def5ffe4f18edfa814d19c1",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。被朋友轻轻点了一下，先自然轻笑，再俏皮地问怎么啦。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "ad24c226-99b2-9ce6-ab3a-3ce08304fc2b"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "idle_2",
+      "text": "要不要休息一下呀？",
+      "file": "anxiaolan_v3.1/idle_2.wav",
+      "duration": 1.52,
+      "sha256": "44022693919a9be507ea33347cea954279c35696d3363596507ae9d3d5ccbdd3",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。像轻轻招呼朋友休息，语气关心而不催促，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "602de699-6837-9075-9941-f70872584be0"
+    },
+    {
+      "voice": "anxiaolan_v3.1",
+      "kind": "idle_3",
+      "text": "我就在这里陪着你。",
+      "file": "anxiaolan_v3.1/idle_3.wav",
+      "duration": 1.68,
+      "sha256": "319d47b2eeed8d01f7a2196058f5dbab2a74ffbd6cdee5430efad6f5b0617dbf",
+      "instruction": "为桌面陪伴角色配音。声线清甜纯净，用普通话轻声说话，起声轻柔，短句干净利落。安静温柔地陪着朋友，语速舒缓，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "e2b0e9b4-afad-9ffc-82be-46e244fdad36"
     },
     {
       "voice": "anxiaolan_v3.1",
@@ -175,6 +1055,16 @@
     },
     {
       "voice": "wenhuaiqing_v3.1",
+      "kind": "angry",
+      "text": "慢一点啦，哼！",
+      "file": "wenhuaiqing_v3.1/angry.wav",
+      "duration": 1.68,
+      "sha256": "522d5f16266bffd67c729347f5dec202c153f43e6bd0940b3024414072cad4ef",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。被朋友连续戳了几下，鼓着脸轻轻闹别扭。用可爱娇嗔的小抱怨说「慢一点啦」，最后短短地哼一下。略有不满但亲近柔和，不凶、不尖叫。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "757e5601-7941-9eae-946f-e628ddadca24"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
       "kind": "completion",
       "text": "做好啦！",
       "file": "wenhuaiqing_v3.1/completion.wav",
@@ -192,6 +1082,216 @@
       "sha256": "aa00f8e610e9d8f27bddd55b3915296077f493a60e5594c6e8f3aa7fe4167d1a",
       "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
       "requestId": "664f1c4f-9f75-9bef-9ad1-63988e357b62"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "started",
+      "text": "收到，交给我吧。",
+      "file": "wenhuaiqing_v3.1/started.wav",
+      "duration": 1.52,
+      "sha256": "1dcd85ba1adfed995a4fdfa46d35730609231f7eeab901718aefbbcaafd82a19",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻快地接过朋友交代的小任务，可靠又有一点小开心。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "81afb0b2-d3d1-9e1e-811f-8a1fce055be2"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "attention",
+      "text": "需要你看一下哦。",
+      "file": "wenhuaiqing_v3.1/attention.wav",
+      "duration": 1.36,
+      "sha256": "3f45fcfff281b3eb0e447194d60fd9df3096cf43de4e27143922b6072d6b868f",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻轻提醒朋友需要确认一件事，亲切清楚，不催促。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "c606ad83-5a6d-9513-b393-210776f5d20f"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "failure",
+      "text": "遇到一点问题，来看看嘛。",
+      "file": "wenhuaiqing_v3.1/failure.wav",
+      "duration": 2.48,
+      "sha256": "fa4e07c6423c24def6ab9f26da09e5cead1aff160a4e2b190182d87ee8f7afc4",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。温柔地说明遇到小问题，语气平静安慰，不惊慌、不卖惨。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "804eb1cd-e138-9b52-ba65-fc84c63e3983"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "started_2",
+      "text": "好呀，我这就开始。",
+      "file": "wenhuaiqing_v3.1/started_2.wav",
+      "duration": 1.92,
+      "sha256": "7c000f496ce6701fb3882adcb8b4866b09d360c9405a512a98ab6ec2b7eb22d9",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。轻快地接过朋友的小任务，温柔爽快，像微笑着答应马上开始。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "6e963530-c83a-97b7-8a8e-a7dffbde0fed"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "started_3",
+      "text": "嗯，我来处理啦。",
+      "file": "wenhuaiqing_v3.1/started_3.wav",
+      "duration": 1.6,
+      "sha256": "730509e9e608390028e6b2acb44a08825371a284880332201b10458903c1f9f0",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。先轻轻答应一声，再亲切地表示接下这件事，可靠又有一点小开心。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "47f067f1-36f1-9a3f-ace5-bf86d1d9ec1f"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "completion_2",
+      "text": "完成啦，来看看吧。",
+      "file": "wenhuaiqing_v3.1/completion_2.wav",
+      "duration": 1.68,
+      "sha256": "809ce913097cecd4ba7df45e877a3ed635f95ff8a68b23ccd7b65d7f8c8cf7f8",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。事情完成后开心地招呼朋友来看结果，轻柔俏皮，不夸张庆祝。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "54db6454-c39f-97c4-9801-72c6b22d9cfb"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "completion_3",
+      "text": "这件事办好啦。",
+      "file": "wenhuaiqing_v3.1/completion_3.wav",
+      "duration": 1.04,
+      "sha256": "43668314b6b6221ae23355f583a84a3d3a55ab5d6caf191f5f14c359f66dfdea",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。做完事情后带一点小满足，温柔自然地告诉朋友已经办好了。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "27aed407-a3f4-9282-b414-58cdc4fef9ed"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "attention_2",
+      "text": "这里要请你确认一下。",
+      "file": "wenhuaiqing_v3.1/attention_2.wav",
+      "duration": 1.6,
+      "sha256": "a5fd09200325bfa7b08b58a80c869f14acaaef345d197bb86f060bc570d6f119",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。有一处需要朋友确认，轻声提醒，吐字清楚，亲近而不催促。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "f6974a0b-b14a-9603-a651-9ac7093e2cc3"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "attention_3",
+      "text": "等你回应一下哦。",
+      "file": "wenhuaiqing_v3.1/attention_3.wav",
+      "duration": 1.36,
+      "sha256": "41bc7cab91663cbbae0f566cb39d4cf710060611ae9a933873ab8deeb8579d38",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。轻轻招呼朋友来回应，耐心柔和，尾音轻软，不催促不着急。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "4d6f2494-0961-96bf-a6b1-bd2f6a72a2fb"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "failure_2",
+      "text": "这次没完成，来看看原因吧。",
+      "file": "wenhuaiqing_v3.1/failure_2.wav",
+      "duration": 2.56,
+      "sha256": "292a2dce26025450576735f7595bbfbfd750b8c389b5463a8f8aeb3388db0fad",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。温柔地说明这次没有完成，请朋友一起查看原因，平静清楚，不惊慌不卖惨。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "e7fe1fdb-feb1-9637-9d1a-ec2cae2346f0"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "failure_3",
+      "text": "出了点小状况，我们看看吧。",
+      "file": "wenhuaiqing_v3.1/failure_3.wav",
+      "duration": 2.48,
+      "sha256": "20d91f3c0053839dc845584374a59972140104d6763b812f92b66c042d744a99",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。遇到问题后温柔地邀请朋友一起看看，语气平静，不夸大也不承诺已经解决。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "123caebf-435f-95fc-a32f-9142f3652ef1"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "shy",
+      "text": "一直看着我做什么呀……",
+      "file": "wenhuaiqing_v3.1/shy.wav",
+      "duration": 1.92,
+      "sha256": "6dbbadb7038a36a04915c7a54531b13630b43e6a6e7e066667d8acb6af986fc1",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。被朋友一直看着，有一点害羞，像微微脸红的小声询问，尾音轻软含蓄。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "717515ac-6907-92e8-a3cc-b272b367c966"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "wake",
+      "text": "唔……我醒啦。",
+      "file": "wenhuaiqing_v3.1/wake.wav",
+      "duration": 2.48,
+      "sha256": "2494f27bd90832944789870bb5cf35bc657b93eb04beb80c9a3518900b00e233",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。刚被轻轻叫醒，先迷迷糊糊地唔一声，再柔和地回应，慵懒但吐字清楚。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "60b528a5-79e4-944f-af44-6a695d08a1f7"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "sleep",
+      "text": "有点困了，我眯一会儿哦。",
+      "file": "wenhuaiqing_v3.1/sleep.wav",
+      "duration": 2.56,
+      "sha256": "c60789ecc648fb2889cd881c4a909441966a6971f1fe39ceac42e9aa1800e686",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。有一点困了，温柔地道声小别，越说越轻，像准备眯一小会儿，不夸张打哈欠。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "101db725-f996-9df8-887d-8ea310fcf674"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "welcome",
+      "text": "你回来啦，我在呢。",
+      "file": "wenhuaiqing_v3.1/welcome.wav",
+      "duration": 1.76,
+      "sha256": "5046af966fb7845a8aa183b5ef7647c39a69fd12798bb6a0628476b501518cf0",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。朋友回来时开心地轻声欢迎，温暖自然，有一点小惊喜。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "fb43e527-23bb-9224-aad7-9d2a82003278"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "moved",
+      "text": "这里也不错嘛。",
+      "file": "wenhuaiqing_v3.1/moved.wav",
+      "duration": 1.12,
+      "sha256": "e3cf0a576d2387feedcfb3e1cb0734ca3212ba62554a6ff2ec732ea3c879836b",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。被搬到新位置后好奇地看看周围，轻快满意，尾音柔和。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "df3eb451-4575-9410-b13d-674f1f5d1b06"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "reconnected",
+      "text": "又连上啦。",
+      "file": "wenhuaiqing_v3.1/reconnected.wav",
+      "duration": 0.96,
+      "sha256": "739e8c747946f4f7477e4fed4419f017fc73b409c8fc8b763c6dd1b2039e7e9d",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。连接恢复后轻轻松一口气，简短清楚，开心但不兴奋大喊。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "60b29bb5-b83e-9bf4-869d-b2c42c6f76c3"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "pet_2",
+      "text": "我在呢。",
+      "file": "wenhuaiqing_v3.1/pet_2.wav",
+      "duration": 0.88,
+      "sha256": "ad3d1d7e498cdf456d33f267dbd23d355439fe20adf3ae67f5240b79eda6a595",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。朋友轻轻点了点你，温柔亲近地回应，像轻轻答应一声。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "47b6f9da-812b-92fc-bbd2-2f0f20952d92"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "pet_3",
+      "text": "嘿嘿，怎么啦？",
+      "file": "wenhuaiqing_v3.1/pet_3.wav",
+      "duration": 1.44,
+      "sha256": "4a5d78e93e4f564f8905fe2b604213a7bc7445cacf3b6d364c58988de7186037",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。被朋友轻轻点了一下，先自然轻笑，再俏皮地问怎么啦。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "77cbea66-97b5-9248-ae75-9b00de8bfd68"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "idle_2",
+      "text": "要不要休息一下呀？",
+      "file": "wenhuaiqing_v3.1/idle_2.wav",
+      "duration": 1.52,
+      "sha256": "b488908acf5e2e09ec5af6dcf09d656dfc5d142bb9d4d2936e9c1c966b9d9fef",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。像轻轻招呼朋友休息，语气关心而不催促，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "170dece7-ef36-9c94-8b74-b540b4faee89"
+    },
+    {
+      "voice": "wenhuaiqing_v3.1",
+      "kind": "idle_3",
+      "text": "我就在这里陪着你。",
+      "file": "wenhuaiqing_v3.1/idle_3.wav",
+      "duration": 1.44,
+      "sha256": "f83a12b3628ba0959b137fb48f88c3e8bcd36b998e30137497b03f0e2032a7fa",
+      "instruction": "为桌面陪伴角色配音。声线清亮柔和，用普通话轻声说话，起声轻柔，短句干净利落。安静温柔地陪着朋友，语速舒缓，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "e9ea9922-83ec-9dbe-b979-10c27a01d72b"
     },
     {
       "voice": "wenhuaiqing_v3.1",
@@ -215,6 +1315,16 @@
     },
     {
       "voice": "xuxiaoqiao_v3.1",
+      "kind": "angry",
+      "text": "慢一点啦，哼！",
+      "file": "xuxiaoqiao_v3.1/angry.wav",
+      "duration": 2.08,
+      "sha256": "4746f7b109d1aebab12392ac9b66325f45137db88974ae0a8bf795116f3809ab",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。被朋友连续戳了几下，鼓着脸轻轻闹别扭。用可爱娇嗔的小抱怨说「慢一点啦」，最后短短地哼一下。略有不满但亲近柔和，不凶、不尖叫。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "7af22d87-273e-91e8-a08b-ba3eedd79af8"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
       "kind": "completion",
       "text": "做好啦！",
       "file": "xuxiaoqiao_v3.1/completion.wav",
@@ -232,6 +1342,216 @@
       "sha256": "f509fec96bc2ccb1a0731791a2993cc3749c736fed29f8d6cfb5070f1e9095d0",
       "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
       "requestId": "b9333b42-3a11-9b4a-b22e-345f3f5d8233"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "started",
+      "text": "收到，交给我吧。",
+      "file": "xuxiaoqiao_v3.1/started.wav",
+      "duration": 1.52,
+      "sha256": "fe6333c4fd1aea1f1296cb47d7a00b6f4e335801610bc16545fdde46e654a0a4",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻快地接过朋友交代的小任务，可靠又有一点小开心。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "c3ad0cd0-d229-92b9-9c60-79eb3ebda6fc"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "attention",
+      "text": "需要你看一下哦。",
+      "file": "xuxiaoqiao_v3.1/attention.wav",
+      "duration": 1.52,
+      "sha256": "a7cbf1dca44902c36630c38d4589f2c5ffb907fdcf1aa4d12af95a51337504ff",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻轻提醒朋友需要确认一件事，亲切清楚，不催促。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "4d734810-6035-9985-b3df-827fd60acc56"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "failure",
+      "text": "遇到一点问题，来看看嘛。",
+      "file": "xuxiaoqiao_v3.1/failure.wav",
+      "duration": 2.56,
+      "sha256": "0c5c236103559e423b26732fe4e83a148798e33af3523ac2b77b0c597df54369",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。温柔地说明遇到小问题，语气平静安慰，不惊慌、不卖惨。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "dc48c641-2720-9302-9c20-80aea58ff817"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "started_2",
+      "text": "好呀，我这就开始。",
+      "file": "xuxiaoqiao_v3.1/started_2.wav",
+      "duration": 1.68,
+      "sha256": "0950f30afaf8ab374590ceac0de5af3ceea5a37d57613a1edd77557ffcb8eaae",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。轻快地接过朋友的小任务，温柔爽快，像微笑着答应马上开始。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "3d8a0887-e520-94cf-b439-e1006945c1fa"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "started_3",
+      "text": "嗯，我来处理啦。",
+      "file": "xuxiaoqiao_v3.1/started_3.wav",
+      "duration": 1.76,
+      "sha256": "90c8d8d2111930c74d1ef774ddcc83b3bcfc34a634cd9659966954def4018935",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。先轻轻答应一声，再亲切地表示接下这件事，可靠又有一点小开心。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "9e72cec0-796f-91c1-b7d5-6f3c5bb5de21"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "completion_2",
+      "text": "完成啦，来看看吧。",
+      "file": "xuxiaoqiao_v3.1/completion_2.wav",
+      "duration": 1.84,
+      "sha256": "bd403977483935a711fbddb895013a498412bd993362112f54d002d80bbb1e97",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。事情完成后开心地招呼朋友来看结果，轻柔俏皮，不夸张庆祝。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "a9da36c9-4344-9873-835a-bc90405637ea"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "completion_3",
+      "text": "这件事办好啦。",
+      "file": "xuxiaoqiao_v3.1/completion_3.wav",
+      "duration": 1.28,
+      "sha256": "1870ca288b936180d1d8b727698e4fb76a19a8c5e57cf4b4e26696e79c294196",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。做完事情后带一点小满足，温柔自然地告诉朋友已经办好了。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "35f994b5-98aa-9fad-abd2-eda492522b20"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "attention_2",
+      "text": "这里要请你确认一下。",
+      "file": "xuxiaoqiao_v3.1/attention_2.wav",
+      "duration": 1.92,
+      "sha256": "ed82daab7fb6db2f250bef9785df6c8892216e928c361625c9c8653f4ebc282e",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。有一处需要朋友确认，轻声提醒，吐字清楚，亲近而不催促。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "8e0b8e98-84a7-94f7-91c3-335d40315234"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "attention_3",
+      "text": "等你回应一下哦。",
+      "file": "xuxiaoqiao_v3.1/attention_3.wav",
+      "duration": 1.52,
+      "sha256": "ee23259ea42f66258a9e3d5e00157ec82e0b370b5c276f30db995a653b72a837",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。轻轻招呼朋友来回应，耐心柔和，尾音轻软，不催促不着急。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "a8c1f0e5-b4ec-9d71-9659-d526c479323b"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "failure_2",
+      "text": "这次没完成，来看看原因吧。",
+      "file": "xuxiaoqiao_v3.1/failure_2.wav",
+      "duration": 2.48,
+      "sha256": "55fa938e0a91a3ba5d66d81227574b25da590a34be13b84cb1903d943210a728",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。温柔地说明这次没有完成，请朋友一起查看原因，平静清楚，不惊慌不卖惨。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "f910f957-f47c-980e-8960-da37bd395a98"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "failure_3",
+      "text": "出了点小状况，我们看看吧。",
+      "file": "xuxiaoqiao_v3.1/failure_3.wav",
+      "duration": 2.56,
+      "sha256": "174d3f90c25186962de2e2ba9a1c504572ecdccee35e4a79e31a69741b36bf1e",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。遇到问题后温柔地邀请朋友一起看看，语气平静，不夸大也不承诺已经解决。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "bd90f797-1520-94ac-89d4-bc3d780c1cde"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "shy",
+      "text": "一直看着我做什么呀……",
+      "file": "xuxiaoqiao_v3.1/shy.wav",
+      "duration": 2,
+      "sha256": "fa68017a67c1653e4be11794053731e19a851e639b6268d79cd3b429f1755106",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。被朋友一直看着，有一点害羞，像微微脸红的小声询问，尾音轻软含蓄。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "3a8d16d2-e327-9910-ab80-8290bef35250"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "wake",
+      "text": "唔……我醒啦。",
+      "file": "xuxiaoqiao_v3.1/wake.wav",
+      "duration": 1.84,
+      "sha256": "48603479087aa3109e0cd69617e78bea7e61c7806f9c2729576708618324bf1f",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。刚被轻轻叫醒，先迷迷糊糊地唔一声，再柔和地回应，慵懒但吐字清楚。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "f02b00ea-1dcd-912c-978d-38b3b6908a42"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "sleep",
+      "text": "有点困了，我眯一会儿哦。",
+      "file": "xuxiaoqiao_v3.1/sleep.wav",
+      "duration": 2.56,
+      "sha256": "b061f20b1c1a1ac99ce908ebc67770a7e2a320d34a613da6a02854232f7312d6",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。有一点困了，温柔地道声小别，越说越轻，像准备眯一小会儿，不夸张打哈欠。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "b6a5d0c4-8a46-970c-9d16-2a3c0d3daa79"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "welcome",
+      "text": "你回来啦，我在呢。",
+      "file": "xuxiaoqiao_v3.1/welcome.wav",
+      "duration": 1.76,
+      "sha256": "da473fb9d6c441dfb99a578144bee66fc6bd843dbb48de1a0be62305ef501f34",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。朋友回来时开心地轻声欢迎，温暖自然，有一点小惊喜。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "8f2afc66-77c5-9f6a-934b-d3c376e3e001"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "moved",
+      "text": "这里也不错嘛。",
+      "file": "xuxiaoqiao_v3.1/moved.wav",
+      "duration": 1.28,
+      "sha256": "3ac9b615de3ac92cee059c257d6fd53345e1cb278073513eabe40c59673bf9bc",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。被搬到新位置后好奇地看看周围，轻快满意，尾音柔和。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "a7c789e9-5f3e-97a3-b1f2-ea2c2ed4b0b3"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "reconnected",
+      "text": "又连上啦。",
+      "file": "xuxiaoqiao_v3.1/reconnected.wav",
+      "duration": 1.12,
+      "sha256": "501809a70c9eb9ad59d301d72287ec51e7b9cea71cfaa5a10c5c8f7a38a1c72d",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。连接恢复后轻轻松一口气，简短清楚，开心但不兴奋大喊。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "195fb64e-f7a5-950f-8930-c3ed9f00f128"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "pet_2",
+      "text": "我在呢。",
+      "file": "xuxiaoqiao_v3.1/pet_2.wav",
+      "duration": 0.8,
+      "sha256": "0f4c3ed71c10d9364256d9fbb84d86e28c2ed7960f9e90cd7b02e85ab4bdfca6",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。朋友轻轻点了点你，温柔亲近地回应，像轻轻答应一声。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "8a4262bd-e160-9d47-817f-1ee95b39c085"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "pet_3",
+      "text": "嘿嘿，怎么啦？",
+      "file": "xuxiaoqiao_v3.1/pet_3.wav",
+      "duration": 1.52,
+      "sha256": "1a782eb2ded9e6d124dbecc424c5bd49172247a1d9dc10a6bb81605dcbb72e11",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。被朋友轻轻点了一下，先自然轻笑，再俏皮地问怎么啦。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "be7565cf-778e-9561-b604-6e8e63c5266b"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "idle_2",
+      "text": "要不要休息一下呀？",
+      "file": "xuxiaoqiao_v3.1/idle_2.wav",
+      "duration": 1.68,
+      "sha256": "86cbad8bf96a0c45a698012fa583c90b30545c76562d84d8d1b6f3bbcc6413c2",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。像轻轻招呼朋友休息，语气关心而不催促，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "a5e05079-a36c-9c2a-888c-105213e35406"
+    },
+    {
+      "voice": "xuxiaoqiao_v3.1",
+      "kind": "idle_3",
+      "text": "我就在这里陪着你。",
+      "file": "xuxiaoqiao_v3.1/idle_3.wav",
+      "duration": 1.76,
+      "sha256": "ee3cec94cb7c0ea2336a4d808acdce77f6bd0888c8be9e7fd1cb023beac551c3",
+      "instruction": "为桌面陪伴角色配音。声线自然俏皮，用普通话轻声说话，起声轻柔，短句干净利落。安静温柔地陪着朋友，语速舒缓，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "1cfd5611-e276-96da-bdb1-78c93fe7b0b2"
     },
     {
       "voice": "xuxiaoqiao_v3.1",
@@ -255,6 +1575,16 @@
     },
     {
       "voice": "yeqinghe_v3.1",
+      "kind": "angry",
+      "text": "慢一点啦，哼！",
+      "file": "yeqinghe_v3.1/angry.wav",
+      "duration": 2,
+      "sha256": "c2de5ff6d5ef3e6177f3d86632fde4a5581cd8d968fe40757f483f738e7f2eaf",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。被朋友连续戳了几下，鼓着脸轻轻闹别扭。用可爱娇嗔的小抱怨说「慢一点啦」，最后短短地哼一下。略有不满但亲近柔和，不凶、不尖叫。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "957b5e74-998c-9fb6-b373-a38bedd90de2"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
       "kind": "completion",
       "text": "做好啦！",
       "file": "yeqinghe_v3.1/completion.wav",
@@ -272,6 +1602,216 @@
       "sha256": "7f4dd7c8e2f8a2bb8e98a4622fe38f86c18c8ed6765495f0e456c7510b44145b",
       "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
       "requestId": "b3c0697c-d017-9ea9-ae92-c8f530b6d0bc"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "started",
+      "text": "收到，交给我吧。",
+      "file": "yeqinghe_v3.1/started.wav",
+      "duration": 1.76,
+      "sha256": "bb3b082273322aa9f1141974f8d348d3e1f6ec8984f6a40ce837fa398031a081",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻快地接过朋友交代的小任务，可靠又有一点小开心。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "473407c2-4bbe-94f7-a563-f0e4b1c66024"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "attention",
+      "text": "需要你看一下哦。",
+      "file": "yeqinghe_v3.1/attention.wav",
+      "duration": 1.6,
+      "sha256": "294c6f9a846b0a0346543ebf2b55aa510a2d59781dfac9b82c8131e2495940d3",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻轻提醒朋友需要确认一件事，亲切清楚，不催促。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "e1bb9846-6bcd-9ac0-bf6e-aeac9ca41d62"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "failure",
+      "text": "遇到一点问题，来看看嘛。",
+      "file": "yeqinghe_v3.1/failure.wav",
+      "duration": 2.56,
+      "sha256": "07f1f243ae828f92a8ac2688f36bd1598b7807c2e924c2877ae49363fed01dae",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。温柔地说明遇到小问题，语气平静安慰，不惊慌、不卖惨。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "4ce190b3-19b7-9848-85e6-59623b04407d"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "started_2",
+      "text": "好呀，我这就开始。",
+      "file": "yeqinghe_v3.1/started_2.wav",
+      "duration": 1.92,
+      "sha256": "5191c07e67edfb859122a804711476748fd023cd296a17112149c67d1dd312d2",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。轻快地接过朋友的小任务，温柔爽快，像微笑着答应马上开始。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "05e295c8-5297-9191-94e8-d2dff28c028f"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "started_3",
+      "text": "嗯，我来处理啦。",
+      "file": "yeqinghe_v3.1/started_3.wav",
+      "duration": 1.6,
+      "sha256": "6f5afcd71dbf8609a055649a83091374b78a382989e8e3d656c1d922a784c175",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。先轻轻答应一声，再亲切地表示接下这件事，可靠又有一点小开心。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "54cbf93c-b97c-9644-a60f-b147958afd3b"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "completion_2",
+      "text": "完成啦，来看看吧。",
+      "file": "yeqinghe_v3.1/completion_2.wav",
+      "duration": 1.92,
+      "sha256": "81114db72cadde72c9d2b6cb46c73fea71a095073ba6d9d639d35b495d03a0a6",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。事情完成后开心地招呼朋友来看结果，轻柔俏皮，不夸张庆祝。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "79f4ecbc-8f32-97b7-a0b0-a6baf56c499b"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "completion_3",
+      "text": "这件事办好啦。",
+      "file": "yeqinghe_v3.1/completion_3.wav",
+      "duration": 1.76,
+      "sha256": "3dee9089f21dde21228be74e0ca965d28a5a26051a203e6867426de65e9be6d2",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。做完事情后带一点小满足，温柔自然地告诉朋友已经办好了。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "fb8b7d89-ec61-9ebc-b807-a09c8b0d9455"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "attention_2",
+      "text": "这里要请你确认一下。",
+      "file": "yeqinghe_v3.1/attention_2.wav",
+      "duration": 2,
+      "sha256": "532d8b34d89b2dea837c514bea0df10ed91d1d6250d4ab1aaf548e4116674f38",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。有一处需要朋友确认，轻声提醒，吐字清楚，亲近而不催促。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "30b4f493-b20e-9698-80dc-a9dcf237896b"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "attention_3",
+      "text": "等你回应一下哦。",
+      "file": "yeqinghe_v3.1/attention_3.wav",
+      "duration": 1.36,
+      "sha256": "507dc464e51047bea898cadafc35ca05e61fa6385f2ec0f1fbdaed0b17d57e0b",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。轻轻招呼朋友来回应，耐心柔和，尾音轻软，不催促不着急。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "1d1e60c3-789c-98b6-b62d-312a9b3ef745"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "failure_2",
+      "text": "这次没完成，来看看原因吧。",
+      "file": "yeqinghe_v3.1/failure_2.wav",
+      "duration": 2.88,
+      "sha256": "5c6c00e58ea1d0e6d140bbf02bb95aff5d8a1647093f21ef08ac40641bf4ff15",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。温柔地说明这次没有完成，请朋友一起查看原因，平静清楚，不惊慌不卖惨。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "2e0b3a7a-1c53-9093-8968-c8088ed89440"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "failure_3",
+      "text": "出了点小状况，我们看看吧。",
+      "file": "yeqinghe_v3.1/failure_3.wav",
+      "duration": 2.72,
+      "sha256": "ab9fd4072fff55fa46cca70fa02c8a16d49d77468c9e3ebb6d37751d77334f77",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。遇到问题后温柔地邀请朋友一起看看，语气平静，不夸大也不承诺已经解决。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "a328d5d9-01c1-946a-857e-dd5152840204"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "shy",
+      "text": "一直看着我做什么呀……",
+      "file": "yeqinghe_v3.1/shy.wav",
+      "duration": 2.56,
+      "sha256": "6f0a86880811016ecf31d9903f9763fe8f6f12734b09dc9db1daa8cde19e8fbb",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。被朋友一直看着，有一点害羞，像微微脸红的小声询问，尾音轻软含蓄。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "ab50bc1a-b5ae-931c-bba5-59aa93f93712"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "wake",
+      "text": "唔……我醒啦。",
+      "file": "yeqinghe_v3.1/wake.wav",
+      "duration": 2.16,
+      "sha256": "1904568d2f59c654dd8f32d406f7b2f6d51d42565a8efc5929137a6815baf26f",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。刚被轻轻叫醒，先迷迷糊糊地唔一声，再柔和地回应，慵懒但吐字清楚。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "59b198f3-555a-9fcb-99f8-fe678b131167"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "sleep",
+      "text": "有点困了，我眯一会儿哦。",
+      "file": "yeqinghe_v3.1/sleep.wav",
+      "duration": 2.8,
+      "sha256": "52f4a9b67b135e9451305354a028e1dd09d55343137ebd45077d0e66b6210345",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。有一点困了，温柔地道声小别，越说越轻，像准备眯一小会儿，不夸张打哈欠。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "14131663-7e2c-9f83-9c54-f7bce597499f"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "welcome",
+      "text": "你回来啦，我在呢。",
+      "file": "yeqinghe_v3.1/welcome.wav",
+      "duration": 2,
+      "sha256": "3eccb5e372e6fd03a7551ca0ab8469e7536127f81abf81d280a9f1830da0df8e",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。朋友回来时开心地轻声欢迎，温暖自然，有一点小惊喜。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "e44a589e-6300-9c35-9602-8e1b919e37fd"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "moved",
+      "text": "这里也不错嘛。",
+      "file": "yeqinghe_v3.1/moved.wav",
+      "duration": 2.56,
+      "sha256": "6c2ff1ca7ca8c8489010e679289ed7838f348df1c59d468686c5207b13a8f6cc",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。被搬到新位置后好奇地看看周围，轻快满意，尾音柔和。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "7a5cd1d7-2459-9a29-b494-465429948df8"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "reconnected",
+      "text": "又连上啦。",
+      "file": "yeqinghe_v3.1/reconnected.wav",
+      "duration": 1.12,
+      "sha256": "e10f0c20cdeeafae3f27fc452024822db48be89680b422e895fec4fce2146419",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。连接恢复后轻轻松一口气，简短清楚，开心但不兴奋大喊。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "cf552b09-b689-9160-8ed0-5318a0e1cbe3"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "pet_2",
+      "text": "我在呢。",
+      "file": "yeqinghe_v3.1/pet_2.wav",
+      "duration": 0.96,
+      "sha256": "c28bc4fdc640a1a03a2aa994f3e328b0d2915a8e8fda12a336743431b860b287",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。朋友轻轻点了点你，温柔亲近地回应，像轻轻答应一声。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "f24d2afb-bbaa-9a5f-afbb-6bad71556f07"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "pet_3",
+      "text": "嘿嘿，怎么啦？",
+      "file": "yeqinghe_v3.1/pet_3.wav",
+      "duration": 1.52,
+      "sha256": "5928f94d49368d17d06af5946c0bc3214b5e13d477adcd3f16b1bd21b8151a47",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。被朋友轻轻点了一下，先自然轻笑，再俏皮地问怎么啦。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "671d4515-eb22-9772-a08d-f28a50ddd212"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "idle_2",
+      "text": "要不要休息一下呀？",
+      "file": "yeqinghe_v3.1/idle_2.wav",
+      "duration": 1.68,
+      "sha256": "e2670c84512418934eed947539a4d80b6f0ef659290dd1c30b5f1a694550e1d3",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。像轻轻招呼朋友休息，语气关心而不催促，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "3a499cb3-9143-951b-885f-ba82fe6e5b54"
+    },
+    {
+      "voice": "yeqinghe_v3.1",
+      "kind": "idle_3",
+      "text": "我就在这里陪着你。",
+      "file": "yeqinghe_v3.1/idle_3.wav",
+      "duration": 1.68,
+      "sha256": "b6f6c143869be294801c00e53bb8d655b445164404b24a845958bcfebf822ca5",
+      "instruction": "为桌面陪伴角色配音。声线亲切温柔，用普通话轻声说话，起声轻柔，短句干净利落。安静温柔地陪着朋友，语速舒缓，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "c7b0df20-f0a2-9e50-975a-6cf999e607f3"
     },
     {
       "voice": "yeqinghe_v3.1",
@@ -295,6 +1835,16 @@
     },
     {
       "voice": "anruorou_v3.1",
+      "kind": "angry",
+      "text": "慢一点啦，哼！",
+      "file": "anruorou_v3.1/angry.wav",
+      "duration": 1.68,
+      "sha256": "3b06475f0c06c4f0359a58d8e3e151511c4d08a945c68f23d6e29e3634c3d374",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。被朋友连续戳了几下，鼓着脸轻轻闹别扭。用可爱娇嗔的小抱怨说「慢一点啦」，最后短短地哼一下。略有不满但亲近柔和，不凶、不尖叫。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "6c17b0f2-a196-94be-84d5-08090e55d47f"
+    },
+    {
+      "voice": "anruorou_v3.1",
       "kind": "completion",
       "text": "做好啦！",
       "file": "anruorou_v3.1/completion.wav",
@@ -312,6 +1862,216 @@
       "sha256": "07b63cebd3e62c94ee6f9e98c02b86350ba72bab2d3e47b58df97a6196123ff2",
       "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，尾音微微上扬，语速自然，短句干净利落。像轻轻招呼朋友，声音更轻一些。不要播音腔，不要大喊。",
       "requestId": "f45afcdd-7872-9261-bd73-684a5008034a"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "started",
+      "text": "收到，交给我吧。",
+      "file": "anruorou_v3.1/started.wav",
+      "duration": 1.6,
+      "sha256": "5af1de7e3679a399c74ef3b81bcd6b3fcce0f3959386a5ed04e6e8271cd92095",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻快地接过朋友交代的小任务，可靠又有一点小开心。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "206f48f9-95f7-90f7-b5ca-ffc9a53467ea"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "attention",
+      "text": "需要你看一下哦。",
+      "file": "anruorou_v3.1/attention.wav",
+      "duration": 1.36,
+      "sha256": "002c8c64db54f0313b05b782b80d793c095feb949e709b7acfb6e1b88d557318",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。像轻轻提醒朋友需要确认一件事，亲切清楚，不催促。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "5e3abdc3-91ac-9e82-b450-f18d9d01a9bf"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "failure",
+      "text": "遇到一点问题，来看看嘛。",
+      "file": "anruorou_v3.1/failure.wav",
+      "duration": 2.08,
+      "sha256": "9447a7e77b5255b5510f2227487e88b272c2a2f412682a414501d5490aee2303",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，带自然微笑和亲近感。起声轻柔，语速自然，短句干净利落。温柔地说明遇到小问题，语气平静安慰，不惊慌、不卖惨。俏皮自然，不要刻意夹嗓。不要播音腔，不要大喊。",
+      "requestId": "e08247b7-3ff3-9f02-b84b-0dac3bf8d70a"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "started_2",
+      "text": "好呀，我这就开始。",
+      "file": "anruorou_v3.1/started_2.wav",
+      "duration": 1.68,
+      "sha256": "89cf2880ee455b172eed782905b5a34b5a26d7d0df4e39a7abed76ad6f1244ab",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。轻快地接过朋友的小任务，温柔爽快，像微笑着答应马上开始。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "f0dec8da-ed3e-9cee-8c43-3b53da7341f3"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "started_3",
+      "text": "嗯，我来处理啦。",
+      "file": "anruorou_v3.1/started_3.wav",
+      "duration": 1.52,
+      "sha256": "ed4bb659a194cb5c2bdb114c7dd31546d94be9f4accb6dc0c77bf5c53685f428",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。先轻轻答应一声，再亲切地表示接下这件事，可靠又有一点小开心。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "e90dd213-644b-9c81-9de8-6eab60ffb554"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "completion_2",
+      "text": "完成啦，来看看吧。",
+      "file": "anruorou_v3.1/completion_2.wav",
+      "duration": 1.92,
+      "sha256": "f6e19d6d297bfe537855991f185ee820e7fac7fdad4404ef0650d3e6d0b91d3b",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。事情完成后开心地招呼朋友来看结果，轻柔俏皮，不夸张庆祝。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "54b356ff-ecbf-97e1-a68f-b194e47d99ce"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "completion_3",
+      "text": "这件事办好啦。",
+      "file": "anruorou_v3.1/completion_3.wav",
+      "duration": 1.36,
+      "sha256": "1a23120545eaaf95b336bb1afa490ae41e225169f073a3fb09c01199457c3583",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。做完事情后带一点小满足，温柔自然地告诉朋友已经办好了。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "c5c2153f-11d5-9844-9c09-f6d5c4fccb60"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "attention_2",
+      "text": "这里要请你确认一下。",
+      "file": "anruorou_v3.1/attention_2.wav",
+      "duration": 1.52,
+      "sha256": "9ccb2d466539773fd0d906499fd188ab4366c0047bfa85ce4430f75fe8a90650",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。有一处需要朋友确认，轻声提醒，吐字清楚，亲近而不催促。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "a86f9976-6ee9-9422-95a4-a67d90534f88"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "attention_3",
+      "text": "等你回应一下哦。",
+      "file": "anruorou_v3.1/attention_3.wav",
+      "duration": 1.28,
+      "sha256": "e1cf3f69971249c3de90ba540db50c0ad45a96d19bd5ce9a301c78d4aee04ab2",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。轻轻招呼朋友来回应，耐心柔和，尾音轻软，不催促不着急。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "cf7504b0-ed32-9c1d-a68a-ea81f70f5d35"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "failure_2",
+      "text": "这次没完成，来看看原因吧。",
+      "file": "anruorou_v3.1/failure_2.wav",
+      "duration": 2.24,
+      "sha256": "42c634c9103abff814f1716b0317cf93e289584f08d9b22155b07909488f9e13",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。温柔地说明这次没有完成，请朋友一起查看原因，平静清楚，不惊慌不卖惨。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "6a8f7df2-54a8-9f39-912d-2072c71d2bc0"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "failure_3",
+      "text": "出了点小状况，我们看看吧。",
+      "file": "anruorou_v3.1/failure_3.wav",
+      "duration": 2.64,
+      "sha256": "75160caefe02089d5d90991b03c37d75a43a3199c22e06ae3cec2ac2d7d9383a",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。遇到问题后温柔地邀请朋友一起看看，语气平静，不夸大也不承诺已经解决。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "1decc049-5e46-918c-9a83-2fc9eb1795bd"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "shy",
+      "text": "一直看着我做什么呀……",
+      "file": "anruorou_v3.1/shy.wav",
+      "duration": 1.52,
+      "sha256": "570e5723346cd45d62f8d33ad94220b38df289314bb7450dfa66dc5647378780",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。被朋友一直看着，有一点害羞，像微微脸红的小声询问，尾音轻软含蓄。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "926a2837-4636-9352-9bb2-2e54672cda64"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "wake",
+      "text": "唔……我醒啦。",
+      "file": "anruorou_v3.1/wake.wav",
+      "duration": 2.4,
+      "sha256": "a32d0c8d3ce0b2d6f9bbafab6b40dc6c3dde26f589c168707e7e8c8ecaa3817e",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。刚被轻轻叫醒，先迷迷糊糊地唔一声，再柔和地回应，慵懒但吐字清楚。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "807bdd3e-f0b5-99d0-badd-95bfe7f97acd"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "sleep",
+      "text": "有点困了，我眯一会儿哦。",
+      "file": "anruorou_v3.1/sleep.wav",
+      "duration": 2.16,
+      "sha256": "d82a50184b8f8c4ae9c08fea662ed05da5ead1555081fefda5402d7d936ff19c",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。有一点困了，温柔地道声小别，越说越轻，像准备眯一小会儿，不夸张打哈欠。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "38e7beab-3301-9b71-987c-d9671147a29e"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "welcome",
+      "text": "你回来啦，我在呢。",
+      "file": "anruorou_v3.1/welcome.wav",
+      "duration": 1.68,
+      "sha256": "c01a9595559db9061f01ac99ba0990ea78b9d44a9faed302683313c2e068a9c5",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。朋友回来时开心地轻声欢迎，温暖自然，有一点小惊喜。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "00c8a854-f7a2-9758-88ab-426383ccbefe"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "moved",
+      "text": "这里也不错嘛。",
+      "file": "anruorou_v3.1/moved.wav",
+      "duration": 1.12,
+      "sha256": "5f50b7913369c636ff3b9d1a6111bc1f9b7e0d61d768fa095eb980e55b5107bb",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。被搬到新位置后好奇地看看周围，轻快满意，尾音柔和。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "5b77bee1-0fca-9742-b913-c4179aacf0d4"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "reconnected",
+      "text": "又连上啦。",
+      "file": "anruorou_v3.1/reconnected.wav",
+      "duration": 1.12,
+      "sha256": "12b9aa5916dae7b8f3040dde67d1c002a76e1f73b193931e51042428a0c36b10",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。连接恢复后轻轻松一口气，简短清楚，开心但不兴奋大喊。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "2d0e6d37-a685-9751-9bd1-2c7fc4bde4cd"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "pet_2",
+      "text": "我在呢。",
+      "file": "anruorou_v3.1/pet_2.wav",
+      "duration": 0.8,
+      "sha256": "4778497b7fa5bf579eb4949217e19bf846fa5557e71fed6e86b8a779624e128c",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。朋友轻轻点了点你，温柔亲近地回应，像轻轻答应一声。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "31d19527-13c9-944d-bf38-adcecbf4f5b1"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "pet_3",
+      "text": "嘿嘿，怎么啦？",
+      "file": "anruorou_v3.1/pet_3.wav",
+      "duration": 1.44,
+      "sha256": "dd70f6fd631a29e4ed8e6fcf51df9ae1eee12ea75211af83e5984f6481cb58c7",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。被朋友轻轻点了一下，先自然轻笑，再俏皮地问怎么啦。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "81782f28-3c22-9112-a8a4-ec9034f7822a"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "idle_2",
+      "text": "要不要休息一下呀？",
+      "file": "anruorou_v3.1/idle_2.wav",
+      "duration": 1.52,
+      "sha256": "591f4ecda5c020abe38b9f714ea032063353fe4bcf321de82c9b5975ae3531c1",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。像轻轻招呼朋友休息，语气关心而不催促，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "a0ed1a9b-393f-9b94-90ca-8eccd6bb3c57"
+    },
+    {
+      "voice": "anruorou_v3.1",
+      "kind": "idle_3",
+      "text": "我就在这里陪着你。",
+      "file": "anruorou_v3.1/idle_3.wav",
+      "duration": 1.28,
+      "sha256": "e14ca08c1564de79fde65a4d5b8fde62ed481fc6e064c8f0681e9ca5b9e2b8d3",
+      "instruction": "为桌面陪伴角色配音。声线轻柔气声，用普通话轻声说话，起声轻柔，短句干净利落。安静温柔地陪着朋友，语速舒缓，声音更轻一些。自然亲切，不要刻意夹嗓，不要播音腔，不要大喊。",
+      "requestId": "241e8675-711b-963a-aee3-d3d12bd390ca"
     },
     {
       "voice": "anruorou_v3.1",

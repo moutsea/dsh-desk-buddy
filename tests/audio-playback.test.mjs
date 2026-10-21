@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { PetAudio } from "../src/sounds.ts";
-import { SOUND_DEFAULTS } from "../shared/sound.mjs";
-import { SOUND_VOICES } from "../shared/voices.mjs";
+import { SoundCues, SOUND_DEFAULTS } from "../shared/sound.mjs";
+import { TaskSoundRecorder } from "../shared/task-sounds.mjs";
+import { reduceActivity } from "../shared/activity.mjs";
+import { SOUND_VOICES, SOUND_VARIANTS } from "../shared/voices.mjs";
 
 function deferred() {
   let resolve, reject;
@@ -92,6 +94,119 @@ function audioHarness(
   return { audio, played, requests, signals, gains, decoded: () => decoded };
 }
 
+test("action-needed audio preempts completion, protects itself from previews and coalesces other urgent cues", async (t) => {
+  const { audio, played } = audioHarness(t);
+  assert.equal(await audio.play("completion"), "played");
+  assert.equal(await audio.play("attention"), "played");
+  assert.equal(played[0].stopped, true);
+  assert.equal(await audio.preview(SOUND_VOICES[0].id, "failure"), "busy");
+  assert.equal(await audio.play("failure"), "busy");
+  assert.equal(played.length, 2);
+  audio.configure({ ...SOUND_DEFAULTS, attention: false });
+  assert.equal(played[1].stopped, true);
+  assert.equal(await audio.play("failure"), "played");
+});
+
+test("failure preempts an in-flight start; resolving a request discards loading attention audio", async (t) => {
+  const loading = deferred();
+  const { audio, played } = audioHarness(t, () => loading.promise);
+  audio.configure({ ...SOUND_DEFAULTS, started: true });
+  const started = audio.play("started");
+  const failure = audio.play("failure");
+  assert.equal(await started, "muted");
+  loading.resolve({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) });
+  assert.equal(await failure, "played");
+  assert.equal(played.length, 1);
+  audio.configure({ ...SOUND_DEFAULTS, failure: false });
+  let pending = true;
+  const attention = audio.play("attention", () => pending);
+  pending = false;
+  audio.refresh();
+  assert.equal(await attention, "muted");
+  assert.equal(played.length, 1);
+});
+
+for (const phase of ["loading", "playing"])
+  test(`late output preserves a ${phase} failure until its real task boundary`, async (t) => {
+    const load = deferred();
+    const { audio, played } = audioHarness(t, () => load.promise);
+    const recorder = new TaskSoundRecorder();
+    const policy = new SoundCues(1000);
+    const state = {
+      connection: "connected",
+      connectionEpoch: 1,
+      config: { endpoint: "local", sounds: SOUND_DEFAULTS },
+      sessions: [{ sessionId: "task", running: true }],
+      activity: {},
+      taskSounds: [],
+      pending: [],
+      completions: [],
+      surface: { section: null },
+    };
+    let now = 1000;
+    policy.update(state, now);
+    const deliver = (event) => {
+      now += 100;
+      state.taskSounds = recorder.record(
+        state.taskSounds,
+        "task",
+        event,
+        now,
+        1,
+      );
+      state.activity.task =
+        event.type === "host/agent-error"
+          ? { status: "error", seq: 1 }
+          : reduceActivity(state.activity.task, event, now);
+      const cues = policy.update(state, now);
+      audio.refresh();
+      return cues;
+    };
+    assert.deepEqual(
+      deliver({ type: "host/agent-error", id: "failure", message: "Failed" }),
+      ["failure"],
+    );
+    const cue = policy.taskCues.failure;
+    const playback = audio.play("failure", () =>
+      policy.taskIsCurrent(state, now, cue),
+    );
+    const release = () =>
+      load.resolve({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) });
+    if (phase === "playing") {
+      release();
+      assert.equal(await playback, "played");
+    }
+    assert.deepEqual(
+      deliver({
+        type: "assistant/message",
+        seq: 2,
+        data: { message: { content: [{ type: "text", text: "Late output" }] } },
+      }),
+      [],
+    );
+    assert.equal(state.activity.task.status, "replying");
+    assert.deepEqual(
+      deliver({
+        type: "turn/end",
+        seq: 3,
+        data: { reason: { kind: "error", error: { message: "Failed" } } },
+      }),
+      [],
+    );
+    if (phase === "loading") {
+      release();
+      assert.equal(await playback, "played");
+    }
+    assert.equal(played.length, 1);
+    assert.equal(played[0].stopped, false);
+    deliver({ type: "turn/start", seq: 4 });
+    assert.equal(
+      played[0].stopped,
+      true,
+      "a new turn still stops the old failure",
+    );
+  });
+
 test("volume and unrelated switches preserve a loading completion at the updated gain", async (t) => {
   const loading = deferred();
   const { audio, played, gains } = audioHarness(t, () => loading.promise);
@@ -102,6 +217,36 @@ test("volume and unrelated switches preserve a loading completion at the updated
   assert.equal(await completion, "played");
   assert.equal(played.length, 1);
   assert.equal(gains[0].gain.value, 0.7);
+});
+
+test("anger replaces pet responses, coalesces repeats and yields to task notifications", async (t) => {
+  const { audio, played } = audioHarness(t);
+  assert.equal(await audio.play("pet"), "played");
+  assert.equal(await audio.play("angry"), "played");
+  assert.equal(played[0].stopped, true);
+  assert.equal(await audio.play("angry"), "busy");
+  assert.equal(await audio.play("pet"), "busy");
+  assert.equal(await audio.play("completion"), "played");
+  assert.equal(played[1].stopped, true);
+  assert.equal(await audio.play("angry"), "busy");
+  assert.equal(played.length, 3);
+});
+
+test("a pending anger response cannot revive when its reaction ends and later returns", async (t) => {
+  const loading = deferred();
+  const { audio, played } = audioHarness(t, () => loading.promise);
+  let current = true;
+  const pending = audio.play("angry", () => current);
+  current = false;
+  audio.refresh();
+  current = true;
+  loading.resolve({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) });
+  assert.equal(await pending, "muted");
+  assert.equal(played.length, 0);
+  assert.equal(await audio.play("angry"), "played");
+  audio.configure({ ...SOUND_DEFAULTS, angry: false });
+  assert.equal(played[0].stopped, true);
+  assert.equal(await audio.preview(SOUND_VOICES[0].id, "angry"), "muted");
 });
 
 test("disabling and re-enabling completion during loading never revives the old request", async (t) => {
@@ -579,4 +724,78 @@ test("invalidated idle loads do not revive after eligibility returns", async (t)
   eligible = false;
   audio.refresh();
   assert.equal(played[0].stopped, true, "active automatic greetings also stop");
+});
+
+test("all varied scenes rotate real clips without immediate repeats, independently of auditions", async (t) => {
+  const { audio, played, requests } = audioHarness(t);
+  let time = 1000;
+  t.mock.method(performance, "now", () => time);
+  t.mock.method(Math, "random", () => 0.99);
+  const settings = { ...SOUND_DEFAULTS, started: true };
+  audio.configure(settings);
+  for (const kind of Object.keys(SOUND_VARIANTS)) {
+    assert.equal(await audio.play(kind), "played");
+    assert.ok(requests.at(-1).endsWith(`/${kind}.wav`));
+    played.at(-1).onended();
+    time += 31000;
+    assert.equal(await audio.preview(SOUND_VOICES[0].id, kind), "played");
+    // Preview starts with the original even though automatic playback used it.
+    assert.ok(requests.at(-1).endsWith(`/${kind}.wav`));
+    played.at(-1).onended();
+    assert.equal(await audio.play(kind), "played");
+    assert.ok(requests.at(-1).endsWith(`/${kind}_3.wav`));
+    played.at(-1).onended();
+    assert.equal(
+      await audio.play(kind),
+      "busy",
+      "all alternatives share one cooldown",
+    );
+    time += 31000;
+    assert.equal(await audio.play(kind), "played");
+    assert.ok(requests.at(-1).endsWith(`/${kind}_2.wav`));
+    audio.configure({ ...settings, [kind]: false });
+    assert.equal(played.at(-1).stopped, true);
+    assert.equal(await audio.preview(SOUND_VOICES[0].id, kind), "muted");
+    audio.configure(settings);
+  }
+});
+
+test("a failed first phrase does not advance the rotation", async (t) => {
+  let fail = true;
+  const { audio, requests } = audioHarness(t, async () => {
+    if (fail) throw new Error("unavailable");
+    return { ok: true, arrayBuffer: async () => new ArrayBuffer(8) };
+  });
+  assert.equal(await audio.play("pet"), "unavailable");
+  fail = false;
+  assert.equal(await audio.play("pet"), "played");
+  assert.equal(requests.length, 2);
+  assert.ok(requests.every((url) => url.endsWith("/pet.wav")));
+});
+
+test("an obsolete task alternative is discarded without consuming the next phrase", async (t) => {
+  const loading = deferred();
+  const { audio, requests, played } = audioHarness(t, async (url) => {
+    if (url.endsWith("/completion_3.wav")) return loading.promise;
+    return { ok: true, arrayBuffer: async () => new ArrayBuffer(8) };
+  });
+  let time = 1000,
+    current = true;
+  t.mock.method(performance, "now", () => time);
+  t.mock.method(Math, "random", () => 0.99);
+  assert.equal(await audio.play("completion"), "played");
+  played.at(-1).onended();
+  time += 2000;
+  const pending = audio.play("completion", () => current);
+  assert.ok(requests.at(-1).endsWith("/completion_3.wav"));
+  current = false;
+  audio.refresh();
+  assert.equal(await pending, "muted");
+  loading.resolve({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) });
+  assert.equal(await audio.play("completion"), "played");
+  assert.equal(played.length, 2);
+  assert.ok(
+    requests.at(-1).endsWith("/completion_3.wav"),
+    "retry keeps the unplayed alternative",
+  );
 });

@@ -18,6 +18,7 @@ import { SessionProjections } from "../shared/session-projections.mjs";
 import { EXPRESSIONS, isExpressionId } from "../shared/expressions.mjs";
 import { reduceActivity, reconcileActivity } from "../shared/activity.mjs";
 import { recordCompletion } from "../shared/completion.mjs";
+import { TaskSoundRecorder } from "../shared/task-sounds.mjs";
 import {
   normalizeSoundSettings,
   patchSoundSettings,
@@ -65,6 +66,7 @@ let connectRevision = 0,
   snapshotRevision = 0,
   controlSnapshotRevision = 0;
 const projections = new Map();
+const taskSounds = new TaskSoundRecorder();
 function projectionFor(id) {
   if (!projections.has(id)) projections.set(id, new SessionProjections());
   return projections.get(id);
@@ -97,6 +99,7 @@ let state = {
   pending: [],
   activity: {},
   completions: [],
+  taskSounds: [],
   surface: {
     section: null,
     side: "left",
@@ -488,6 +491,14 @@ function handleFrame(frame) {
       Date.now(),
       state.connectionEpoch,
     );
+    state.taskSounds = taskSounds.record(
+      state.taskSounds,
+      id,
+      event,
+      Date.now(),
+      state.connectionEpoch,
+      previous?.status === "error",
+    );
     if (event.type === "turn/start") {
       if (row) row.running = true;
     }
@@ -500,7 +511,15 @@ function handleFrame(frame) {
     if (row) row.running = payload.running;
     state.activity[id] = reconcileActivity(state.activity[id], payload.running);
   }
-  if (payload.type === "host/agent-error")
+  if (payload.type === "host/agent-error") {
+    state.taskSounds = taskSounds.record(
+      state.taskSounds,
+      id,
+      { type: payload.type, id: frame.rpcId, message: payload.message },
+      Date.now(),
+      state.connectionEpoch,
+      state.activity[id]?.status === "error",
+    );
     state.activity[id] = {
       ...state.activity[id],
       status: "error",
@@ -512,6 +531,7 @@ function handleFrame(frame) {
       message: payload.message,
       at: Date.now(),
     };
+  }
   if (
     payload.type === "host/session-added" ||
     payload.type === "host/session-removed"
@@ -574,6 +594,7 @@ async function connect(endpoint) {
   state.activity = {};
   state.liveAssistant = {};
   state.completions = [];
+  state.taskSounds = [];
   state.sessions = [];
   projections.clear();
   state.host = null;
@@ -592,6 +613,7 @@ async function connect(endpoint) {
     if (!connected) {
       state.connectionEpoch++;
       state.completions = [];
+      state.taskSounds = [];
       if (kind === "mux") {
         state.pending = [];
         state.liveAssistant = {};
@@ -873,9 +895,14 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
       );
       return;
     }
-    case "drag:end":
+    case "drag:end": {
+      const anchor = petAnchor();
+      const moved =
+        !!petDrag?.moved &&
+        (anchor.x !== petDrag.anchor.x || anchor.y !== petDrag.anchor.y);
       finishPetDrag();
-      return;
+      return { moved };
+    }
     case "petScale": {
       if (
         typeof payload !== "number" ||

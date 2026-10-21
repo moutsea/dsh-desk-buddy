@@ -39,8 +39,18 @@ test("sound settings retain zero and false, repair stored values and reject inva
       volume: 0,
       voice: DEFAULT_SOUND_VOICE,
       pet: false,
+      angry: false,
       completion: false,
       idle: false,
+      started: false,
+      attention: true,
+      failure: true,
+      shy: false,
+      wake: false,
+      sleep: false,
+      welcome: false,
+      moved: false,
+      reconnected: false,
     },
   );
   assert.equal(normalizeSoundSettings({ volume: NaN }).volume, 35);
@@ -67,6 +77,15 @@ test("sound settings retain zero and false, repair stored values and reject inva
     { voice: 1 },
   ])
     assert.throws(() => patchSoundSettings(null, patch), /无效声音设置/);
+});
+
+test("anger inherits older touch-mute settings until explicitly configured", () => {
+  assert.equal(normalizeSoundSettings({ pet: false }).angry, false);
+  assert.equal(normalizeSoundSettings({ pet: true }).angry, true);
+  assert.equal(normalizeSoundSettings({ angry: false }).angry, false);
+  assert.equal(patchSoundSettings({ pet: false }, { angry: true }).angry, true);
+  assert.equal(patchSoundSettings({}, { angry: false }).pet, true);
+  assert.throws(() => patchSoundSettings({}, { angry: 1 }), /无效声音设置/);
 });
 
 test("voice choice survives patches and older or unknown settings use the default", () => {

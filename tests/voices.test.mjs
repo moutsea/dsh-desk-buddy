@@ -2,14 +2,21 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import { SOUND_VOICES, SOUND_PHRASES } from "../shared/voices.mjs";
+import {
+  SOUND_VOICES,
+  SOUND_PHRASES,
+  SOUND_VARIANTS,
+} from "../shared/voices.mjs";
 
-test("every selectable voice ships all four distinct, decodable PCM clips and their provenance", async () => {
+test("every selectable voice ships every distinct, decodable PCM clip and its provenance", async () => {
   const root = new URL("../public/voices/", import.meta.url);
   const manifest = JSON.parse(
     await readFile(new URL("manifest.json", root), "utf8"),
   );
-  assert.equal(manifest.clips.length, SOUND_VOICES.length * 4);
+  assert.equal(
+    manifest.clips.length,
+    SOUND_VOICES.length * Object.keys(SOUND_PHRASES).length,
+  );
   const hashes = new Set();
   for (const voice of SOUND_VOICES) {
     for (const [kind, text] of Object.entries(SOUND_PHRASES)) {
@@ -58,5 +65,18 @@ test("every selectable voice ships all four distinct, decodable PCM clips and th
       );
       hashes.add(hash);
     }
+  }
+});
+
+test("variant groups contain distinct shipped phrases and keep the original response", () => {
+  for (const [kind, clips] of Object.entries(SOUND_VARIANTS)) {
+    assert.equal(clips[0], kind);
+    assert.equal(clips.length, 3);
+    assert.equal(new Set(clips).size, clips.length);
+    for (const clip of clips) assert.ok(SOUND_PHRASES[clip]);
+    assert.equal(
+      new Set(clips.map((clip) => SOUND_PHRASES[clip])).size,
+      clips.length,
+    );
   }
 });

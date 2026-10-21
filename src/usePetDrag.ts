@@ -6,7 +6,7 @@ import type {
 
 const THRESHOLD = 5;
 const call = (action: string, point?: { x: number; y: number }) => {
-  void window.desktop?.invoke(action, point).catch(() => {});
+  return window.desktop?.invoke(action, point).catch(() => null);
 };
 
 export function usePetDrag() {
@@ -28,16 +28,18 @@ export function usePetDrag() {
     if (pending.current) call("drag:move", pending.current);
     pending.current = null;
   };
-  const finish = () => {
+  const finish = async () => {
     const current = gesture.current;
-    if (!current) return;
+    if (!current) return { dragged: false, moved: false };
     gesture.current = null;
     flush();
-    call("drag:end");
+    const result = call("drag:end");
     setHeld(false);
     setDragging(false);
     if (current.target.hasPointerCapture(current.id))
       current.target.releasePointerCapture(current.id);
+    const moved = (await result)?.moved === true;
+    return { dragged: current.moved, moved: current.moved && moved };
   };
   useEffect(() => {
     window.addEventListener("blur", finish);
@@ -49,6 +51,7 @@ export function usePetDrag() {
   return {
     held,
     dragging,
+    isHeld: () => gesture.current !== null,
     preventClick(event: ReactMouseEvent) {
       if (!suppressClick.current || event.detail === 0) return false;
       event.preventDefault();

@@ -9,6 +9,7 @@ export async function createFixture({ historyPageSize } = {}) {
     calls = [],
     timers = new Set();
   let disconnected = false;
+  let streamsAvailable = true;
   const later = (fn, ms) => {
     const timer = setTimeout(() => {
       timers.delete(timer);
@@ -263,7 +264,7 @@ export async function createFixture({ historyPageSize } = {}) {
         : request.url === "/api/events.host"
           ? "host"
           : null;
-    if (!kind) {
+    if (!kind || !streamsAvailable) {
       socket.destroy();
       return;
     }
@@ -312,6 +313,9 @@ export async function createFixture({ historyPageSize } = {}) {
       for (const group of Object.values(streams))
         for (const socket of group) socket.close();
       disconnected = true;
+    },
+    setStreamsAvailable: (value) => {
+      streamsAvailable = value;
     },
     get disconnected() {
       return disconnected;

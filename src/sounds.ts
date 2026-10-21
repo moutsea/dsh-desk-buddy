@@ -1,15 +1,38 @@
 import { normalizeSoundSettings } from "../shared/sound.mjs";
-import { isSoundVoice } from "../shared/voices.mjs";
+import { isSoundVoice, SOUND_VARIANTS } from "../shared/voices.mjs";
 
-export type SoundKind = "pet" | "completion" | "idle";
+export type SoundKind =
+  | "pet"
+  | "angry"
+  | "completion"
+  | "idle"
+  | "started"
+  | "attention"
+  | "failure"
+  | "shy"
+  | "wake"
+  | "sleep"
+  | "welcome"
+  | "moved"
+  | "reconnected";
 type ClipKind = SoundKind | "preview";
 export type SoundSettings = {
   enabled: boolean;
   volume: number;
   voice: string;
   pet: boolean;
+  angry: boolean;
   completion: boolean;
   idle: boolean;
+  started: boolean;
+  attention: boolean;
+  failure: boolean;
+  shy: boolean;
+  wake: boolean;
+  sleep: boolean;
+  welcome: boolean;
+  moved: boolean;
+  reconnected: boolean;
 };
 type Playback = {
   kind: ClipKind;
@@ -31,17 +54,34 @@ type BufferLoad = {
 };
 const cooldowns: Record<SoundKind, number> = {
   pet: 350,
+  angry: 6000,
   completion: 1200,
   idle: 30000,
+  started: 5000,
+  attention: 1500,
+  failure: 1500,
+  shy: 60000,
+  wake: 60000,
+  sleep: 300000,
+  welcome: 600000,
+  moved: 30000,
+  reconnected: 60000,
 };
 const loadDeadline = 1000;
 
-function isCompletion(playback: Playback) {
-  return playback.kind === "completion" && !playback.audition;
+function priority(playback: Playback) {
+  if (playback.audition) return 1;
+  if (["attention", "failure"].includes(playback.kind)) return 3;
+  if (playback.kind === "completion") return 2;
+  if (["started", "angry", "wake", "welcome"].includes(playback.kind)) return 1;
+  return 0;
 }
 
 function canInterrupt(next: Playback, current: Playback) {
-  return !isCompletion(current) && (isCompletion(next) || next.audition);
+  return (
+    priority(next) > priority(current) ||
+    (next.audition && priority(current) <= 1)
+  );
 }
 
 export class PetAudio {
@@ -53,6 +93,7 @@ export class PetAudio {
   private lastPlayed: Partial<Record<SoundKind, number>> = {};
   private pending?: PendingPlayback;
   private disposed = false;
+  private lastClips = new Map<string, string>();
 
   configure(value: unknown) {
     const settings = normalizeSoundSettings(value);
@@ -111,7 +152,7 @@ export class PetAudio {
     this.voices.delete(voice);
   }
 
-  private buffer(context: AudioContext, voice: string, kind: ClipKind) {
+  private buffer(context: AudioContext, voice: string, kind: string) {
     const key = `${voice}/${kind}`;
     let load = this.buffers.get(key);
     if (!load) {
@@ -226,7 +267,17 @@ export class PetAudio {
         this.output.connect(this.context.destination);
       }
       const context = this.context;
-      const load = this.buffer(context, voiceId, kind);
+      const variantKey = `${audition ? "preview" : "auto"}/${voiceId}/${kind}`;
+      const lastClip = this.lastClips.get(variantKey);
+      const variants = SOUND_VARIANTS[kind as keyof typeof SOUND_VARIANTS];
+      // Preserve the original first response, then vary successful playbacks.
+      // Auditions have their own rotation and do not consume automatic choices.
+      const choices = variants?.filter((clip) => clip !== lastClip);
+      const clip =
+        lastClip && choices?.length
+          ? choices[Math.floor(Math.random() * choices.length)]
+          : kind;
+      const load = this.buffer(context, voiceId, clip);
       const result = await Promise.race([
         Promise.all([
           load.promise,
@@ -253,8 +304,7 @@ export class PetAudio {
       )
         return "unavailable";
       if (this.pending !== playback) return "muted";
-      if (isCompletion(playback) || audition)
-        for (const voice of this.voices) this.stopVoice(voice);
+      for (const voice of this.voices) this.stopVoice(voice);
       if (!audition && kind !== "preview")
         this.lastPlayed[kind] = performance.now();
       const gain = context.createGain();
@@ -270,6 +320,7 @@ export class PetAudio {
         this.voices.delete(voice);
       };
       source.start(context.currentTime + 0.01);
+      if (variants) this.lastClips.set(variantKey, clip);
       return "played";
     } catch {
       return playback.cancelled || !this.isCurrent(playback)
