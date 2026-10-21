@@ -129,11 +129,11 @@ try {
     "motion",
     "window",
   ]) {
-    // The progress deck is driven by synthetic hover and drag input, which races
-    // with the window's click-through toggling on headless runners. One retry is
-    // enough to absorb that race; a real regression fails both attempts and the
-    // warning keeps the flake visible.
-    const attempts = name === "progress" ? 2 : 1;
+    // Progress is driven by synthetic hover and drag input (which races with the
+    // window's click-through toggling) and sound depends on the runner's audio
+    // device and fake-clock timing. One retry absorbs those races; a real
+    // regression fails both attempts and the warning keeps the flake visible.
+    const attempts = ["progress", "sound"].includes(name) ? 2 : 1;
     let lastError;
     for (let attempt = 1; attempt <= attempts; attempt++) {
       try {

@@ -144,6 +144,11 @@ export async function checkCompanionSounds() {
     await quiet(); // one minute cooldown
     await page.mouse.move(1, 1);
     await invoke("soundSettings", { sleep: true });
+    // The setting is applied over IPC; fast-forwarding first would let the pet
+    // fall asleep with the previous flag and play the wrong cue.
+    await expect
+      .poll(async () => (await invoke("state")).config.soundSettings.sleep)
+      .toBe(true);
     await page.clock.fastForward(241000);
     await asleep();
     await heard("sleep");
@@ -155,6 +160,9 @@ export async function checkCompanionSounds() {
     await heard("wake");
     await rest();
     await invoke("soundSettings", { sleep: false });
+    await expect
+      .poll(async () => (await invoke("state")).config.soundSettings.sleep)
+      .toBe(false);
     await page.mouse.move(1, 1);
     await page.clock.fastForward(601000);
     await asleep();
