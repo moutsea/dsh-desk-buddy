@@ -24,7 +24,7 @@
 
 3. 安装后点击 **立即启用**，重启 DSH，桌宠会自动连接。
 
-首次启动需从 GitHub 下载约 200–230 MB 的组件，之后使用本地缓存。无需另装 Node.js、Electron 或启动 DSH Web。
+首次启动需从 GitHub 下载约 210–250 MB 的组件，之后使用本地缓存。无需另装 Node.js、Electron 或启动 DSH Web。
 
 也可在 [Releases](https://github.com/moutsea/dsh-desk-buddy/releases/latest) 下载对应系统的完整 `.tgz`，将附件链接或本地绝对路径填入安装框。请使用完整插件包，勿选 Source code。
 

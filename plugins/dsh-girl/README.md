@@ -12,13 +12,13 @@
 https://github.com/moutsea/dsh-desk-buddy
 ```
 
-安装后点击“立即启用”，再重启 Desktop。Mac 和 Windows 使用同一个地址，插件自动选择组件。首次下载约 200–230 MB，需要能够访问 GitHub Release；之后使用本地缓存。右下角“dsh-desk-buddy”提供准备状态、启动、关闭、显示、隐藏、对话和自动启动设置；支持拖动并保存位置，避开左下角 user-menu。聚焦后方向键移动，Home 恢复默认位置。下载失败可检查网络后重试。无需另开 DSH Web 服务，也无需手填地址。Desktop 的插件由应用管理，不能使用 `dsh plugin --profile desktop` 修改。
+安装后点击“立即启用”，再重启 Desktop。Mac 和 Windows 使用同一个地址，插件自动选择组件。首次下载约 210–250 MB，需要能够访问 GitHub Release；之后使用本地缓存。右下角“dsh-desk-buddy”提供准备状态、启动、关闭、显示、隐藏、对话和自动启动设置；支持拖动并保存位置，避开左下角 user-menu。聚焦后方向键移动，Home 恢复默认位置。下载失败可检查网络后重试。无需另开 DSH Web 服务，也无需手填地址。Desktop 的插件由应用管理，不能使用 `dsh plugin --profile desktop` 修改。
 
 也可从 [GitHub Releases](https://github.com/moutsea/dsh-desk-buddy/releases) 选择完整 `.tgz`，将附件链接或下载后文件的绝对路径作为安装来源。macOS ARM64 使用 `dsh-desk-buddy-<version>-darwin-arm64.tgz`，Windows x64 使用 `dsh-desk-buddy-<version>-win32-x64.tgz`。完整包无需额外下载组件。两种方式的包名均为 `dsh-desk-buddy`；升级前卸载旧的 `deepseek-girl` 或 `dsh-girl` 插件，再安装新版。用户设置和窗口位置保留。
 
 ## 手动更新与图标
 
-在桌宠“设置 → 插件更新”，或 DSH 页面“dsh-desk-buddy → 插件更新”点击“检查更新”，发现正式版后点击“下载并更新”。按当前系统下载完整插件包并校验 SHA-256，不会自动下载或后台升级。更新包含插件管理代码和桌宠应用，下载约 200–230 MB。升级期间桌宠可能关闭，可继续在 DSH 管理页查看结果。
+在桌宠“设置 → 插件更新”，或 DSH 页面“dsh-desk-buddy → 插件更新”点击“检查更新”，发现正式版后点击“下载并更新”。按当前系统下载完整插件包并校验 SHA-256，不会自动下载或后台升级。更新包含插件管理代码和桌宠应用，下载约 210–250 MB。升级期间桌宠可能关闭，可继续在 DSH 管理页查看结果。
 
 升级时请保持 DSH 打开。支持热加载的宿主使用正式卸载、安装接口替换插件，桌宠会短暂退出再启动；不支持热加载的宿主在安装后等待重启。安装失败时尝试恢复更新前备份，失败信息提供重新安装指引。完成后重启 DSH，桌宠设置、窗口位置、会话与 DSH 任务保留。更新包和旧版备份保留在用户数据目录，DSH 的依赖记录仍会引用这些文件，请勿手动删除。
 
