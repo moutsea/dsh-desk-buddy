@@ -301,6 +301,9 @@ function createWindows() {
       ...layout.bounds,
       frame: false,
       transparent: true,
+      // Opaque default backgrounds flash white whenever the compositor redraws
+      // a transparent window, which happens on every fast session update.
+      backgroundColor: "#00000000",
       acceptFirstMouse: true,
       resizable: false,
       hasShadow: false,

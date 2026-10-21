@@ -195,6 +195,49 @@ try {
     await image.evaluate((node) => node.getAnimations()[0].play());
     console.log(`Motion verified: ${id} (${motionDuration(id)} ms)`);
   }
+  // Switching expressions must not blank the sprite: several sessions can
+  // finish or change state back to back, and a dropped frame reads as a flash.
+  await pet.evaluate(() => {
+    window.__layerSamples = [];
+    const sample = () => {
+      const animated = document.querySelector(".pet-character .motion-sprite");
+      const still = document.querySelector(".pet-character .character-image");
+      window.__layerSamples.push({
+        ready: animated?.getAttribute("data-ready") || null,
+        animated: animated ? getComputedStyle(animated).opacity : null,
+        still: still ? getComputedStyle(still).opacity : null,
+      });
+    };
+    sample();
+    const timer = setInterval(sample, 16);
+    setTimeout(() => clearInterval(timer), 700);
+  });
+  for (const expression of ["thinking", "working", "learning", "happy", "idle"])
+    await pet.evaluate(
+      (value) => window.desktop.invoke("expression", value),
+      expression,
+    );
+  await pet.waitForTimeout(800);
+  const samples = await pet.evaluate(() => window.__layerSamples);
+  assert.ok(samples.length > 8, "sampled the sprite while switching");
+  // Once a sheet is decoded the animated layer keeps painting every frame.
+  assert.deepEqual(
+    samples.filter((sample) => sample.animated !== "1").map((s) => s.animated),
+    [],
+    "the animated layer never disappears while expressions change",
+  );
+  assert.deepEqual(
+    samples.filter((sample) => sample.ready !== "true"),
+    [],
+    "the sprite stays ready while expressions change",
+  );
+  assert.deepEqual(
+    samples.filter((sample) => sample.still !== "0").map((s) => s.still),
+    [],
+    "the static layer stays hidden while the animation runs",
+  );
+  await pet.evaluate(() => window.desktop.invoke("expression", "idle"));
+  await pet.waitForTimeout(120);
   const sprite = pet.locator(".pet-character .motion-sprite.ready"),
     image = sprite.locator("image");
   await pet.emulateMedia({ reducedMotion: "reduce" });

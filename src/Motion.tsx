@@ -35,7 +35,11 @@ export function MotionSprite({ expression }: { expression: string }) {
     height: number;
   } | null>(null);
   const [animation, setAnimation] = useState<Animation | null>(null);
-  const ready = sheet?.id === expression;
+  // Keep painting the last decoded sheet while the next expression loads.
+  // Blanking the layer on every change flashes the pet whenever several
+  // sessions finish or change state one after another.
+  const shown = sheet?.id;
+  const ready = !!shown;
   const playing =
     ready && enabled && !reduced && visible && foreground && windowVisible;
 
@@ -93,16 +97,16 @@ export function MotionSprite({ expression }: { expression: string }) {
   }, [expression, visible, sheet?.id]);
 
   useEffect(() => {
-    if (!ready || !sheet || !picture.current) return;
+    if (!sheet || !picture.current) return;
     const motion = picture.current.animate(
       motionKeyframes(
-        expression,
+        sheet.id,
         sheet.width,
         sheet.height,
-        registration[expression as keyof typeof registration],
+        registration[sheet.id as keyof typeof registration],
       ),
       {
-        duration: motionDuration(expression),
+        duration: motionDuration(sheet.id),
         iterations: Infinity,
       },
     );
@@ -110,7 +114,7 @@ export function MotionSprite({ expression }: { expression: string }) {
     motion.currentTime = 0;
     setAnimation(motion);
     return () => motion.cancel();
-  }, [expression, ready, sheet]);
+  }, [sheet]);
 
   useEffect(() => {
     if (!animation) return;
@@ -128,7 +132,7 @@ export function MotionSprite({ expression }: { expression: string }) {
       viewBox={`0 0 ${CHARACTER_LAYOUT.width} ${CHARACTER_LAYOUT.height}`}
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
-      data-motion={expression}
+      data-motion={shown ?? expression}
       data-ready={ready ? "true" : "false"}
       data-playing={playing ? "true" : "false"}
     >
@@ -145,7 +149,7 @@ export function MotionSprite({ expression }: { expression: string }) {
           <g clipPath={`url(#${clipId})`}>
             <image
               ref={picture}
-              href={`${characterRoot}animations/${expression}.png`}
+              href={`${characterRoot}animations/${sheet.id}.png`}
               width={sheet.width}
               height={sheet.height}
             />

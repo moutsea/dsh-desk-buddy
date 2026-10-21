@@ -9,32 +9,44 @@ const labels = {
   error: "执行出错",
 };
 
-export function activeProgress(state) {
+export function activeProgressItems(state) {
   if (
     state.config.progressBubbles === false ||
     state.connection !== "connected"
   )
-    return null;
+    return [];
   const sessions = state.sessions.filter((item) => item.origin !== "subagent");
-  const pending =
-    state.pending.find(
-      (item) =>
-        item.sessionId === state.selectedId &&
-        sessions.some((session) => session.sessionId === item.sessionId),
-    ) ||
-    state.pending.find((item) =>
-      sessions.some((session) => session.sessionId === item.sessionId),
-    );
+  const byId = new Map(sessions.map((session) => [session.sessionId, session]));
+  const pending = new Map();
+  for (const item of state.pending) {
+    if (byId.has(item.sessionId) && !pending.has(item.sessionId))
+      pending.set(item.sessionId, item);
+  }
   const running = sessions.filter((item) => item.running);
-  const session = pending
-    ? sessions.find((item) => item.sessionId === pending.sessionId)
-    : running.find((item) => item.sessionId === state.selectedId) ||
-      running.sort(
+  const ids = new Set([
+    ...(pending.has(state.selectedId) ? [state.selectedId] : []),
+    ...pending.keys(),
+    ...running
+      .filter((item) => item.sessionId === state.selectedId)
+      .map((item) => item.sessionId),
+    ...running
+      .sort(
         (first, second) =>
           (state.activity[second.sessionId]?.at || 0) -
           (state.activity[first.sessionId]?.at || 0),
-      )[0];
-  if (!session) return null;
+      )
+      .map((item) => item.sessionId),
+  ]);
+  return [...ids].map((id) =>
+    progressFor(state, byId.get(id), pending.get(id)),
+  );
+}
+
+export function activeProgress(state) {
+  return activeProgressItems(state)[0] || null;
+}
+
+function progressFor(state, session, pending) {
   const activity = state.activity[session.sessionId];
   const status = pending ? "waiting" : activity?.status || "thinking";
   const label = labels[status] || "正在执行";
@@ -58,6 +70,5 @@ export function activeProgress(state) {
           ? `…${compact.slice(-180)}`
           : `${compact.slice(0, 180)}…`
         : compact,
-    running: running.length,
   };
 }

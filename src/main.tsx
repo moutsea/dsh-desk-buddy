@@ -46,7 +46,8 @@ import { overallMood, sessionMood } from "../shared/activity.mjs";
 import { projectSession, sessionTitle } from "../shared/projection.mjs";
 import { deepseekPricingPeriod } from "../shared/pricing-period.mjs";
 import { activeCompletion } from "../shared/completion.mjs";
-import { activeProgress } from "../shared/progress.mjs";
+import { activeProgressItems } from "../shared/progress.mjs";
+import { ProgressBubbles } from "./ProgressBubbles";
 import type { AppState, Pending } from "./types";
 import "./style.css";
 
@@ -143,7 +144,15 @@ function useClock() {
   }, []);
   return now;
 }
-function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
+function Pet({
+  state,
+  drag,
+  headroom,
+}: {
+  state: AppState;
+  drag: PetDrag;
+  headroom: number;
+}) {
   const sounds = useSounds();
   const greetings = useRef(new GreetingCues());
   const cueRevision = useRef(0);
@@ -179,7 +188,7 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
   const mood = overallMood(state, now),
     running = state.sessions.filter((item) => item.running).length;
   const completion = activeCompletion(state, now);
-  const progress = state.surface.section ? null : activeProgress(state);
+  const progress = state.surface.section ? [] : activeProgressItems(state);
   const celebrate =
     !!completion && !["offline", "waiting", "error", "shocked"].includes(mood);
   const canReact =
@@ -318,25 +327,13 @@ function Pet({ state, drag }: { state: AppState; drag: PetDrag }) {
         if (!event.currentTarget.contains(event.relatedTarget)) conceal();
       }}
     >
-      {progress && (
-        <button
-          data-interactive
-          className={`pet-progress-bubble ${progress.status}`}
-          aria-label={`查看进度：${progress.title}`}
-          title="点击打开对应对话"
-          onClick={() => call("openSession", progress.sessionId)}
-        >
-          <span className="progress-heading">
-            <span className={`status-dot ${progress.status}`} />
-            <strong>{progress.title}</strong>
-            <ChevronRight size={13} aria-hidden="true" />
-          </span>
-          <span className="progress-preview">{progress.text}</span>
-          <span className="progress-footer">
-            {progress.label}
-            {progress.running > 1 && ` · ${progress.running} 个会话进行中`}
-          </span>
-        </button>
+      {progress.length > 0 && !controlsVisible && !drag.dragging && (
+        <ProgressBubbles
+          items={progress}
+          headroom={headroom}
+          width={size.width}
+          onOpen={(sessionId) => call("openSession", sessionId)}
+        />
       )}
       <div
         className="pet-hover-controls"
@@ -1506,7 +1503,7 @@ function App() {
               height: size.height,
             }}
           >
-            <Pet state={state} drag={drag} />
+            <Pet state={state} drag={drag} headroom={surface.pet.y} />
           </div>
         </div>
       </MotionContext.Provider>

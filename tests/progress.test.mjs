@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { activeProgress } from "../shared/progress.mjs";
+import { activeProgress, activeProgressItems } from "../shared/progress.mjs";
 import { reduceActivity } from "../shared/activity.mjs";
 import { projectSession } from "../shared/projection.mjs";
 import { toolPresentation } from "../shared/tool-presentation.mjs";
@@ -125,7 +125,6 @@ test("bubble prioritizes pending actions, then selected running work, then backg
   assert.equal(activeProgress(state).sessionId, "front");
   state.selectedId = "missing";
   assert.equal(activeProgress(state).text, "bash · npm test");
-  assert.equal(activeProgress(state).running, 2);
   state.pending = [
     { sessionId: "front", questions: [{ question: "继续吗？" }] },
   ];
@@ -168,4 +167,41 @@ test("stream preview shows latest public output and obeys off, disconnect and te
   assert.equal(activeProgress(state), null);
   state.pending = [{ sessionId: "deleted", reason: "stale" }];
   assert.equal(activeProgress(state), null);
+});
+
+test("parallel bubbles include each running or pending session exactly once and drop finished work", () => {
+  const state = stateFor();
+  state.sessions.push(
+    { sessionId: "waiting", title: "待回应", running: false },
+    { sessionId: "child", origin: "subagent", running: true },
+  );
+  state.sessions[0].running = true;
+  state.pending = [
+    { sessionId: "waiting", reason: "允许继续吗？" },
+    { sessionId: "waiting", reason: "另一个请求" },
+    { sessionId: "front", reason: "请确认" },
+    { sessionId: "child", reason: "子代理" },
+    { sessionId: "deleted", reason: "已删除" },
+  ];
+  state.activity.back = { status: "working", toolSummary: "bash · npm test" };
+  const items = activeProgressItems(state);
+  assert.deepEqual(
+    items.map((item) => item.sessionId),
+    ["front", "waiting", "back"],
+  );
+  assert.deepEqual(
+    items.map((item) => item.text),
+    ["请确认", "允许继续吗？", "bash · npm test"],
+  );
+  assert.equal(items[1].status, "waiting");
+  state.sessions[1].running = false;
+  assert.deepEqual(
+    activeProgressItems(state).map((item) => item.sessionId),
+    ["front", "waiting"],
+  );
+  state.connection = "reconnecting";
+  assert.deepEqual(activeProgressItems(state), []);
+  state.connection = "connected";
+  state.config.progressBubbles = false;
+  assert.deepEqual(activeProgressItems(state), []);
 });

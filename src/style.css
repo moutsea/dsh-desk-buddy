@@ -1283,28 +1283,57 @@ body,
   position: relative;
   user-select: none;
 }
-.pet-progress-bubble {
+.pet-progress-stack {
   position: absolute;
-  top: 5px;
-  left: 12px;
-  width: calc(100% - 24px);
-  height: 98px;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 5px;
-  text-align: left;
-  background: #f8fafff5;
-  border: 1px solid #d6e3f8;
-  border-radius: 17px;
-  box-shadow: 0 3px 8px #35588a12;
-  color: #526785;
   z-index: 2;
+  isolation: isolate;
+  overflow: visible;
+  /* Only the cards are hit targets, so the gaps stay click-through. */
+  pointer-events: none;
 }
-.pet-progress-bubble::after {
+.progress-entry {
+  display: contents;
+}
+.pet-progress-bubble,
+.progress-card {
+  position: absolute;
+  border-radius: 14px;
+}
+.pet-progress-bubble {
+  display: block;
+  padding: 0;
+  text-align: left;
+  color: #526785;
+  pointer-events: auto;
+  transition:
+    left 140ms ease,
+    top 140ms ease;
+}
+.pet-progress-bubble:hover:not(:disabled) {
+  filter: none;
+}
+.progress-card {
+  padding: 8px 12px 10px;
+  color: #526785;
+  background: #f8faff;
+  border: 1px solid #d6e3f8;
+  box-shadow: 0 3px 8px #35588a12;
+  transition:
+    left 140ms ease,
+    top 140ms ease,
+    opacity 140ms ease;
+  pointer-events: none;
+}
+.progress-card.is-active {
+  border-color: #8aabd9;
+  /* The selected card jumps to full opacity instead of fading in. */
+  transition:
+    left 140ms ease,
+    top 140ms ease;
+}
+.progress-card::after {
   content: "";
+  display: none;
   position: absolute;
   bottom: -5px;
   left: calc(50% - 4px);
@@ -1315,10 +1344,39 @@ body,
   border-right: 1px solid #d6e3f8;
   border-bottom: 1px solid #d6e3f8;
 }
-.menu-open .pet-progress-bubble,
-.is-dragging .pet-progress-bubble {
+.progress-card.is-active::after {
+  display: block;
+  border-color: #8aabd9;
+}
+.progress-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  gap: 5px;
+}
+.is-browsing .progress-card:not(.is-active) {
+  opacity: 0.1;
+}
+.progress-card:not(.is-active) .progress-preview,
+.progress-card:not(.is-active) .progress-footer {
   visibility: hidden;
+}
+.progress-deck-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: #8291ab;
+  font-size: 10px;
   pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-card,
+  .pet-progress-bubble {
+    transition: none;
+  }
 }
 .progress-heading {
   display: flex;
