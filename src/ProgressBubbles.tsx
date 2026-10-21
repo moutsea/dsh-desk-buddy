@@ -95,23 +95,9 @@ export function ProgressBubbles({
       pendingFocus.current = null;
     }
   }, [active]);
-  const insideDeck = (x: number, y: number) => {
-    const rect = stack.current?.getBoundingClientRect();
-    return (
-      !!rect &&
-      x >= rect.left &&
-      x <= rect.right &&
-      y >= rect.top &&
-      y <= rect.bottom
-    );
-  };
   const followPointer = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "touch") return;
     lastPoint.current = { x: event.clientX, y: event.clientY };
-    // Windows can deliver moves without the matching `pointerenter` (the window
-    // regains hover after being click-through), so treat any move inside the
-    // deck as entering it.
-    if (!hovered && insideDeck(event.clientX, event.clientY)) setHovered(true);
     if (ids.length <= DECK_LIMIT) {
       const target =
         event.target instanceof Element
@@ -148,13 +134,21 @@ export function ProgressBubbles({
     if (ids.length <= DECK_LIMIT) followPointer(event);
   };
   const leaveDeck = (event: PointerEvent<HTMLDivElement>) => {
+    const rect = stack.current?.getBoundingClientRect();
     // Folding moves cards under the pointer, which reports `pointerleave` (with
     // empty coordinates) even though the deck is still hovered; only a real
     // exit ends browsing.
     const noPosition = event.clientX === 0 && event.clientY === 0;
     const x = noPosition ? lastPoint.current.x : event.clientX;
     const y = noPosition ? lastPoint.current.y : event.clientY;
-    if (insideDeck(x, y)) return;
+    if (
+      rect &&
+      x >= rect.left &&
+      x <= rect.right &&
+      y >= rect.top &&
+      y <= rect.bottom
+    )
+      return;
     setHovered(false);
     pointer.current = null;
   };

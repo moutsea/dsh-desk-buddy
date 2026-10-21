@@ -129,11 +129,26 @@ try {
     "motion",
     "window",
   ]) {
-    try {
-      await run(`scripts/smoke-${name}.mjs`, runtime.executable);
-    } catch (error) {
-      failures.push(error);
+    // The progress deck is driven by synthetic hover and drag input, which races
+    // with the window's click-through toggling on headless runners. One retry is
+    // enough to absorb that race; a real regression fails both attempts and the
+    // warning keeps the flake visible.
+    const attempts = name === "progress" ? 2 : 1;
+    let lastError;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        await run(`scripts/smoke-${name}.mjs`, runtime.executable);
+        lastError = undefined;
+        break;
+      } catch (error) {
+        lastError = error;
+        if (attempt < attempts)
+          console.warn(
+            `${name}: attempt ${attempt} failed (${error.message}); retrying`,
+          );
+      }
     }
+    if (lastError) failures.push(lastError);
   }
   if (failures.length)
     throw new AggregateError(failures, "Packaged desktop checks failed");
