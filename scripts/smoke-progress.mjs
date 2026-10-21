@@ -432,10 +432,18 @@ try {
   await leaveDeck();
   // Docking the pet at the top of the screen must not let the deck cover it:
   // cards are clamped to the space above the character's head.
+  // Moving or resizing the window can slide the pet under the real cursor of a
+  // headless runner, which opens the hover menu and unmounts the deck. Keep the
+  // pointer outside the window and let `conceal` settle before asserting.
+  const parkPointer = async () => {
+    await page.mouse.move(-10, -10);
+    await page.waitForTimeout(300);
+  };
   const dock = async (dy) => {
     await invoke("drag:start", { x: 200, y: 400 });
     await invoke("drag:move", { x: 200, y: 400 + dy });
     await invoke("drag:end");
+    await parkPointer();
   };
   await dock(-4000);
   await expect.poll(async () => cards.count()).toBeLessThan(5);
@@ -482,6 +490,7 @@ try {
   await expect(cards).toHaveCount(5);
   for (const scale of [50, 150, 100]) {
     await invoke("petScale", scale);
+    await parkPointer();
     await expect(page.locator(".pet-stage")).toHaveCSS(
       "width",
       `${scale === 150 ? 432 : 300}px`,
