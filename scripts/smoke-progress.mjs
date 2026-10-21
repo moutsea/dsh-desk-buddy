@@ -486,6 +486,9 @@ try {
       "width",
       `${scale === 150 ? 432 : 300}px`,
     );
+    // Resizing the window re-lays out the deck; wait for it before measuring,
+    // otherwise boundingBox can run while the deck is briefly unmounted.
+    await expect(cards).toHaveCount(5);
     const viewport = await page.evaluate(() => ({
       width: innerWidth,
       height: innerHeight,
