@@ -144,10 +144,13 @@ export async function checkCompanionSounds() {
     await quiet(); // one minute cooldown
     await page.mouse.move(1, 1);
     await invoke("soundSettings", { sleep: true });
-    // The setting is applied over IPC; fast-forwarding first would let the pet
-    // fall asleep with the previous flag and play the wrong cue.
+    // The renderer only learns about the change through the coalesced state
+    // broadcast, whose timer is frozen while the clock is mocked. Advance just
+    // enough for that broadcast, otherwise the pet falls asleep with the old
+    // flag and plays the wrong cue.
+    await page.clock.fastForward(50);
     await expect
-      .poll(async () => (await invoke("state")).config.soundSettings.sleep)
+      .poll(async () => (await invoke("state")).config.sounds.sleep)
       .toBe(true);
     await page.clock.fastForward(241000);
     await asleep();
@@ -160,8 +163,9 @@ export async function checkCompanionSounds() {
     await heard("wake");
     await rest();
     await invoke("soundSettings", { sleep: false });
+    await page.clock.fastForward(50);
     await expect
-      .poll(async () => (await invoke("state")).config.soundSettings.sleep)
+      .poll(async () => (await invoke("state")).config.sounds.sleep)
       .toBe(false);
     await page.mouse.move(1, 1);
     await page.clock.fastForward(601000);
