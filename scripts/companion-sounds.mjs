@@ -145,10 +145,9 @@ export async function checkCompanionSounds() {
     await page.mouse.move(1, 1);
     await invoke("soundSettings", { sleep: true });
     // The renderer only learns about the change through the coalesced state
-    // broadcast, whose timer is frozen while the clock is mocked. Advance just
-    // enough for that broadcast, otherwise the pet falls asleep with the old
-    // flag and plays the wrong cue.
-    await page.clock.fastForward(50);
+    // broadcast, which runs on a real 35ms timer in the main process: advancing
+    // the mocked page clock does not flush it, so wait in real time.
+    await page.waitForTimeout(150);
     await expect
       .poll(async () => (await invoke("state")).config.sounds.sleep)
       .toBe(true);
@@ -163,7 +162,7 @@ export async function checkCompanionSounds() {
     await heard("wake");
     await rest();
     await invoke("soundSettings", { sleep: false });
-    await page.clock.fastForward(50);
+    await page.waitForTimeout(150);
     await expect
       .poll(async () => (await invoke("state")).config.sounds.sleep)
       .toBe(false);
