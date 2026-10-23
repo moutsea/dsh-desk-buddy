@@ -49,6 +49,10 @@ async function fixture(run) {
   const save = () =>
     writeFile(join(root, "release-runtime.json"), JSON.stringify(manifest));
   await save();
+  await writeFile(
+    join(root, "package.json"),
+    JSON.stringify({ name: "dsh-desk-buddy", version }),
+  );
   try {
     await run({
       root,
@@ -150,6 +154,26 @@ test("unsupported systems and invalid manifests are rejected before downloading"
     await assert.rejects(
       downloadRuntimePackage(root, cache, { ...options, fetcher }),
       /下载清单无效/,
+    );
+  });
+});
+
+test("source plugin version mismatch is rejected even when a verified runtime is cached", async () => {
+  await fixture(async ({ root, cache, bytes, options }) => {
+    await downloadRuntimePackage(root, cache, {
+      ...options,
+      fetcher: async () => new Response(bytes),
+    });
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({ name: "dsh-desk-buddy", version: "newer" }),
+    );
+    await assert.rejects(
+      downloadRuntimePackage(root, cache, {
+        ...options,
+        fetcher: () => assert.fail("must not download mismatched version"),
+      }),
+      /版本不一致/,
     );
   });
 });

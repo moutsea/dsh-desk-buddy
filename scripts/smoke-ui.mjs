@@ -88,7 +88,9 @@ try {
   });
   // The mouse can cross from DSG to a bubble without hiding the controls.
   await openSection("对话");
-  await panel.getByText("已连接", { exact: true }).waitFor();
+  await expect(panel.locator(".connection-strip")).toContainText(
+    "DSH · 已连接",
+  );
   await panel
     .locator(".welcome-mascot .character-image.is-active image")
     .evaluate(async (node) => {
@@ -142,8 +144,12 @@ try {
   await panel.getByRole("textbox", { name: "消息" }).fill("");
   // Verify reconnect restores an unanswered request, rather than losing it.
   fixture.dropStreams();
-  await panel.getByText("重新连接中", { exact: true }).waitFor();
-  await panel.getByText("已连接", { exact: true }).waitFor();
+  await expect(panel.locator(".connection-strip")).toContainText(
+    "DSH · 重新连接中",
+  );
+  await expect(panel.locator(".connection-strip")).toContainText(
+    "DSH · 已连接",
+  );
   await panel.getByRole("button", { name: "允许一次", exact: true }).click();
   await panel.getByText("下一步做什么？", { exact: true }).waitFor();
   await panel.getByRole("radio", { name: "继续检查" }).check();

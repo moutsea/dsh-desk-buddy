@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { createReadStream } from "node:fs";
+import { Readable } from "node:stream";
+import { artifactManifest } from "./release-artifacts.mjs";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { mkdtemp, mkdir, readFile, writeFile, rm } from "node:fs/promises";
@@ -14,6 +17,7 @@ const pkg = JSON.parse(await readFile("package.json", "utf8"));
 const directory = await mkdtemp(join(tmpdir(), "DSG 仓库安装 "));
 const fixture = await createFixture();
 let manager;
+const originalFetch = globalThis.fetch;
 try {
   assert.ok(process.env.npm_execpath, "请通过 npm run test:repository 运行");
   const packed = await exec(
@@ -66,9 +70,29 @@ try {
   const plugin = await import(pathToFileURL(entry).href);
   assert.equal(typeof plugin.apply, "function");
   const root = dirname(entry);
-  const release = JSON.parse(
+  let release = JSON.parse(
     await readFile(join(root, "release-runtime.json"), "utf8"),
   );
+  if (process.env.DSG_REPOSITORY_REMOTE !== "1") {
+    // Validate this candidate before its Release exists, exercising the real
+    // streaming downloader and checksum/extraction path with the tested tgz.
+    const target = `${process.platform}-${process.arch}`;
+    const archive =
+      process.env.DSG_PLUGIN_PACKAGE ||
+      `release/${pkg.name}-${pkg.version}-${target}.tgz`;
+    release = await artifactManifest(pkg, { [target]: archive });
+    await writeFile(
+      join(root, "release-runtime.json"),
+      JSON.stringify(release),
+    );
+    globalThis.fetch = (url, options) =>
+      String(url) === release.packages[target].url
+        ? Promise.resolve(
+            new Response(Readable.toWeb(createReadStream(archive))),
+          )
+        : originalFetch(url, options);
+  }
+  assert.equal(metadata.version, release.version);
   const { DesktopManager } = await import(
     pathToFileURL(join(root, "manager.mjs")).href
   );
@@ -104,7 +128,10 @@ try {
         platform: process.platform,
         arch: process.arch,
         bootstrapPackage: true,
-        releaseDownload: true,
+        downloadSource:
+          process.env.DSG_REPOSITORY_REMOTE === "1"
+            ? "published-release"
+            : "local-candidate",
         connection: "connected",
         restart: true,
         modelRequests: 0,
@@ -114,9 +141,10 @@ try {
     ),
   );
   console.log(
-    `Repository entry passed on ${process.platform}/${process.arch}: plugin export, Release download, native launch, connection, visibility controls and cached restart.`,
+    `Repository entry passed on ${process.platform}/${process.arch}: plugin export, verified component download, native launch, connection, visibility controls and cached restart.`,
   );
 } finally {
+  globalThis.fetch = originalFetch;
   await manager?.dispose();
   await fixture.close();
   await rm(directory, {

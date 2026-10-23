@@ -116,13 +116,43 @@ export function reduceActivity(previous, event, now = Date.now()) {
 /** Reconcile a host snapshot without erasing tool phases or replaying terminal reactions.
  * @param {any} activity */
 export function reconcileActivity(activity, running, now = Date.now()) {
+  const identity = { seq: activity?.seq, turn: activity?.turn };
+  if (activity?.metadataRevision !== undefined)
+    identity.metadataRevision = activity.metadataRevision;
   if (running)
     return ACTIVE_STATUSES.includes(activity?.status)
       ? activity
-      : { status: "thinking", at: now, seq: activity?.seq };
+      : {
+          status: "thinking",
+          at: now,
+          ...identity,
+        };
   return ACTIVE_STATUSES.includes(activity?.status)
-    ? { status: "idle", seq: activity.seq }
+    ? { status: "idle", ...identity }
     : activity;
+}
+
+/** Reconcile verified session metadata without carrying activity from a
+ * different turn into it. Keep the sequence watermark so older live events
+ * remain rejected; history must not start reactions or replay sound cues. */
+export function reconcileSessionActivity(activity, session, now = Date.now()) {
+  // Other providers' refreshes include this source's cached rows. A live event
+  // observed against that version is newer; only a subsequent source snapshot
+  // can reconcile it, including while a read-only session is being resumed.
+  if (
+    session.runningKnown === false ||
+    (activity?.metadataRevision !== undefined &&
+      session.metadataRevision <= activity.metadataRevision)
+  )
+    return activity;
+  const turn = session.lastTurn?.key;
+  if (
+    turn !== undefined &&
+    activity?.turn !== undefined &&
+    activity.turn !== turn
+  )
+    activity = { seq: activity.seq, turn };
+  return reconcileActivity(activity, session.running, now);
 }
 
 /** @param {any} activity */

@@ -54,7 +54,7 @@ export function SessionUsage({ session }: { session: Session }) {
         <ChevronDown size={12} className="usage-chevron" aria-hidden="true" />
       </summary>
       <div className="usage-detail">
-        <p className="usage-scope">当前会话累计 · 随 DSH 上报更新</p>
+        <p className="usage-scope">当前会话累计 · 随服务上报更新</p>
         <dl>
           {details.map(([label, value]) => (
             <div key={label}>

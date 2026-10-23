@@ -10,6 +10,25 @@ import { DesktopManager } from "../plugins/dsh-girl/manager.mjs";
 import { prepareRuntime } from "../plugins/dsh-girl/runtime.mjs";
 import { createFixture } from "../tests/fixture.mjs";
 
+const desktopInteractions = [
+  "settings-update",
+  "expand",
+  "ui",
+  "size",
+  "drag",
+  "stream",
+  "usage",
+  "completion",
+  "sound",
+  "progress",
+  "progress-lifecycle",
+  "progress-order",
+  "platforms",
+  "codex",
+  "motion",
+  "window",
+];
+
 const pkg = JSON.parse(await readFile("package.json", "utf8"));
 const archive = resolve(
   process.env.DSG_PLUGIN_PACKAGE ||
@@ -115,20 +134,7 @@ try {
     "Installed tarball, verified native runtime, private-pipe control, restart and parent-disconnect cleanup.",
   );
   const failures = [];
-  for (const name of [
-    "settings-update",
-    "expand",
-    "ui",
-    "size",
-    "drag",
-    "stream",
-    "usage",
-    "completion",
-    "sound",
-    "progress",
-    "motion",
-    "window",
-  ]) {
+  for (const name of desktopInteractions) {
     // Progress is driven by synthetic hover and drag input (which races with the
     // window's click-through toggling) and sound depends on the runner's audio
     // device and fake-clock timing. One retry absorbs those races; a real
@@ -164,20 +170,7 @@ try {
         nativeRuntime: true,
         privatePipeControl: true,
         parentDisconnectCleanup: true,
-        desktopInteractions: [
-          "settings-update",
-          "expand",
-          "ui",
-          "size",
-          "drag",
-          "stream",
-          "usage",
-          "completion",
-          "sound",
-          "progress",
-          "motion",
-          "window",
-        ],
+        desktopInteractions,
         host: "isolated protocol fixture; no model requests",
       },
       null,

@@ -3,7 +3,7 @@
 [![Desktop validation](https://github.com/moutsea/dsh-desk-buddy/actions/workflows/desktop.yml/badge.svg)](https://github.com/moutsea/dsh-desk-buddy/actions/workflows/desktop.yml)
 [![Release](https://img.shields.io/github/v/release/moutsea/dsh-desk-buddy)](https://github.com/moutsea/dsh-desk-buddy/releases/latest)
 
-住在桌面上的 DSH 小搭档。陪你对话、关注任务进度，完成时轻声说一句「做好啦」。
+住在桌面上的 DSH / Codex 小搭档。陪你对话、关注任务进度，完成时轻声说一句「做好啦」。
 
 <p align="center">
   <img src="docs/images/conversation.png" width="840" alt="鲸鱼娘桌宠与身旁的对话窗口，顶部展示 Token、缓存命中率和上下文占用" />
@@ -33,7 +33,8 @@
 ## 她能做什么
 
 - **桌边对话**：切换会话、发送任务、查看工具调用、处理审批和提问；支持小、中、大三档对话框。
-- **任务陪伴**：19 种动态表情跟随阅读、工作和完成状态；多个会话同时进行时，进度气泡叠成一摞卡片，可沿斜向翻看、点击直达，完成时还会提醒。
+- **双平台接入**：同时连接 DSH 与 Codex，新建对话选择平台，Codex 使用深色界面；共享 App Server 会话支持操作，外部历史仅查看。见 [Codex 接入说明](docs/codex.md)。
+- **任务陪伴**：19 种动态表情跟随阅读、工作和完成状态；多个会话的进度气泡叠成一摞卡片，可沿斜向翻看、点击直达；完成后保留并排到最前，可手动关闭，新任务重新显示。
 - **用量一眼看清**：当前会话累计 Token、缓存命中率和上下文占用，展开可看输入输出、生成速度和首字耗时。
 - **声音由你选**：8 种离线女声，可试听、调音量，13 类场景独立开关，互动和工作提醒都有随机台词。
 - **随手放在桌边**：拖动、缩放、置顶；悬停查看 DeepSeek 余额与峰谷倒计时。
@@ -42,7 +43,7 @@
 
 ### 会话用量
 
-累计统计不受历史分页影响，随 DSH 上报更新；估算的上下文占用带「≈」，未上报的数据显示「—」。
+累计统计不受历史分页影响，随对应平台上报更新；估算的上下文占用带「≈」，未上报的数据显示「—」。
 
 <p align="center">
   <img src="docs/images/session-usage.png" width="720" alt="会话用量明细，包含 Token 总数、缓存命中率、输入输出及生成速度" />
@@ -96,7 +97,7 @@ npm run pack:plugin
 
 ## 更多说明
 
-[插件安装与更新](plugins/dsh-girl/README.md) · [平台支持与验证](docs/platforms.md) · [任务与表情](docs/task-behaviour.md) · [语音包](docs/voices.md) · [架构与协议](docs/architecture.md) · [更新内容](docs/release-notes.md)
+[插件安装与更新](plugins/dsh-girl/README.md) · [平台支持与验证](docs/platforms.md) · [任务与表情](docs/task-behaviour.md) · [语音包](docs/voices.md) · [架构与协议](docs/architecture.md) · [更新内容](docs/release-notes.md) · [发布流程](docs/releasing.md)
 
 接入已核对的 DSH Desktop `0.2.1-rc.2` / DSH Web `0.1.1-rc.2`。当前成品未签名，macOS 未公证；其他系统和架构的支持范围见平台文档。
 

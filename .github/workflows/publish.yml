@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       run_id:
-        description: Successful Desktop validation run for this exact tag commit
+        description: Successful Desktop validation candidate run (only release manifest may differ)
         required: true
         type: string
 
@@ -28,11 +28,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.tag }}
+          fetch-depth: 0
       - name: Verify successful build and revision
         run: |
           test "$(gh run view "$VALIDATED_RUN" --repo "$GITHUB_REPOSITORY" --json conclusion --jq .conclusion)" = success
           test "$(gh run view "$VALIDATED_RUN" --repo "$GITHUB_REPOSITORY" --json workflowName --jq .workflowName)" = 'Desktop validation'
-          test "$(gh run view "$VALIDATED_RUN" --repo "$GITHUB_REPOSITORY" --json headSha --jq .headSha)" = "$(git rev-parse HEAD)"
+          BUILD_SHA=$(gh run view "$VALIDATED_RUN" --repo "$GITHUB_REPOSITORY" --json headSha --jq .headSha)
+          # Candidate must belong to this release history. Only the generated
+          # download manifest can change after its binaries were validated.
+          git merge-base --is-ancestor "$BUILD_SHA" HEAD
+          git diff --exit-code "$BUILD_SHA" HEAD -- . ':!plugins/dsh-girl/release-runtime.json'
           node --input-type=module -e 'import pkg from "./package.json" with { type: "json" }; if (process.env.RELEASE_TAG !== `v${pkg.version}`) throw new Error("Tag and package version must match")'
       - uses: actions/download-artifact@v4
         with:
@@ -41,6 +46,13 @@ jobs:
           pattern: dsh-desk-buddy-*
           merge-multiple: true
           path: release
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Verify tagged manifest against tested artifacts
+        run: node scripts/release-manifest.mjs check release
       - name: Publish tested artifacts
         run: |
           cd release

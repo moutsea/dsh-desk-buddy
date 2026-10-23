@@ -5,16 +5,16 @@ import {
   type CSSProperties,
   type PointerEvent,
 } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { activeProgressItems } from "../shared/progress.mjs";
 import {
   DECK_LIMIT,
   deckCapacity,
-  deckIndices,
   deckLayout,
-  deckSlots,
   deckTop,
   moveDeckPointer,
+  reconcileDeckOrder,
+  reconcileDeckView,
 } from "../shared/progress-deck.mjs";
 
 // Derive the item shape from the projection helper so the two cannot drift.
@@ -32,61 +32,95 @@ export function ProgressBubbles({
   headroom,
   width,
   onOpen,
+  onDismiss,
 }: {
   items: ProgressItem[];
   headroom: number;
   width: number;
   onOpen: (sessionId: string) => void;
+  onDismiss: (sessionId: string) => void;
 }) {
   const stack = useRef<HTMLDivElement>(null);
   const incoming = items.map((item) => item.sessionId).reverse();
-  const membership = JSON.stringify([...incoming].sort());
-  // Card order is committed when the set of sessions changes: streaming text
-  // and activity updates never reorder cards that are already on screen.
-  const committed = useRef({ membership, order: incoming });
-  if (committed.current.membership !== membership) {
-    const order = [
-      ...committed.current.order.filter((id) => incoming.includes(id)),
-      ...incoming.filter((id) => !committed.current.order.includes(id)),
-    ];
-    committed.current = { membership, order };
-  }
-  const ids = committed.current.order;
-  const byId = new Map(items.map((item) => [item.sessionId, item]));
   const [selected, setSelected] = useState(incoming.at(-1)!);
   const [hovered, setHovered] = useState(false);
   const [keyboard, setKeyboard] = useState(false);
-  const active = ids.includes(selected) ? selected : ids.at(-1)!;
+  const browsing = hovered || keyboard;
+  const committed = useRef<{
+    order: string[];
+    completed: Record<string, number>;
+    automatic?: string;
+  }>({
+    order: incoming,
+    completed: {},
+  });
+  const next = reconcileDeckOrder(committed.current, items, browsing);
+  committed.current = next;
+  const ids = next.order;
+  const orderKey = JSON.stringify(ids);
+  const byId = new Map(items.map((item) => [item.sessionId, item]));
+  const active =
+    next.promoted ?? (ids.includes(selected) ? selected : ids.at(-1)!);
+  // Commit the fallback as well as completion promotion: a dismissed ID must
+  // not become selected again when its next task makes the bubble reappear.
+  if (active !== selected) {
+    // Replacing a removed selection is automatic too. If the replacement
+    // restarts, it must yield to completed work until the user chooses a card.
+    if (!ids.includes(selected)) next.automatic = active;
+    setSelected(active);
+  }
   const activeIndex = ids.indexOf(active);
   const selection = useRef(active);
+  selection.current = active;
   const pointer = useRef<DeckPointer | null>(null);
   const pointerAt = useRef(0);
   const lastPoint = useRef({ x: 0, y: 0 });
   const pendingFocus = useRef<string | null>(null);
-  const browsing = hovered || keyboard;
   // Cards are clamped to the space above the pet so the deck never covers its
   // head, which would swallow clicks meant for the character.
   const capacity = deckCapacity(headroom);
-  const visible = deckIndices(ids.length, activeIndex, browsing, capacity);
-  // Only folded decks reorder: with five cards or fewer the selection follows
-  // the card under the pointer, so rotating slots would loop through
-  // leave/enter as the cards move beneath it.
-  const slots = deckSlots(
-    visible,
-    activeIndex,
-    !browsing && ids.length > DECK_LIMIT,
+  const view = useRef<ReturnType<typeof reconcileDeckView> | undefined>(
+    undefined,
   );
+  const display = reconcileDeckView(view.current, {
+    ids,
+    active,
+    hovered,
+    browsing,
+    capacity,
+    width,
+    headroom,
+  });
+  const { slots, rotate: needsRotation } = display;
+  const compactCaption = slots.length === 1 && needsRotation;
   const layout = deckLayout(slots.length, width);
   const select = (index: number, focus = false) => {
     const id = ids[Math.max(0, Math.min(ids.length - 1, index))];
+    committed.current.automatic = undefined;
     selection.current = id;
     if (focus) pendingFocus.current = id;
     setSelected(id);
   };
+  const dismiss = (id: string) => {
+    committed.current.automatic = undefined;
+    if (keyboard) {
+      const remaining = ids.filter((item) => item !== id);
+      const next = remaining[Math.min(ids.indexOf(id), remaining.length - 1)];
+      if (next) {
+        pendingFocus.current = next;
+        setSelected(next);
+      }
+    }
+    onDismiss(id);
+  };
   useLayoutEffect(() => {
-    selection.current = active;
-    pointer.current = null;
-  }, [membership]);
+    view.current = display;
+  });
+  useLayoutEffect(() => {
+    // Drop accumulated rotation, but keep the cursor origin when membership
+    // changes under it so the next deliberate movement still browses a card.
+    pointer.current = hovered ? { ...lastPoint.current, carry: 0 } : null;
+  }, [orderKey, capacity, width]);
   useLayoutEffect(() => {
     if (pendingFocus.current === active) {
       stack.current
@@ -95,10 +129,56 @@ export function ProgressBubbles({
       pendingFocus.current = null;
     }
   }, [active]);
+  useLayoutEffect(() => {
+    // Removing a focused card need not fire blur. Validate after the keyboard
+    // focus handoff above, so ordinary arrow navigation still owns the focus.
+    if (keyboard && !stack.current?.contains(document.activeElement))
+      setKeyboard(false);
+  });
+  useLayoutEffect(() => {
+    if (!hovered) return;
+    const leave = () => {
+      setHovered(false);
+      pointer.current = null;
+    };
+    const move = (event: globalThis.PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      const rect = stack.current?.getBoundingClientRect();
+      if (
+        !rect ||
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      )
+        leave();
+    };
+    // Gaps are click-through. After entering one, subsequent moves no longer
+    // reach the stack, so observe the rest of the exit at the document boundary.
+    document.addEventListener("pointermove", move, true);
+    document.documentElement.addEventListener("pointerleave", leave);
+    window.addEventListener("blur", leave);
+    return () => {
+      document.removeEventListener("pointermove", move, true);
+      document.documentElement.removeEventListener("pointerleave", leave);
+      window.removeEventListener("blur", leave);
+    };
+  }, [hovered]);
   const followPointer = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "touch") return;
+    // Window blur clears browsing without necessarily ending DOM :hover.
+    // Movement inside the deck can resume without another pointerenter.
+    setHovered(true);
     lastPoint.current = { x: event.clientX, y: event.clientY };
-    if (ids.length <= DECK_LIMIT) {
+    if (
+      event.target instanceof Element &&
+      event.target.closest(".progress-dismiss")
+    ) {
+      pointer.current = { x: event.clientX, y: event.clientY, carry: 0 };
+      pointerAt.current = event.timeStamp;
+      return;
+    }
+    if (!needsRotation) {
       const target =
         event.target instanceof Element
           ? event.target.closest<HTMLElement>("[data-session-id]")
@@ -131,7 +211,7 @@ export function ProgressBubbles({
     lastPoint.current = { x: event.clientX, y: event.clientY };
     pointer.current = { x: event.clientX, y: event.clientY, carry: 0 };
     pointerAt.current = event.timeStamp;
-    if (ids.length <= DECK_LIMIT) followPointer(event);
+    if (!needsRotation) followPointer(event);
   };
   const leaveDeck = (event: PointerEvent<HTMLDivElement>) => {
     const rect = stack.current?.getBoundingClientRect();
@@ -152,12 +232,24 @@ export function ProgressBubbles({
     setHovered(false);
     pointer.current = null;
   };
+  const caption = (
+    <span
+      className={`progress-deck-caption${compactCaption ? " is-inline" : ""}`}
+      aria-live={keyboard || !browsing ? "polite" : "off"}
+    >
+      {activeIndex + 1} / {ids.length}
+      {needsRotation &&
+        (browsing
+          ? " · 沿斜向移动切换"
+          : ` · 已折叠 ${ids.length - slots.length} 个`)}
+    </span>
+  );
   return (
     <div
       ref={stack}
       className={`pet-progress-stack${browsing ? " is-browsing" : ""}`}
       role="group"
-      aria-label="进行中的会话"
+      aria-label="会话气泡"
       data-selected-session={active}
       data-selected-index={activeIndex}
       data-total={ids.length}
@@ -180,8 +272,15 @@ export function ProgressBubbles({
           setKeyboard(false);
       }}
       onKeyDown={(event) => {
-        // Enter opens the selected card; a pointer click opens the card it hits.
-        if (event.key === "Enter") {
+        // The close control owns Enter/Space; never open a chat while closing it.
+        if (
+          event.target instanceof Element &&
+          event.target.closest(".progress-dismiss")
+        )
+          return;
+        // Keyboard activation follows the visible selection even when pointer
+        // rotation left DOM focus on another card. Suppress Space's native click.
+        if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           event.stopPropagation();
           onOpen(selection.current);
@@ -204,8 +303,9 @@ export function ProgressBubbles({
         select(keys[event.key], true);
       }}
     >
-      {slots.map((index, slot) => {
-        const id = ids[index],
+      {slots.map((id, slot) => {
+        if (id === null) return null;
+        const index = ids.indexOf(id),
           item = byId.get(id)!,
           isActive = id === active;
         const position = layout.positions[slot];
@@ -235,24 +335,26 @@ export function ProgressBubbles({
             <button
               data-interactive
               data-session-id={id}
+              data-provider={item.provider}
               className={`pet-progress-bubble${isActive ? " is-active" : ""}`}
               style={{ ...geometry, zIndex: layer }}
-              aria-label={`查看进度：${item.title}，${item.label}${detail}`}
+              aria-label={`查看进度：${item.title}，${item.label}${detail}${needsRotation ? `，第 ${index + 1} 个，共 ${ids.length} 个会话` : ""}`}
               tabIndex={isActive ? 0 : -1}
               title={
-                ids.length > DECK_LIMIT
+                needsRotation
                   ? "沿斜向移动切换会话，点击打开该会话"
                   : "点击打开对应对话"
               }
               onFocus={() => select(index)}
               onMouseDown={(event) => {
-                if (ids.length > DECK_LIMIT) event.preventDefault();
+                if (needsRotation) event.preventDefault();
               }}
               onClick={() => onOpen(id)}
             />
             <span
               className={`progress-card ${item.status}${isActive ? " is-active" : ""}`}
               data-session-id={id}
+              data-provider={item.provider}
               aria-hidden="true"
               style={{ ...geometry, zIndex: layer }}
             >
@@ -263,24 +365,45 @@ export function ProgressBubbles({
                   <ChevronRight size={13} />
                 </span>
                 <span className="progress-preview">{item.text}</span>
-                <span className="progress-footer">{item.label}</span>
+                <span
+                  className={`progress-footer${compactCaption ? " has-deck-caption" : ""}`}
+                >
+                  <span>
+                    <span className={`provider-badge ${item.provider}`}>
+                      {item.provider === "codex" ? "Codex" : "DSH"}
+                    </span>{" "}
+                    {item.label}
+                  </span>
+                  {compactCaption && caption}
+                </span>
               </span>
             </span>
+            <button
+              data-interactive
+              data-session-id={id}
+              data-provider={item.provider}
+              className={`progress-dismiss${isActive ? " is-active" : ""}`}
+              style={{
+                left: position.x + layout.cardWidth - 28,
+                top: position.y + 3,
+                zIndex: layer,
+              }}
+              aria-label={`关闭气泡：${item.title}`}
+              title="关闭气泡显示，不会停止任务"
+              tabIndex={isActive ? 0 : -1}
+              disabled={!isActive}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={(event) => {
+                event.stopPropagation();
+                dismiss(id);
+              }}
+            >
+              <X size={13} />
+            </button>
           </div>
         );
       })}
-      {slots.length > 1 && (
-        <span
-          className="progress-deck-caption"
-          aria-live={keyboard || !browsing ? "polite" : "off"}
-        >
-          {activeIndex + 1} / {ids.length}
-          {ids.length > slots.length &&
-            (browsing
-              ? " · 沿斜向移动切换"
-              : ` · 已折叠 ${ids.length - slots.length} 个`)}
-        </span>
-      )}
+      {slots.length > 1 && caption}
     </div>
   );
 }

@@ -48,6 +48,12 @@ import { deepseekPricingPeriod } from "../shared/pricing-period.mjs";
 import { activeCompletion } from "../shared/completion.mjs";
 import { activeProgressItems } from "../shared/progress.mjs";
 import { ProgressBubbles } from "./ProgressBubbles";
+import { NewSession } from "./NewSession";
+import {
+  platformConnection,
+  selectedProvider,
+  providerLabel,
+} from "./platforms";
 import type { AppState, Pending } from "./types";
 import "./style.css";
 
@@ -96,7 +102,7 @@ const labels: Record<string, string> = {
   blocked: "这一轮暂停了",
 };
 const invoke = async (action: string, payload?: any) => {
-  if (!window.desktop) throw new Error("请在桌面应用中连接 DSH");
+  if (!window.desktop) throw new Error("请在桌面应用中连接会话服务");
   return window.desktop.invoke(action, payload);
 };
 function useDesktop() {
@@ -134,7 +140,7 @@ function useDesktop() {
 function balanceLabel(state: AppState) {
   if (!state.balance) return "未连接";
   const first = state.balance.balances[0];
-  return `${first.currency === "CNY" ? "¥" : "$"}${first.total.toFixed(2)}${state.balanceError || state.connection !== "connected" || Date.now() - state.balance.updatedAt > 120000 ? " · 旧数据" : ""}${state.balance.balances.length > 1 ? " +" : ""}`;
+  return `${first.currency === "CNY" ? "¥" : "$"}${first.total.toFixed(2)}${state.balanceError || platformConnection(state, "dsh").status !== "connected" || Date.now() - state.balance.updatedAt > 120000 ? " · 旧数据" : ""}${state.balance.balances.length > 1 ? " +" : ""}`;
 }
 function useClock() {
   const [now, setNow] = useState(Date.now);
@@ -333,6 +339,7 @@ function Pet({
           headroom={headroom}
           width={size.width}
           onOpen={(sessionId) => call("openSession", sessionId)}
+          onDismiss={(sessionId) => call("dismissProgress", sessionId)}
         />
       )}
       <div
@@ -369,29 +376,33 @@ function Pet({
             </button>
           ))}
         </div>
-        <button
-          data-interactive
-          className={`pet-balance ${state.balanceError ? "stale" : ""}`}
-          aria-label={`DeepSeek 余额 ${balanceLabel(state)} · 当前${pricingPeriod.label} · ${pricingPeriod.countdownDescription}`}
-          title={[
-            `DeepSeek 余额 ${balanceLabel(state)}`,
-            state.balanceError,
-            pricingPeriod.description,
-            "点击查看 DeepSeek Key 账号余额详情",
-          ]
-            .filter(Boolean)
-            .join("\n")}
-          onClick={() => call("section", "settings")}
-        >
-          <span className="pet-balance-label">DeepSeek 余额</span>
-          <span className="pet-balance-value">{balanceLabel(state)}</span>
-          <span className={`pet-pricing-period ${pricingPeriod.id}`}>
-            <span className="pet-pricing-label">{pricingPeriod.label}</span>
-            <span className="pet-pricing-countdown">
-              {pricingPeriod.countdown}
+        {(state.connections
+          ? !!state.connections.dsh.host
+          : state.config.provider !== "codex") && (
+          <button
+            data-interactive
+            className={`pet-balance ${state.balanceError ? "stale" : ""}`}
+            aria-label={`DeepSeek 余额 ${balanceLabel(state)} · 当前${pricingPeriod.label} · ${pricingPeriod.countdownDescription}`}
+            title={[
+              `DeepSeek 余额 ${balanceLabel(state)}`,
+              state.balanceError,
+              pricingPeriod.description,
+              "点击查看 DeepSeek Key 账号余额详情",
+            ]
+              .filter(Boolean)
+              .join("\n")}
+            onClick={() => call("section", "settings")}
+          >
+            <span className="pet-balance-label">DeepSeek 余额</span>
+            <span className="pet-balance-value">{balanceLabel(state)}</span>
+            <span className={`pet-pricing-period ${pricingPeriod.id}`}>
+              <span className="pet-pricing-label">{pricingPeriod.label}</span>
+              <span className="pet-pricing-countdown">
+                {pricingPeriod.countdown}
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+        )}
       </div>
       <button
         data-interactive
@@ -605,25 +616,28 @@ function Interaction({
         <>
           <p className="tool-name">{item.toolName}</p>
           {item.reason && <p>{item.reason}</p>}
-          <div className="button-row">
-            <button
-              disabled={disabled}
-              className="secondary"
-              onClick={() =>
-                run("answer", { rpcId: item.rpcId, outcome: "rejected" })
-              }
-            >
-              拒绝
-            </button>
-            <button
-              disabled={disabled}
-              className="primary"
-              onClick={() =>
-                run("answer", { rpcId: item.rpcId, outcome: "allowed-once" })
-              }
-            >
-              允许一次
-            </button>
+          <div className="button-row approval-choices">
+            {(
+              item.choices ?? [
+                { value: "rejected", label: "拒绝" },
+                { value: "allowed-once", label: "允许一次" },
+              ]
+            ).map((choice) => (
+              <div key={choice.value}>
+                {choice.detail && (
+                  <pre className="approval-detail">{choice.detail}</pre>
+                )}
+                <button
+                  disabled={disabled}
+                  className="secondary"
+                  onClick={() =>
+                    run("answer", { rpcId: item.rpcId, outcome: choice.value })
+                  }
+                >
+                  {choice.label}
+                </button>
+              </div>
+            ))}
           </div>
         </>
       ) : (
@@ -690,6 +704,7 @@ function Interaction({
               <input
                 disabled={disabled}
                 className="text-input"
+                type={question.isSecret ? "password" : "text"}
                 placeholder="或输入你的回答"
                 value={answers[question.id]?.custom || ""}
                 onChange={(event) =>
@@ -725,6 +740,10 @@ function Interaction({
   );
 }
 function Panel({ state }: { state: AppState }) {
+  const activeProvider = selectedProvider(state);
+  const isCodex = activeProvider === "codex";
+  const activeConnection = platformConnection(state, activeProvider);
+  const providerName = isCodex ? "Codex" : "DSH";
   const now = useClock();
   const lastEngagement = useRef(0);
   const engage = () => {
@@ -738,16 +757,27 @@ function Panel({ state }: { state: AppState }) {
   };
   const [sessionsOpen, setSessionsOpen] = useState(false),
     [drafts, setDrafts] = useState<Record<string, string>>({}),
-    [endpoint, setEndpoint] = useState(state.config.endpoint),
+    [provider, setProvider] = useState(state.config.provider || "dsh"),
+    [endpoint, setEndpoint] = useState(
+      isCodex
+        ? state.config.codexEndpoint || "ws://127.0.0.1:4500"
+        : state.config.endpoint,
+    ),
+    [awaitingSession, setAwaitingSession] = useState<string | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const changingSession =
+    awaitingSession !== null && state.selectedId !== awaitingSession;
+  useEffect(() => {
+    if (awaitingSession === state.selectedId) setAwaitingSession(null);
+  }, [awaitingSession, state.selectedId]);
   const scroll = useRef<HTMLDivElement>(null),
     follow = useRef(true),
     previous = useRef(""),
     busyRef = useRef(false),
     olderHeight = useRef(0);
-  const connected = state.connection === "connected",
+  const connected = activeConnection.status === "connected",
     selected = state.sessions.find(
       (item) => item.sessionId === state.selectedId,
     ),
@@ -776,12 +806,19 @@ function Panel({ state }: { state: AppState }) {
     taskMood: mood,
     now,
   });
-  const draftKey = state.selectedId || "new",
+  const draftKey = `${activeProvider}:${state.selectedId || "new"}`,
     draft = drafts[draftKey] || "";
   const active = state.sessions.filter((item) => item.running).length;
   const setDraft = (value: string) =>
     setDrafts((prev) => ({ ...prev, [draftKey]: value }));
-  useEffect(() => setEndpoint(state.config.endpoint), [state.config.endpoint]);
+  useEffect(() => {
+    setEndpoint(
+      provider === "codex"
+        ? state.config.codexEndpoint || "ws://127.0.0.1:4500"
+        : state.config.endpoint,
+    );
+  }, [provider, state.config.endpoint, state.config.codexEndpoint]);
+  const serviceConnection = platformConnection(state, provider);
   useEffect(() => {
     if (!notice) return;
     const id = setTimeout(() => setNotice(""), 4500);
@@ -817,7 +854,10 @@ function Panel({ state }: { state: AppState }) {
     setBusy(true);
     setError("");
     try {
-      return await invoke(action, payload);
+      const result = await invoke(action, payload);
+      if (action === "create" && typeof result === "string")
+        setAwaitingSession(result);
+      return result;
     } catch (err) {
       olderHeight.current = 0;
       setError(
@@ -833,18 +873,21 @@ function Panel({ state }: { state: AppState }) {
     }
   }
   async function send() {
-    if (!draft.trim() || busyRef.current || !connected) return;
+    if (!draft.trim() || busyRef.current || !connected || selected?.readOnly)
+      return;
     busyRef.current = true;
     setBusy(true);
     setError("");
     const key = draftKey,
       text = draft.trim();
     try {
-      if (!state.selectedId) await invoke("create");
-      const result = await invoke("send", text);
+      const sessionId =
+        state.selectedId ||
+        (await invoke("create", { provider: activeProvider }));
+      const result = await invoke("send", { sessionId, text });
       setDrafts((prev) => ({ ...prev, [key]: "" }));
       if (result) setNotice(result);
-      else if (selected?.running) setNotice("消息已加入 DSH 队列");
+      else if (selected?.running && !isCodex) setNotice("消息已加入 DSH 队列");
       follow.current = true;
     } catch (err) {
       setError(
@@ -860,7 +903,8 @@ function Panel({ state }: { state: AppState }) {
   }
   return (
     <div
-      className="app-shell"
+      className={`app-shell${tab === "chat" && isCodex ? " codex-chat" : ""}`}
+      data-provider={activeProvider}
       onPointerDown={engage}
       onKeyDown={(event) => {
         engage();
@@ -886,13 +930,15 @@ function Panel({ state }: { state: AppState }) {
           <span>dsh-desk-buddy</span>
         </div>
         <div className="window-actions">
-          <button
-            aria-label="打开 DSH"
-            title="在浏览器中打开 DSH"
-            onClick={() => run("openDsh")}
-          >
-            <ExternalLink size={14} />
-          </button>
+          {!isCodex && (
+            <button
+              aria-label="打开 DSH"
+              title="在浏览器中打开 DSH"
+              onClick={() => run("openDsh")}
+            >
+              <ExternalLink size={14} />
+            </button>
+          )}
           <button aria-label="收起内容" onClick={() => invoke("section", null)}>
             <X size={17} />
           </button>
@@ -900,9 +946,12 @@ function Panel({ state }: { state: AppState }) {
       </header>
       <div className="connection-strip">
         <span className={`status-dot ${connected ? "connected" : "offline"}`} />
-        <span>{labels[state.connection]}</span>
-        {state.host && (
-          <span className="host-version">DSH {state.host.version}</span>
+        <span>
+          {isCodex ? "Codex 共享服务" : providerName} ·{" "}
+          {labels[activeConnection.status]}
+        </span>
+        {activeConnection.host && (
+          <span className="host-version">{activeConnection.host.version}</span>
         )}
         <span className="connection-right">
           {active ? `${active} 个会话进行中` : "你的桌面小搭档"}
@@ -925,7 +974,8 @@ function Panel({ state }: { state: AppState }) {
         <div className="offline-banner">
           <WifiOff size={16} />
           <span>
-            {state.connectionMessage || "连接本机 DSH，开始第一段对话。"}
+            {activeConnection.message ||
+              `连接本机 ${providerName}，开始第一段对话。`}
           </span>
           <button onClick={() => setTab("settings")}>
             去连接
@@ -941,7 +991,16 @@ function Panel({ state }: { state: AppState }) {
                 <Mascot small mood={mood} expression={expression} />
               </div>
               <div className="conversation-copy">
-                <span className="eyebrow">当前会话</span>
+                <span className="eyebrow">
+                  <span className={`provider-badge ${activeProvider}`}>
+                    {providerName}
+                  </span>{" "}
+                  {selected?.readOnly
+                    ? "外部会话 · 仅查看"
+                    : selected
+                      ? "当前会话"
+                      : "新会话"}
+                </span>
                 <button
                   className="session-trigger"
                   aria-label="切换会话"
@@ -958,19 +1017,17 @@ function Panel({ state }: { state: AppState }) {
                   className={`conversation-mood ${mood}`}
                   aria-live="polite"
                 >
-                  {labels[mood]}
+                  {selected?.readOnly ? "原窗口的运行状态未接入" : labels[mood]}
                 </span>
               </div>
             </div>
-            <button
-              className="icon-button"
-              aria-label="新建会话"
-              title="在所选项目中新建会话"
-              disabled={!connected || busy}
-              onClick={() => run("create")}
-            >
-              <Plus size={18} />
-            </button>
+            <NewSession
+              state={state}
+              busy={busy}
+              run={run}
+              iconOnly
+              onCreated={() => setSessionsOpen(false)}
+            />
           </div>
           {state.pending.some(
             (item) => item.sessionId !== state.selectedId,
@@ -994,6 +1051,26 @@ function Panel({ state }: { state: AppState }) {
             />
           )}
           <div className="chat-body" hidden={sessionsOpen}>
+            {selected?.readOnly && (
+              <div className="external-session-notice" role="status">
+                已保存的内容每 3 秒刷新。发送、停止和审批请回到 Codex 原窗口。
+              </div>
+            )}
+            {!selected && (
+              <label className="new-conversation-platform">
+                新会话平台
+                <select
+                  aria-label="新会话平台"
+                  value={activeProvider}
+                  onChange={(event) =>
+                    run("defaultProvider", event.target.value)
+                  }
+                >
+                  <option value="dsh">DSH</option>
+                  <option value="codex">Codex</option>
+                </select>
+              </label>
+            )}
             {selected && (
               <SessionUsage key={selected.sessionId} session={selected} />
             )}
@@ -1019,7 +1096,27 @@ function Panel({ state }: { state: AppState }) {
                   加载更早的消息
                 </button>
               )}
-              {!projection.messages.length && (
+              {state.historyReload && (
+                <div
+                  className={`alert${state.historyReload.error ? " error" : ""}`}
+                  role="status"
+                >
+                  <span title={state.historyReload.error || undefined}>
+                    {state.historyReload.error
+                      ? "会话历史加载失败，正在重试…"
+                      : "正在重新加载会话历史…"}
+                  </span>
+                  {state.historyReload.error && (
+                    <button
+                      disabled={busy || !connected}
+                      onClick={() => run("refresh")}
+                    >
+                      重试
+                    </button>
+                  )}
+                </div>
+              )}
+              {!projection.messages.length && !state.historyReload && (
                 <div className="welcome">
                   <div className="welcome-mascot">
                     <Mascot small />
@@ -1083,7 +1180,7 @@ function Panel({ state }: { state: AppState }) {
                   {state.activity[state.selectedId].message}
                 </div>
               )}
-              {selected && status !== "idle" && (
+              {selected && !selected.readOnly && status !== "idle" && (
                 <div className={`task-status ${status}`}>
                   {selected.running ? (
                     <LoaderCircle size={13} className="spin" />
@@ -1127,12 +1224,17 @@ function Panel({ state }: { state: AppState }) {
               >
                 <textarea
                   aria-label="消息"
+                  disabled={busy || changingSession || selected?.readOnly}
                   placeholder={
-                    connected
-                      ? selected?.running
-                        ? "补充你的想法，将加入消息队列…"
-                        : "有什么想一起做的？"
-                      : "先连接 DSH，然后开始对话…"
+                    selected?.readOnly
+                      ? "此会话仅支持查看，请在 Codex 原窗口继续…"
+                      : connected
+                        ? selected?.running
+                          ? isCodex
+                            ? "补充你的想法，将发送给当前任务…"
+                            : "补充你的想法，将加入消息队列…"
+                          : "有什么想一起做的？"
+                        : `先连接 ${providerName}，然后开始对话…`
                   }
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
@@ -1151,17 +1253,25 @@ function Panel({ state }: { state: AppState }) {
                 <div className="composer-footer">
                   <span className="permission-label">
                     <ShieldCheck size={12} />
-                    使用 DSH 当前权限
+                    {selected?.readOnly
+                      ? "仅查看会话内容"
+                      : `使用 ${providerName} 当前权限`}
                   </span>
                   <div>
-                    {selected?.running && (
+                    {selected?.running && !selected.readOnly && (
                       <button
                         type="button"
                         className="stop-button"
                         aria-label="停止当前轮次"
-                        title="取消当前轮次，保留 DSH 排队消息"
+                        title={
+                          isCodex
+                            ? "取消当前 Codex 任务"
+                            : "取消当前轮次，保留 DSH 排队消息"
+                        }
                         disabled={busy || !connected}
-                        onClick={() => run("cancel")}
+                        onClick={() =>
+                          run("cancel", { sessionId: state.selectedId })
+                        }
                       >
                         <Square size={13} fill="currentColor" />
                       </button>
@@ -1169,7 +1279,13 @@ function Panel({ state }: { state: AppState }) {
                     <button
                       className="send-button"
                       aria-label="发送消息"
-                      disabled={busy || !connected || !draft.trim()}
+                      disabled={
+                        busy ||
+                        changingSession ||
+                        !connected ||
+                        selected?.readOnly ||
+                        !draft.trim()
+                      }
                     >
                       {busy ? (
                         <LoaderCircle size={17} className="spin" />
@@ -1181,8 +1297,14 @@ function Panel({ state }: { state: AppState }) {
                 </div>
               </form>
               <div className="composer-hint">
-                Enter 发送 <span>·</span> Shift + Enter 换行 <span>·</span>{" "}
-                执行中可继续补充
+                {selected?.readOnly ? (
+                  "同一共享服务内的会话支持发送、停止与审批"
+                ) : (
+                  <>
+                    Enter 发送 <span>·</span> Shift + Enter 换行 <span>·</span>{" "}
+                    执行中可继续补充
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1253,7 +1375,9 @@ function Panel({ state }: { state: AppState }) {
             <div className="toggle-row">
               <div>
                 <h2>执行进度气泡</h2>
-                <p>收起窗口时，在桌宠上方显示最新进展，点击打开对应对话。</p>
+                <p>
+                  收起窗口时显示会话气泡，结束后继续保留。点击打开对话，右上角可关闭显示；下次新任务会重新出现。
+                </p>
               </div>
               <button
                 role="switch"
@@ -1274,13 +1398,54 @@ function Panel({ state }: { state: AppState }) {
               <span
                 className={`status-dot ${connected ? "connected" : "offline"}`}
               />
-              DSH 服务
+              会话服务
             </h2>
             <p>
               {state.managed
-                ? "由 DSH 插件启动，已自动配置当前服务。"
-                : "连接你电脑上的 DSH，复用会话、工具与项目。"}
+                ? "DSH 由插件管理，也可以同时连接 Codex。"
+                : "DSH 与 Codex 可同时连接，新建会话时选择平台。"}
             </p>
+            <div className="platform-connections">
+              {(["dsh", "codex"] as const).map((source) => (
+                <span
+                  key={source}
+                  className="platform-connection"
+                  data-provider={source}
+                >
+                  <span className={`provider-badge ${source}`}>
+                    {providerLabel(source)}
+                  </span>
+                  <span
+                    className={`status-dot ${platformConnection(state, source).status}`}
+                  />
+                  {labels[platformConnection(state, source).status]}
+                </span>
+              ))}
+            </div>
+            {
+              <>
+                <label className="field-label" htmlFor="provider">
+                  服务类型
+                </label>
+                <select
+                  id="provider"
+                  className="text-input"
+                  value={provider}
+                  onChange={(event) => {
+                    const value = event.target.value as "dsh" | "codex";
+                    setProvider(value);
+                    setEndpoint(
+                      value === "codex"
+                        ? state.config.codexEndpoint || "ws://127.0.0.1:4500"
+                        : state.config.endpoint,
+                    );
+                  }}
+                >
+                  <option value="dsh">DSH</option>
+                  <option value="codex">Codex（共享 App Server）</option>
+                </select>
+              </>
+            }
             <label className="field-label" htmlFor="endpoint">
               本机服务地址
             </label>
@@ -1288,24 +1453,26 @@ function Panel({ state }: { state: AppState }) {
               id="endpoint"
               className="text-input"
               value={endpoint}
-              readOnly={state.managed}
+              readOnly={state.managed && provider === "dsh"}
               onChange={(event) => setEndpoint(event.target.value)}
               spellCheck={false}
             />
             <div className="button-row">
               <span className="muted">
-                {state.host
-                  ? `版本 ${state.host.version}`
-                  : state.managed
+                {serviceConnection.host
+                  ? `版本 ${serviceConnection.host.version}`
+                  : state.managed && provider === "dsh"
                     ? "由插件自动连接"
-                    : "默认端口 3080"}
+                    : provider === "codex"
+                      ? "默认端口 4500"
+                      : "默认端口 3080"}
               </span>
               <button
                 className="primary"
-                disabled={busy || state.connection === "connecting"}
-                onClick={() => run("connect", endpoint)}
+                disabled={busy || serviceConnection.status === "connecting"}
+                onClick={() => run("connect", { provider, endpoint })}
               >
-                {busy || state.connection === "connecting" ? (
+                {busy || serviceConnection.status === "connecting" ? (
                   <LoaderCircle size={14} className="spin" />
                 ) : (
                   <Check size={14} />
@@ -1313,69 +1480,99 @@ function Panel({ state }: { state: AppState }) {
                 连接
               </button>
             </div>
-            {state.connectionMessage && (
+            {serviceConnection.message && (
               <p className="connection-explanation">
-                {state.connectionMessage}
+                {serviceConnection.message}
               </p>
             )}
-            {!state.managed && (
+            {serviceConnection.status !== "offline" &&
+              !(state.managed && provider === "dsh") && (
+                <button
+                  className="secondary disconnect-service"
+                  disabled={busy}
+                  onClick={() => run("disconnect", provider)}
+                >
+                  断开 {providerLabel(provider)}
+                </button>
+              )}
+            {(!state.managed || provider === "codex") && (
               <details>
                 <summary>如何启动服务</summary>
-                <code>dsh web --host 127.0.0.1 --port 3080 --no-open</code>
-                <p>
-                  先在终端启动 DSH Web，再点击连接。桌宠目前不管理 DSH 进程。
-                </p>
+                {provider === "codex" ? (
+                  <>
+                    <code>codex app-server --listen ws://127.0.0.1:4500</code>
+                    <p>再开一个终端，让 Codex 和桌宠连接同一个服务：</p>
+                    <code>codex --remote ws://127.0.0.1:4500</code>
+                    <p>
+                      显示此服务已加载的会话。可在桌宠新建，也可在 Codex
+                      终端恢复旧会话。已有桌面窗口或独立 CLI 进程不会自动接入。
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <code>dsh web --host 127.0.0.1 --port 3080 --no-open</code>
+                    <p>
+                      先在终端启动 DSH Web，再点击连接。桌宠目前不管理 DSH
+                      进程。
+                    </p>
+                  </>
+                )}
               </details>
             )}
           </section>
-          <section className="settings-card balance-card">
-            <div className="section-title">
-              <h2>DeepSeek 余额</h2>
-              <button
-                aria-label="刷新余额"
-                className="icon-button"
-                disabled={!connected || busy}
-                onClick={() => run("balance")}
-              >
-                <RefreshCw size={14} />
-              </button>
-            </div>
-            {state.balance ? (
-              <>
-                <div className="balance-values">
-                  {state.balance.balances.map((row) => (
-                    <strong key={row.currency}>
-                      <span>{row.currency === "CNY" ? "¥" : "$"}</span>
-                      {row.total.toFixed(2)}
-                      <small>{row.currency}</small>
-                    </strong>
-                  ))}
-                </div>
-                <span className="muted">
-                  DeepSeek Key 账号 ·{" "}
-                  {new Date(state.balance.updatedAt).toLocaleTimeString(
-                    "zh-CN",
-                    { hour: "2-digit", minute: "2-digit" },
-                  )}
-                  {state.balanceError ? " · 旧数据" : " 更新"}
-                </span>
-              </>
-            ) : (
-              <div className="no-balance">
-                —<span>等待余额数据</span>
+          {(state.connections ? !!state.connections.dsh.host : !isCodex) && (
+            <section className="settings-card balance-card">
+              <div className="section-title">
+                <h2>DeepSeek 余额</h2>
+                <button
+                  aria-label="刷新余额"
+                  className="icon-button"
+                  disabled={
+                    platformConnection(state, "dsh").status !== "connected" ||
+                    busy
+                  }
+                  onClick={() => run("balance")}
+                >
+                  <RefreshCw size={14} />
+                </button>
               </div>
-            )}
-            {state.balanceError && (
-              <p className="connection-explanation">{state.balanceError}</p>
-            )}
-            <details>
-              <summary>连接余额插件</summary>
-              <p>
-                安装项目中的 dsh-girl-bridge 插件后重启 DSH。凭证在 DSH
-                中配置，桌宠不读取密钥。具体步骤见项目 README。
-              </p>
-            </details>
-          </section>
+              {state.balance ? (
+                <>
+                  <div className="balance-values">
+                    {state.balance.balances.map((row) => (
+                      <strong key={row.currency}>
+                        <span>{row.currency === "CNY" ? "¥" : "$"}</span>
+                        {row.total.toFixed(2)}
+                        <small>{row.currency}</small>
+                      </strong>
+                    ))}
+                  </div>
+                  <span className="muted">
+                    DeepSeek Key 账号 ·{" "}
+                    {new Date(state.balance.updatedAt).toLocaleTimeString(
+                      "zh-CN",
+                      { hour: "2-digit", minute: "2-digit" },
+                    )}
+                    {state.balanceError ? " · 旧数据" : " 更新"}
+                  </span>
+                </>
+              ) : (
+                <div className="no-balance">
+                  —<span>等待余额数据</span>
+                </div>
+              )}
+              {state.balanceError && (
+                <p className="connection-explanation">{state.balanceError}</p>
+              )}
+              <details>
+                <summary>连接余额插件</summary>
+                <p>
+                  安装项目中的 dsh-girl-bridge 插件后重启 DSH。凭证在 DSH
+                  中配置，桌宠不读取密钥。具体步骤见项目 README。
+                </p>
+              </details>
+            </section>
+          )}
           <section className="settings-card">
             <div className="toggle-row">
               <div>
@@ -1477,6 +1674,7 @@ function App() {
           <div
             className={`companion-surface ${surface.section ? "open" : ""}`}
             data-section={surface.section || undefined}
+            data-provider={selectedProvider(state)}
             inert={!surface.section}
             aria-hidden={!surface.section}
             style={

@@ -8,6 +8,7 @@ import {
   deckSlots,
   deckTop,
   moveDeckPointer,
+  reconcileDeckView,
 } from "../shared/progress-deck.mjs";
 import { PET_CHARACTER } from "../shared/desktop-layout.mjs";
 
@@ -94,6 +95,119 @@ test("the resting deck keeps the selected card in the front slot", () => {
       assert.equal(slots.at(-1), selected);
     }
   }
+});
+
+const viewOf = (ids, active, previous, options = {}) =>
+  reconcileDeckView(previous, {
+    ids,
+    active,
+    hovered: true,
+    browsing: true,
+    capacity: 5,
+    width: 300,
+    headroom: 250,
+    ...options,
+  });
+
+test("new sessions cannot displace hovered cards when the deck starts rotating", () => {
+  for (const capacity of [1, 2, 5]) {
+    const ids = ["a", "b", "c", "d", "e"].slice(0, capacity);
+    for (const active of ids) {
+      const before = viewOf(ids, active, undefined, { capacity });
+      const after = viewOf([...ids, "new"], active, before, { capacity });
+      assert.deepEqual(after.slots, before.slots);
+      assert.equal(after.rotate, true);
+      // Later streaming updates must not unfreeze the frame.
+      assert.deepEqual(
+        viewOf([...ids, "new", "another"], active, after, { capacity }).slots,
+        before.slots,
+      );
+    }
+  }
+});
+
+test("added sessions stay reachable by rotation without moving the active slot", () => {
+  const ids = ["a", "b", "c", "d", "e"];
+  let view = viewOf(ids, "b");
+  const anchor = view.slots.indexOf("b");
+  ids.push("new", "another");
+  view = viewOf(ids, "b", view);
+  for (const active of [...ids, ...ids.toReversed()]) {
+    view = viewOf(ids, active, view);
+    assert.equal(view.slots[anchor], active);
+    assert.equal(view.slots.length, 5);
+    assert.equal(new Set(view.slots).size, 5);
+    assert.ok(view.slots.every((id) => ids.includes(id)));
+  }
+});
+
+test("growth below capacity preserves the hovered frame and expands on exit", () => {
+  for (const count of [1, 3]) {
+    const ids = ["a", "b", "c"].slice(0, count);
+    const before = viewOf(ids, "a");
+    ids.push("new");
+    const after = viewOf(ids, "a", before);
+    assert.deepEqual(after.slots, before.slots);
+    assert.equal(after.rotate, true);
+    const rotated = viewOf(ids, "new", after);
+    assert.equal(rotated.slots[0], "new");
+    assert.equal(rotated.slots.length, count);
+    const resting = viewOf(ids, "new", rotated, {
+      hovered: false,
+      browsing: false,
+    });
+    assert.deepEqual(resting.slots, ids);
+    assert.equal(resting.rotate, false);
+  }
+});
+
+test("removals keep surviving targets in place and refill only empty slots", () => {
+  const before = viewOf(["a", "b", "c", "d", "e"], "c");
+  const removed = viewOf(["a", "c", "e"], "c", before);
+  assert.deepEqual(removed.slots, ["a", null, "c", null, "e"]);
+  const added = viewOf(["a", "c", "e", "new"], "c", removed);
+  assert.deepEqual(added.slots, ["a", "new", "c", null, "e"]);
+  const replaced = viewOf(["a", "e", "new"], "e", added);
+  assert.equal(
+    replaced.slots[2],
+    "e",
+    "replacement occupies the removed active slot",
+  );
+  assert.deepEqual(replaced.slots.filter(Boolean).sort(), ["a", "e", "new"]);
+  assert.deepEqual(viewOf([], undefined, replaced).slots, []);
+});
+
+test("direct hover selection keeps every card in its existing physical slot", () => {
+  const ids = ["a", "b", "c", "d", "e"];
+  let view = viewOf(ids, "e", undefined, { hovered: false, browsing: false });
+  for (const active of ids) {
+    view = viewOf(ids, active, view);
+    assert.equal(view.rotate, false);
+    assert.deepEqual(view.slots, ids);
+  }
+});
+
+test("viewport changes release the hover frame to respect the available space", () => {
+  const ids = ["a", "b", "c", "d", "e", "f"];
+  const before = viewOf(ids.slice(0, 5), "b");
+  const held = viewOf(ids, "b", before);
+  for (const options of [
+    { capacity: 2, headroom: 60 },
+    { capacity: 1, headroom: 0 },
+    { width: 366 },
+    { headroom: 200 },
+  ]) {
+    const view = viewOf(ids, "b", held, options);
+    assert.equal(view.slots.at(-1), "b");
+    assert.equal(view.slots.length, options.capacity || 5);
+  }
+});
+
+test("keyboard-only browsing does not freeze the frame when sessions are added", () => {
+  const before = viewOf(["a"], "a", undefined, { hovered: false });
+  const after = viewOf(["a", "new"], "a", before, { hovered: false });
+  assert.deepEqual(after.slots, ["a", "new"]);
+  assert.equal(after.rotate, false);
 });
 
 test("horizontal cards stack toward the upper right and fit inside every supported pet width", () => {

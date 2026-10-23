@@ -35,6 +35,12 @@ if (testUpdate) {
   const metadata = JSON.parse(await readFile(manifest, "utf8"));
   metadata.version = "0.0.0";
   await writeFile(manifest, JSON.stringify(metadata));
+  // This isolated seed only fakes version metadata to exercise an update.
+  // Keep the plugin/runtime manifests consistent with the installer guard.
+  const runtimePath = join(seed, "package/runtime.json");
+  const runtime = JSON.parse(await readFile(runtimePath, "utf8"));
+  runtime.version = metadata.version;
+  await writeFile(runtimePath, JSON.stringify(runtime));
   if (testRollback || testRemovalRestart) {
     const entry = join(seed, "package/index.mjs");
     const code = await readFile(entry, "utf8");
@@ -168,7 +174,7 @@ try {
   const running = await status();
   pid = running.pid;
   assert.equal(running.hostKind, "desktop");
-  assert.equal(running.version, pkg.version);
+  assert.equal(running.version, testUpdate ? "0.0.0" : pkg.version);
   assert.equal(running.error, "");
   assert.ok(alive(pid));
   assert.ok(!JSON.stringify(running).includes("token"));

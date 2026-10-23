@@ -53,7 +53,8 @@ for (const file of ["web", "cordis.patch.yml", "README.md"])
 const pluginPackage = JSON.parse(
   await readFile(join(source, "package.json"), "utf8"),
 );
-pluginPackage.version = pkg.version;
+if (pluginPackage.version !== pkg.version || pluginPackage.name !== pkg.name)
+  throw new Error("源码插件与应用版本不匹配，请同步 package.json");
 pluginPackage.os = [process.platform];
 pluginPackage.cpu = [process.arch];
 await writeFile(

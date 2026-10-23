@@ -1,12 +1,15 @@
+export type Provider = "dsh" | "codex";
 export type Question = {
   id: string;
   question: string;
   detail?: string;
   header?: string;
   multiSelect?: boolean;
+  isSecret?: boolean;
   options?: { label: string; description?: string }[];
 };
 export type Pending = {
+  provider?: Provider;
   rpcId: string;
   type: string;
   sessionId: string;
@@ -14,10 +17,21 @@ export type Pending = {
   toolName?: string;
   reason?: string;
   questions?: Question[];
+  choices?: { value: string; label: string; detail?: string }[];
 };
 export type Session = {
+  provider?: Provider;
+  readOnly?: boolean;
   sessionId: string;
   running: boolean;
+  // False while reconnecting until a fresh list or live runtime event arrives.
+  runningKnown?: boolean;
+  lastTurn?: {
+    key: string;
+    status?: string;
+    startedAt?: number;
+    historical?: boolean;
+  };
   blank: boolean;
   cwd?: string;
   title?: string;
@@ -34,6 +48,10 @@ export type AppState = {
     contentHeight: number;
     contentTop: number;
   };
+  connections?: Record<
+    Provider,
+    { status: string; message: string; host: AppState["host"]; epoch?: number }
+  >;
   connection: string;
   connectionEpoch: number;
   connectionMessage: string;
@@ -46,11 +64,22 @@ export type AppState = {
     { attemptId: string; revision: number; text: string } | null
   >;
   hasMore: boolean;
+  historyReload?: { error: string } | null;
   pending: Pending[];
+  progressEntries?: Record<
+    string,
+    {
+      active: boolean;
+      hidden: boolean;
+      turn: string | null;
+      status: string;
+      completedAt?: number;
+    }
+  >;
   activity: Record<
     string,
     {
-      status: string;
+      status?: string;
       tool?: string;
       toolSummary?: string;
       toolDetails?: Record<string, string>;
@@ -58,6 +87,8 @@ export type AppState = {
       message?: string;
       at?: number;
       seq?: number;
+      turn?: string;
+      metadataRevision?: number;
       tools?: Record<string, string>;
       reaction?: { mood: string; at: number; until: number };
       linger?: { mood: string; until: number };
@@ -78,6 +109,9 @@ export type AppState = {
   } | null;
   balanceError: string;
   config: {
+    provider?: Provider;
+    enabledProviders?: Provider[];
+    codexEndpoint?: string;
     endpoint: string;
     cwd: string;
     alwaysOnTop: boolean;

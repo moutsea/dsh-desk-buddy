@@ -17,6 +17,47 @@ const cardInset = 12;
 // The deck docks at most this far from the top of the window.
 const dockOffset = 3;
 
+/** Keep streaming updates stable; promote finished work only between browsing.
+ * @param {{order: string[], completed: Record<string, number>, automatic?: string}} previous
+ * @param {{sessionId: string, completedAt?: number}[]} items
+ * @param {boolean} browsing
+ */
+export function reconcileDeckOrder(previous, items, browsing) {
+  const incoming = items.map((item) => item.sessionId).reverse();
+  const order = [
+    ...previous.order.filter((id) => incoming.includes(id)),
+    ...incoming.filter((id) => !previous.order.includes(id)),
+  ];
+  if (browsing)
+    return {
+      order,
+      completed: previous.completed,
+      automatic: previous.automatic,
+      promoted: undefined,
+    };
+  const completed = Object.fromEntries(
+    items
+      .filter((item) => item.completedAt > 0)
+      .map((item) => [item.sessionId, item.completedAt || 0]),
+  );
+  // The last slot is the front of the stack.
+  order.sort((a, b) => (completed[a] || 0) - (completed[b] || 0));
+  const newestFirst = [...order].reverse();
+  const newCompletion = newestFirst.some(
+    (id) => completed[id] && completed[id] !== previous.completed[id],
+  );
+  const lostAutomatic = previous.automatic && !completed[previous.automatic];
+  // A restarted auto-selected card must release the front slot in large decks.
+  // Manual selections clear `automatic` and remain under the user's control.
+  const promoted =
+    newCompletion || lostAutomatic
+      ? newestFirst.find((id) => completed[id])
+      : undefined;
+  const automatic =
+    promoted ?? (lostAutomatic ? undefined : previous.automatic);
+  return { order, completed, automatic, promoted };
+}
+
 /**
  * Where the stack box starts, relative to the pet stage. The deck stays inside
  * the window (`dockOffset`) unless the character leaves room for all of it.
@@ -57,8 +98,8 @@ export function deckIndices(count, selected, browsing, limit = DECK_LIMIT) {
   limit = Math.max(1, Math.min(DECK_LIMIT, limit));
   if (count <= limit) return Array.from({ length: count }, (_, index) => index);
   if (browsing) {
-    // End the window at the selected card so it keeps the front slot and the
-    // deck does not jump when browsing starts.
+    // Prefer the preceding neighbours; deckSlots keeps the selected card in
+    // front even when this window hits the beginning of the list.
     const start = Math.max(0, Math.min(count - limit, selected - limit + 1));
     return Array.from({ length: limit }, (_, index) => start + index);
   }
@@ -75,9 +116,9 @@ export function deckIndices(count, selected, browsing, limit = DECK_LIMIT) {
   return [...new Set(keep)].slice(0, limit).sort((a, b) => a - b);
 }
 
-// The selected card owns the front (lower-left) slot while the deck rests, so
-// the painted stack keeps the same order as the hit targets. Browsing keeps
-// list order instead, otherwise cards would jump under the pointer.
+// Large decks keep the selected card in the front (lower-left) slot both at
+// rest and while browsing, so hover does not move its click/close targets.
+// Small decks keep list order because selection follows the pointer hit target.
 /**
  * @param {number[]} visible
  * @param {number} selected
@@ -88,6 +129,71 @@ export function deckSlots(visible, selected, rotate) {
   if (!rotate || visible.at(-1) === selected) return visible;
   const rest = visible.filter((index) => index !== selected);
   return rest.length === visible.length ? visible : [...rest, selected];
+}
+
+/**
+ * @typedef {{slots: (string | null)[], active: string, hovered: boolean,
+ *   capacity: number, width: number, headroom: number, rotate: boolean}} DeckView
+ */
+
+/** Keep pointer targets in place while sessions join or leave a hovered deck.
+ * The frame stays fixed until pointer exit; any extra cards remain reachable
+ * by rotation. Empty slots preserve geometry when a visible card disappears.
+ * @param {DeckView | undefined} previous Last committed presentation.
+ * @param {{ids: string[], active: string, hovered: boolean, browsing: boolean,
+ *   capacity: number, width: number, headroom: number}} current
+ * @returns {DeckView}
+ */
+export function reconcileDeckView(previous, current) {
+  const { ids, active, hovered, browsing, capacity, width, headroom } = current;
+  const preserve =
+    previous?.hovered &&
+    hovered &&
+    previous.capacity === capacity &&
+    previous.width === width &&
+    previous.headroom === headroom &&
+    previous.slots.length > 0 &&
+    ids.length > 0;
+  const size = preserve
+    ? previous.slots.length
+    : Math.min(ids.length, capacity);
+  const rotate = ids.length > size;
+  const selected = ids.indexOf(active);
+  const visible = deckIndices(ids.length, selected, browsing, size);
+  let desired = deckSlots(visible, selected, rotate).map((index) => ids[index]);
+  /** @type {(string | null)[]} */
+  let slots = desired;
+  if (preserve) {
+    // Passive membership updates cannot replace cards under a stationary
+    // pointer. Rotation deliberately chooses a new window of neighbours.
+    if (active === previous.active) {
+      const survivors = previous.slots.filter(
+        (id) => id !== null && ids.includes(id),
+      );
+      desired = [...new Set([...survivors, ...desired])].slice(0, size);
+    }
+    slots = Array(size).fill(null);
+    const anchor = previous.slots.indexOf(
+      rotate || !ids.includes(previous.active) ? previous.active : active,
+    );
+    slots[anchor >= 0 ? anchor : size - 1] = active;
+    previous.slots.forEach((id, slot) => {
+      if (
+        id !== null &&
+        desired.includes(id) &&
+        !slots.includes(id) &&
+        slots[slot] === null
+      )
+        slots[slot] = id;
+    });
+    for (const id of desired) {
+      if (slots.includes(id)) continue;
+      const empty = slots.indexOf(null);
+      if (empty < 0) break;
+      slots[empty] = id;
+    }
+  }
+  return { slots, active, hovered, capacity, width, headroom, rotate };
 }
 
 /**

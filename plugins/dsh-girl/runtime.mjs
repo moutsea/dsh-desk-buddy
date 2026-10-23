@@ -11,7 +11,10 @@ import {
 } from "node:fs/promises";
 import { join, resolve, sep } from "node:path";
 import { extractArchive } from "./archive.mjs";
-import { downloadRuntimePackage } from "./release-runtime.mjs";
+import {
+  downloadRuntimePackage,
+  assertPackageVersion,
+} from "./release-runtime.mjs";
 
 export async function fileHash(path) {
   const hash = createHash("sha256");
@@ -38,6 +41,7 @@ export async function prepareRuntime(root, cache) {
     throw new Error(
       `此插件包适用于 ${manifest.platform}/${manifest.arch}，请安装适合当前电脑的桌宠插件包`,
     );
+  await assertPackageVersion(root, manifest);
   if (!["darwin", "win32"].includes(process.platform))
     throw new Error("此版本的插件安装器目前支持 macOS 和 Windows");
   if (

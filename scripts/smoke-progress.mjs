@@ -101,9 +101,9 @@ try {
     fixture.sessions.get(id).running = true;
     fixture.event(id, "turn/start", {});
   }
-  const bubbles = page.locator(".pet-progress-bubble");
-  const cards = page.locator(".progress-card");
-  const stack = page.getByRole("group", { name: "进行中的会话" });
+  let bubbles = page.locator(".pet-progress-bubble");
+  let cards = page.locator(".progress-card");
+  let stack = page.getByRole("group", { name: "会话气泡" });
   await expect(bubbles).toHaveCount(3);
   const order = await bubbles.evaluateAll((nodes) =>
     nodes.map((node) => node.dataset.sessionId),
@@ -526,6 +526,48 @@ try {
     fixture.event(id, "turn/end", { reason: { kind: "cancelled" } });
   }
   await page.mouse.move(-10, -10);
+  await expect(stack).toHaveAttribute("data-total", "12");
+  await expect(cards).toHaveCount(5);
+  // Early selections used to jump 22–88px on hover, moving the visible close
+  // button away from the pointer and opening another chat at its old position.
+  let closeId, closePoint;
+  for (const index of [0, 1, 2, 3]) {
+    await page.locator(".pet-progress-bubble.is-active").focus();
+    await page.keyboard.press("Home");
+    for (let i = 0; i < index; i++) await page.keyboard.press("ArrowDown");
+    await leaveDeck();
+    await settle();
+    closeId = await stack.getAttribute("data-selected-session");
+    const button = page.locator(".progress-dismiss.is-active");
+    const before = await button.boundingBox();
+    closePoint = {
+      x: before.x + before.width / 2,
+      y: before.y + before.height / 2,
+    };
+    await page.mouse.move(closePoint.x, closePoint.y, { steps: 3 });
+    await expect(stack).toHaveClass(/is-browsing/);
+    await settle();
+    assert.deepEqual(
+      await button.boundingBox(),
+      before,
+      "hover must not move the close target",
+    );
+    assert.equal(await hitId(closePoint.x, closePoint.y), closeId);
+    await expect(cards).toHaveCount(5);
+  }
+  // Click the original screen coordinates, not a locator that silently follows
+  // a displaced button. No keyboard focus is keeping this deck expanded.
+  await page.mouse.click(closePoint.x, closePoint.y);
+  await expect(stack).toHaveAttribute("data-total", "11");
+  await expect(cards).toHaveCount(5);
+  assert.equal((await state()).progressEntries[closeId].hidden, true);
+  assert.equal((await state()).surface.section, null);
+  for (const id of [
+    "front",
+    "third",
+    ...Array.from({ length: 9 }, (_, i) => `extra-${i}`),
+  ])
+    await invoke("dismissProgress", id);
   await expect(cards).toHaveCount(1);
   await expect(stack).toHaveAttribute("data-selected-session", "back");
   await expect(visual("back")).toHaveCSS("opacity", "1");
@@ -589,6 +631,11 @@ try {
   await app.close();
   app = await launchDesktop(env);
   page = await app.firstWindow({ timeout: 15000 });
+  // Locators belong to a page; the completion-order checks below must use the
+  // new renderer after verifying the persisted setting across an app restart.
+  bubbles = page.locator(".pet-progress-bubble");
+  cards = page.locator(".progress-card");
+  stack = page.getByRole("group", { name: "会话气泡" });
   await page.mouse.move(-10, -10);
   await expect.poll(async () => (await state()).connection).toBe("connected");
   assert.equal((await state()).config.progressBubbles, false);
@@ -598,15 +645,159 @@ try {
   await invoke("section", null);
   await page.mouse.move(-10, -10);
   await expect(bubble()).toBeVisible();
+  const closeBubble = () =>
+    page.getByRole("button", { name: "关闭气泡：后台检查项目", exact: true });
+  await closeBubble().click();
+  await expect(bubble()).toHaveCount(0);
+  assert.equal(
+    (await state()).surface.section,
+    null,
+    "closing must not open the conversation",
+  );
+  assert.equal(
+    fixture.sessions.get("back").running,
+    true,
+    "closing does not stop the task",
+  );
+  fixture.event("back", "assistant/chunk", {
+    chunk: { type: "text-delta", text: "关闭后继续运行" },
+  });
+  await invoke("refresh");
+  await expect(bubble()).toHaveCount(0);
+  const epoch = (await state()).connections.dsh.epoch;
+  fixture.dropStreams();
+  await expect
+    .poll(async () => (await state()).connections.dsh.epoch)
+    .toBeGreaterThan(epoch);
+  await expect
+    .poll(async () => {
+      const current = await state();
+      return (
+        current.connections.dsh.status === "connected" &&
+        current.sessions.find((row) => row.sessionId === "back")?.running ===
+          true
+      );
+    })
+    .toBe(true);
+  assert.equal(
+    (await state()).progressEntries.back.hidden,
+    true,
+    "automatic reconnect must not revive the dismissed running task",
+  );
+  await expect(bubble()).toHaveCount(0);
   fixture.sessions.get("back").running = false;
   fixture.event("back", "turn/end", { reason: { kind: "completed" } });
+  await expect
+    .poll(async () => (await state()).progressEntries.back.active)
+    .toBe(false);
   await expect(bubble()).toHaveCount(0);
+  fixture.sessions.get("back").running = true;
+  fixture.event("back", "turn/start", { turn: "next-task" });
+  await expect(bubble()).toBeVisible();
+  fixture.sessions.get("back").running = false;
+  fixture.event("back", "turn/end", { reason: { kind: "completed" } });
+  await expect(visual("back")).toContainText("已完成");
+  await invoke("refresh");
+  await expect(bubble()).toBeVisible();
+  await page.locator(".pet-progress-stack").screenshot({
+    path: "artifacts/progress-retained.png",
+    animations: "disabled",
+    omitBackground: true,
+  });
+  await closeBubble().focus();
+  await page.keyboard.press("Enter");
+  await expect(bubble()).toHaveCount(0);
+  assert.equal(
+    (await state()).surface.section,
+    null,
+    "keyboard close must not open the conversation",
+  );
+  assert.equal(
+    fixture.calls.some((call) => call.path === "/api/session.cancel"),
+    false,
+  );
   assert.equal(
     fixture.calls.some((call) => call.path === "/api/session.prompt"),
     false,
   );
+
+  // Newly completed work moves out of the folded middle into the front slot.
+  // Completion ordering is shared with the session picker, and pauses while
+  // the user is browsing the deck so click/keyboard targets stay in place.
+  const priorityIds = [
+    "front",
+    "back",
+    "third",
+    "extra-0",
+    "extra-1",
+    "extra-2",
+  ];
+  for (const id of priorityIds) {
+    fixture.sessions.get(id).running = true;
+    fixture.event(id, "turn/start", { turn: "completion-order" });
+  }
+  await expect(stack).toHaveAttribute("data-total", "6");
+  await leaveDeck();
+  await expect(cards).toHaveCount(5);
+  const shown = await cards.evaluateAll((nodes) =>
+    nodes.map((node) => node.dataset.sessionId),
+  );
+  const firstDone = priorityIds.find((id) => !shown.includes(id));
+  assert.ok(firstDone, "a middle session starts folded");
+  const finish = (id) => {
+    fixture.sessions.get(id).running = false;
+    fixture.event(id, "turn/end", {
+      turn: "completion-order",
+      reason: "completed",
+    });
+  };
+  finish(firstDone);
+  await expect(stack).toHaveAttribute("data-selected-session", firstDone);
+  await expect(cards.last()).toHaveAttribute("data-session-id", firstDone);
+  await expect(cards.last()).toContainText("已完成");
+  await expect(cards).toHaveCount(5);
+  await page.locator(".pet-progress-bubble.is-active").focus();
+  await page.keyboard.press("End");
+  await expect(stack).toHaveClass(/is-browsing/);
+  const beforeCompletion = await cards.evaluateAll((nodes) =>
+    nodes.map((node) => node.dataset.sessionId),
+  );
+  const latestDone = priorityIds.find((id) => id !== firstDone);
+  finish(latestDone);
+  await expect
+    .poll(async () => (await state()).progressEntries[latestDone].status)
+    .toBe("done");
+  await expect(stack).toHaveAttribute("data-selected-session", firstDone);
+  assert.deepEqual(
+    await cards.evaluateAll((nodes) =>
+      nodes.map((node) => node.dataset.sessionId),
+    ),
+    beforeCompletion,
+  );
+  await leaveDeck();
+  await expect(stack).toHaveAttribute("data-selected-session", latestDone);
+  await expect(cards.last()).toHaveAttribute("data-session-id", latestDone);
+  await expect(cards).toHaveCount(5);
+  await invoke("section", "chat");
+  await page.getByRole("button", { name: "切换会话", exact: true }).click();
+  const sessionCards = page.locator(".session-card");
+  await expect(sessionCards.nth(0)).toContainText(
+    fixture.sessions.get(latestDone).title,
+  );
+  await expect(sessionCards.nth(1)).toContainText(
+    fixture.sessions.get(firstDone).title,
+  );
+  fixture.sessions.get(latestDone).running = true;
+  fixture.event(latestDone, "turn/start", { turn: "after-completion-order" });
+  await expect(sessionCards.nth(0)).toContainText(
+    fixture.sessions.get(firstDone).title,
+  );
+  assert.equal(
+    (await state()).progressEntries[latestDone].completedAt,
+    undefined,
+  );
   console.log(
-    "Progress bubble passed: horizontal cards stacked toward the upper right, five-card cap including transparent layers, folded middle sessions, the selected card resting in the front slot, bidirectional mouse rotation, stationary pointer stability, 90% transparency, keyboard and per-card click navigation, scale bounds, background tools and streaming, click-to-chat, visible commands, product name, no focus/position changes, persisted toggle and completion cleanup. No model calls.",
+    "Progress bubble passed: horizontal cards stacked toward the upper right, five-card cap including transparent layers, folded middle sessions, selected card staying in the front slot across hover, bidirectional mouse rotation, stationary pointer stability, 90% transparency, keyboard and per-card click navigation, scale bounds, background tools and streaming, click-to-chat, visible commands, product name, no focus/position changes, persisted toggle, retained terminal states, manual mouse/keyboard dismissal without cancelling, no revival on automatic reconnect, and reappearance on the next task. No model calls.",
   );
 } finally {
   await app?.close();

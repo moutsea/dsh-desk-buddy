@@ -50,6 +50,18 @@ export async function downloadVerifiedPackage(
     throw new Error("桌宠组件下载校验失败");
 }
 
+export async function assertPackageVersion(root, manifest) {
+  const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+  if (
+    !pkg.version ||
+    pkg.version !== manifest.version ||
+    (manifest.packageName && pkg.name !== manifest.packageName)
+  )
+    throw new Error(
+      "插件与桌宠组件清单版本不一致，请重新安装对应版本的完整插件包",
+    );
+}
+
 export async function downloadRuntimePackage(
   root,
   cache,
@@ -66,6 +78,7 @@ export async function downloadRuntimePackage(
       { cause: error },
     );
   }
+  await assertPackageVersion(root, manifest);
   const target = `${platform}-${arch}`;
   const asset = manifest.packages?.[target];
   if (!asset)

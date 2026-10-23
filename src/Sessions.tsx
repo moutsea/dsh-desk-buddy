@@ -4,11 +4,13 @@ import {
   ExternalLink,
   LoaderCircle,
   MessageCircle,
-  Plus,
   RefreshCw,
   X,
 } from "lucide-react";
 import { sessionTitle } from "../shared/projection.mjs";
+import { sessionCompletedAt } from "../shared/progress.mjs";
+import { NewSession } from "./NewSession";
+import { platformConnection, providerLabel } from "./platforms";
 import type { AppState } from "./types";
 
 export function Sessions({
@@ -26,6 +28,9 @@ export function Sessions({
 }) {
   const connected = state.connection === "connected";
   const active = state.sessions.filter((session) => session.running).length;
+  const sessions = [...state.sessions].sort(
+    (a, b) => sessionCompletedAt(state, b) - sessionCompletedAt(state, a),
+  );
   return (
     <section className="sessions-inline" role="region" aria-label="会话列表">
       <header className="sessions-heading">
@@ -58,16 +63,12 @@ export function Sessions({
           {error}
         </div>
       )}
-      <button
-        className="new-session primary"
-        disabled={!connected || busy}
-        onClick={async () => {
-          if (await run("create")) onClose();
-        }}
-      >
-        <Plus size={15} />
-        新建会话
-      </button>
+      <NewSession state={state} busy={busy} run={run} onCreated={onClose} />
+      {state.sessions.some((session) => session.readOnly) && (
+        <p className="session-source-hint">
+          Codex 外部会话可查看已保存的内容，运行状态与操作请回到原窗口。
+        </p>
+      )}
       <div className="sessions-list">
         {state.pending.some(
           (item) =>
@@ -90,11 +91,11 @@ export function Sessions({
             <p>
               {connected
                 ? "还没有会话，说说你的第一个想法吧。"
-                : "连接后，这里会显示 DSH 中的会话。"}
+                : "连接后，这里会显示 DSH 和 Codex 的会话。"}
             </p>
           </div>
         )}
-        {state.sessions.map((session) => {
+        {sessions.map((session) => {
           const count = state.pending.filter(
             (item) => item.sessionId === session.sessionId,
           ).length;
@@ -102,9 +103,14 @@ export function Sessions({
           return (
             <button
               className={`session-card ${current ? "current" : ""}`}
+              data-provider={session.provider || "dsh"}
               key={session.sessionId}
               aria-current={current ? "true" : undefined}
-              disabled={busy || !connected}
+              disabled={
+                busy ||
+                platformConnection(state, session.provider || "dsh").status !==
+                  "connected"
+              }
               onClick={async () => {
                 if (await run("select", session.sessionId)) onClose();
               }}
@@ -121,21 +127,30 @@ export function Sessions({
                 )}
               </span>
               <span className="session-card-text">
-                <strong>{sessionTitle(session)}</strong>
+                <strong>
+                  <span
+                    className={`provider-badge ${session.provider || "dsh"}`}
+                  >
+                    {providerLabel(session.provider || "dsh")}
+                  </span>{" "}
+                  {sessionTitle(session)}
+                </strong>
                 <span>
                   {session.cwd?.split(/[\\/]/).filter(Boolean).pop() ||
                     "未指定项目"}
                   <span className="middot">·</span>
-                  {count
-                    ? "等待你回应"
-                    : session.running
-                      ? "正在进行"
-                      : session.blank
-                        ? "新会话"
-                        : new Date(session.updatedAt).toLocaleDateString(
-                            "zh-CN",
-                            { month: "short", day: "numeric" },
-                          )}
+                  {session.readOnly
+                    ? "仅查看 · 外部会话"
+                    : count
+                      ? "等待你回应"
+                      : session.running
+                        ? "正在进行"
+                        : session.blank
+                          ? "新会话"
+                          : new Date(session.updatedAt).toLocaleDateString(
+                              "zh-CN",
+                              { month: "short", day: "numeric" },
+                            )}
                 </span>
               </span>
               {current && <Check size={15} />}

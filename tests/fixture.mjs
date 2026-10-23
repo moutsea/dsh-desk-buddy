@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
 
 // An explicitly isolated protocol fixture; no model provider or credentials.
-export async function createFixture({ historyPageSize } = {}) {
+export async function createFixture({ historyPageSize, beforeRpcReply } = {}) {
   const streams = { mux: new Set(), host: new Set() },
     sessions = new Map(),
     pending = new Map(),
@@ -247,6 +247,7 @@ export async function createFixture({ historyPageSize } = {}) {
       response.end(JSON.stringify({ accepted: true }));
       return;
     } else error = { code: "not-found", message: "unknown method" };
+    await beforeRpcReply?.({ method: body.method, value });
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end(
       JSON.stringify({

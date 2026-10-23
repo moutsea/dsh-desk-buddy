@@ -192,6 +192,10 @@ test("runtime installer rejects source-only packages, incompatible platforms and
   try {
     await assert.rejects(prepareRuntime(root, join(root, "cache")), /未包含/);
     const manifest = { platform: "different-platform", arch: process.arch };
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({ version: manifest.version }),
+    );
     await writeFile(join(root, "runtime.json"), JSON.stringify(manifest));
     await assert.rejects(prepareRuntime(root, join(root, "cache")), /适用于/);
     if (!["darwin", "win32"].includes(process.platform)) return;
@@ -202,6 +206,10 @@ test("runtime installer rejects source-only packages, incompatible platforms and
       executable: "DSG.app/Contents/MacOS/DSG",
       sha256: "a".repeat(64),
     });
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({ version: manifest.version }),
+    );
     await writeFile(join(root, "runtime.json"), JSON.stringify(manifest));
     await writeFile(join(root, "runtime.zip"), "modified");
     await assert.rejects(prepareRuntime(root, join(root, "cache")), /校验失败/);
@@ -237,6 +245,10 @@ test(
         archive,
       ]);
       await writeFile(
+        join(root, "package.json"),
+        JSON.stringify({ version: "test" }),
+      );
+      await writeFile(
         join(root, "runtime.json"),
         JSON.stringify({
           platform: process.platform,
@@ -263,6 +275,14 @@ test(
         "A",
       );
       assert.deepEqual(await prepareRuntime(root, join(root, "cache")), a);
+      await writeFile(
+        join(root, "package.json"),
+        JSON.stringify({ version: "newer" }),
+      );
+      await assert.rejects(
+        prepareRuntime(root, join(root, "cache")),
+        /版本不一致/,
+      );
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -282,6 +302,10 @@ test(
       await copyFile(process.execPath, join(root, executable));
       await writeFile(join(source, "资源.json"), '{"完整":true}');
       await createArchive(source, archive);
+      await writeFile(
+        join(root, "package.json"),
+        JSON.stringify({ version: "test" }),
+      );
       await writeFile(
         join(root, "runtime.json"),
         JSON.stringify({

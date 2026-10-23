@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   reduceActivity,
   reconcileActivity,
+  reconcileSessionActivity,
   sessionMood,
   overallMood,
   toolActivity,
@@ -22,6 +23,120 @@ const result = (toolCallId, isError = false) => ({
       },
     ],
   },
+});
+
+test("new snapshot turns clear old activity while preserving event ordering and current live phases", () => {
+  const old = {
+    turn: "old",
+    seq: 20,
+    status: "error",
+    message: "old failure",
+    at: 1000,
+    reaction: { mood: "shocked", until: 5000 },
+    preview: "old reply",
+  };
+  const session = { running: false, lastTurn: { key: "new", status: "done" } };
+  const fresh = reconcileSessionActivity(old, session, 2000);
+  assert.deepEqual(fresh, { turn: "new", seq: 20 });
+  assert.equal(
+    sessionMood(fresh, false, 2000),
+    "idle",
+    "history must not replay a reaction",
+  );
+  assert.equal(
+    reduceActivity(fresh, event(20, "turn/end", { reason: "error" })),
+    fresh,
+  );
+  assert.equal(reconcileSessionActivity(fresh, session, 2100), fresh);
+  const running = reconcileSessionActivity(
+    old,
+    { ...session, running: true },
+    2200,
+  );
+  assert.deepEqual(running, {
+    turn: "new",
+    seq: 20,
+    status: "thinking",
+    at: 2200,
+  });
+  const stopped = reconcileSessionActivity(running, session, 2300);
+  assert.deepEqual(stopped, { turn: "new", seq: 20, status: "idle" });
+  const live = {
+    turn: "new",
+    seq: 21,
+    status: "working",
+    tools: { shell: "bash" },
+  };
+  assert.equal(
+    reconcileSessionActivity(live, { ...session, running: true }),
+    live,
+  );
+  assert.equal(
+    reconcileSessionActivity(old, { running: false }),
+    old,
+    "unknown identity must not erase live activity",
+  );
+});
+
+test("cached metadata cannot erase newer live work or its terminal state", () => {
+  const live = {
+    turn: "new",
+    seq: 7,
+    metadataRevision: 4,
+    status: "working",
+    tools: { shell: "bash" },
+    toolSummary: "bash · npm test",
+  };
+  for (const activity of [
+    live,
+    { ...live, status: "error", message: "current error", tools: {} },
+  ]) {
+    for (const metadataRevision of [3, 4]) {
+      for (const running of [false, true]) {
+        const cached = {
+          readOnly: true,
+          running,
+          metadataRevision,
+          lastTurn: { key: "old", status: "done" },
+        };
+        assert.equal(reconcileSessionActivity(activity, cached), activity);
+      }
+    }
+    assert.equal(
+      reconcileSessionActivity(activity, {
+        running: false,
+        runningKnown: false,
+        metadataRevision: 5,
+      }),
+      activity,
+      "reconnect placeholders cannot end live work",
+    );
+  }
+  const fresh = {
+    running: true,
+    readOnly: false,
+    metadataRevision: 5,
+    lastTurn: { key: "new", status: "thinking" },
+  };
+  assert.equal(reconcileSessionActivity(live, fresh), live);
+  const ended = reconcileSessionActivity(live, { ...fresh, running: false });
+  assert.equal(
+    ended.status,
+    "idle",
+    "a genuinely newer idle snapshot still ends work",
+  );
+  assert.equal(
+    ended.metadataRevision,
+    4,
+    "host reconciliation preserves the live version floor",
+  );
+  const next = reconcileSessionActivity(ended, {
+    ...fresh,
+    running: false,
+    metadataRevision: 6,
+    lastTurn: { key: "next", status: "done" },
+  });
+  assert.deepEqual(next, { turn: "next", seq: 7 });
 });
 
 test("real tool names classify studying and parallel tools keep the remaining phase", () => {
