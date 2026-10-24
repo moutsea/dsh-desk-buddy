@@ -19,11 +19,16 @@ let newer = false,
   downloads = 0,
   installs = 0,
   releaseInstall;
+let controlFailure = null;
+let routesRemoved = false;
+let managementRequests = 0;
+const jobUrl = "/dsh-desk-buddy-update/11111111-1111-1111-1111-111111111111";
 const updater = new PluginUpdater({
   version: "0.12.3",
   storage: directory,
   platform: "darwin",
   arch: "arm64",
+  trackJob: () => jobUrl,
   service: () => ({
     installBundle: async (archive) => {
       assert.deepEqual(await readFile(archive), bytes);
@@ -81,6 +86,19 @@ const files = new Map([
 ]);
 const server = createServer(async (req, res) => {
   try {
+    if (
+      ["/dsh-girl/status.json", "/dsh-girl/control", jobUrl].includes(req.url)
+    ) {
+      managementRequests++;
+      if (routesRemoved) {
+        res.writeHead(404);
+        return res.end();
+      }
+    }
+    if (req.url === jobUrl) {
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify(updater.snapshot()));
+    }
     if (req.url === "/") {
       res.setHeader("Content-Type", "text/html");
       return res.end(
@@ -95,6 +113,10 @@ const server = createServer(async (req, res) => {
       const chunks = [];
       for await (const chunk of req) chunks.push(chunk);
       const { action, value } = JSON.parse(Buffer.concat(chunks).toString());
+      if (controlFailure) {
+        res.writeHead(controlFailure.status);
+        return res.end(controlFailure.body);
+      }
       if (action === "checkUpdate") updater.check();
       else if (action === "installUpdate") updater.install(value);
       else if (action === "hide") state.visible = false;
@@ -139,6 +161,17 @@ try {
   await check.click();
   await expect(page.locator("#update-status")).toHaveText("当前已是最新版本");
   assert.equal(downloads, 0);
+  for (const [status, body, message] of [
+    [404, "", "管理服务暂不可用"],
+    [200, "", "状态为空或格式不正确"],
+    [200, "null", "状态为空或格式不正确"],
+    [400, JSON.stringify({ error: "测试操作被拒绝" }), "测试操作被拒绝"],
+  ]) {
+    controlFailure = { status, body };
+    await page.getByRole("button", { name: "显示桌宠", exact: true }).click();
+    await expect(page.locator("#error")).toContainText(message);
+  }
+  controlFailure = null;
   newer = true;
   await check.click();
   await expect(page.locator("#update-status")).toHaveText("发现新版本 v0.12.4");
@@ -168,6 +201,22 @@ try {
   );
   await expect(install).toBeHidden();
   await expect(check).toBeDisabled();
+  await expect(page.locator("#phase")).toHaveText("更新已安装，等待重启 DSH");
+  for (const button of await page.locator("[data-action]").all())
+    await expect(button).toBeDisabled();
+  await expect(page.locator("#auto-start")).toBeDisabled();
+  routesRemoved = true;
+  const completedRequests = managementRequests;
+  // The old host routes and the temporary job route can both disappear before
+  // the user finishes their running tasks and restarts DSH.
+  await page.waitForTimeout(2600);
+  assert.equal(managementRequests, completedRequests);
+  await expect(page.locator("#phase")).toHaveText("更新已安装，等待重启 DSH");
+  await expect(page.locator("#error")).toBeHidden();
+  await expect(page.locator("#update-status")).toContainText(
+    "已安装，请在任务完成后重启 DSH",
+  );
+  routesRemoved = false;
   assert.equal(installs, 1);
   assert.equal(downloads, 2);
   await page.setViewportSize({ width: 380, height: 730 });
@@ -207,6 +256,37 @@ try {
   );
   await launcher.click();
   await expect(launcher).toHaveAttribute("aria-expanded", "true");
+  const panel = page.locator("deepseek-girl-manager iframe");
+  const management = page.frameLocator("deepseek-girl-manager iframe");
+  await management.getByRole("heading", { name: "你的桌面小搭档" }).click();
+  await expect(launcher).toHaveAttribute("aria-expanded", "true");
+  await page.locator("#user-menu").evaluate((node) => {
+    node.addEventListener("click", () => {
+      node.dataset.clicked = "true";
+    });
+  });
+  await page.locator("#user-menu").click();
+  await expect(panel).toBeHidden();
+  await expect(launcher).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator("#user-menu")).toHaveAttribute(
+    "data-clicked",
+    "true",
+  );
+  await expect(page.locator("#user-menu")).toBeFocused();
+  await launcher.click();
+  await expect(panel).toBeVisible();
+  await management.getByRole("heading", { name: "你的桌面小搭档" }).click();
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  await expect(launcher).toBeFocused();
+  await launcher.click();
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  await launcher.click();
+  await launcher.click();
+  await expect(panel).toBeHidden();
+  await launcher.click();
+  await expect(panel).toBeVisible();
   const insideViewport = async () => {
     await expect
       .poll(async () => {
@@ -223,9 +303,20 @@ try {
       })
       .toBe(true);
   };
+  const doesNotCoverLauncher = async () => {
+    const bubble = await panel.boundingBox();
+    const button = await launcher.boundingBox();
+    assert.ok(
+      bubble.y + bubble.height <= button.y ||
+        button.y + button.height <= bubble.y,
+      "the management panel leaves the launcher reachable",
+    );
+  };
   await insideViewport();
+  await doesNotCoverLauncher();
   await page.setViewportSize({ width: 380, height: 500 });
   await insideViewport();
+  await doesNotCoverLauncher();
   const resized = await launcher.boundingBox();
   assert.ok(
     resized.x >= 0 &&
@@ -248,9 +339,10 @@ try {
   );
   await page.keyboard.press("ArrowLeft");
   assert.equal((await launcher.boundingBox()).x, reset.x - 10);
+  await doesNotCoverLauncher();
   await page.screenshot({ path: "artifacts/plugin-launcher.png" });
   console.log(
-    "Manual update UI and launcher passed: current version, progress, retry, logo, user menu clearance, drag, click suppression, persistence, keyboard and viewport bounds.",
+    "Manual update UI and launcher passed: current version, progress, retry, empty/error responses, restart-required controls and expired routes, logo, user menu clearance, drag, click suppression, persistence, keyboard and viewport bounds.",
   );
 } finally {
   releaseInstall?.();

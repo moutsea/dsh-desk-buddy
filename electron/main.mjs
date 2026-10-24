@@ -815,6 +815,16 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
       const window = BrowserWindow.fromWebContents(event.sender);
       return window.isVisible() && !window.isMinimized();
     }
+    case "cursorPosition": {
+      const window = BrowserWindow.fromWebContents(event.sender);
+      const cursor = screen.getCursorScreenPoint();
+      const bounds = window.getContentBounds();
+      const zoom = event.sender.getZoomFactor();
+      return {
+        x: (cursor.x - bounds.x) / zoom,
+        y: (cursor.y - bounds.y) / zoom,
+      };
+    }
     case "engage":
       state.lastInteractionAt = Date.now();
       broadcast();

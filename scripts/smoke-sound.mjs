@@ -1,3 +1,5 @@
+import { openSoundEvents, closeSoundEvents } from "./sound-settings-dialog.mjs";
+import { checkSoundDialogPassthrough } from "./sound-dialog-passthrough.mjs";
 import { checkCompanionSounds } from "./companion-sounds.mjs";
 import { expect } from "@playwright/test";
 import assert from "node:assert/strict";
@@ -220,10 +222,63 @@ try {
   await expect(
     settings.getByRole("switch", { name: "声音陪伴", exact: true }),
   ).toHaveAttribute("aria-checked", "true");
-  await settings
+  await expect(settings.getByRole("switch")).toHaveCount(1);
+  const entry = settings.getByRole("button", { name: /^互动声音设置/ });
+  const events = await openSoundEvents(page);
+  await expect(events.getByRole("switch")).toHaveCount(13);
+  await expect(
+    events.getByRole("button", { name: "关闭互动声音设置" }),
+  ).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  assert.equal(
+    await page.evaluate(() => !!document.activeElement.closest("dialog")),
+    true,
+  );
+  await page.keyboard.press("Tab");
+  await expect(
+    events.getByRole("button", { name: "关闭互动声音设置" }),
+  ).toBeFocused();
+  await events
+    .getByRole("heading", { name: "互动声音设置", exact: true })
+    .click();
+  await expect(events).toBeVisible();
+  const shade = page.locator(".sound-dialog-shade");
+  const heading = await page.locator(".sound-dialog-heading").boundingBox();
+  const backdrop = await shade.boundingBox();
+  await page.mouse.move(heading.x + 10, heading.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(backdrop.x + 4, backdrop.y + backdrop.height / 2);
+  await page.mouse.up();
+  await expect(events).toBeVisible();
+  await shade.click({ position: { x: 4, y: backdrop.height / 2 } });
+  await expect(events).not.toBeVisible();
+  await expect(entry).toBeFocused();
+  await openSoundEvents(page);
+  await page.keyboard.press("Escape");
+  await expect(events).not.toBeVisible();
+  await expect(page.locator(".companion-surface")).toHaveAttribute(
+    "data-section",
+    "settings",
+  );
+  await expect(entry).toBeFocused();
+  await checkSoundDialogPassthrough(app, page);
+  await openSoundEvents(page);
+  await mkdir("artifacts", { recursive: true });
+  await shade.screenshot({ path: "artifacts/sound-events-dialog.png" });
+  const lastSwitch = events.getByRole("switch", {
+    name: "重新连上声音",
+    exact: true,
+  });
+  await lastSwitch.scrollIntoViewIfNeeded();
+  await expect(lastSwitch).toBeInViewport();
+  await expect(
+    events.getByRole("button", { name: "关闭互动声音设置" }),
+  ).toBeInViewport();
+  await events
     .getByRole("button", { name: "试听任务完成", exact: true })
     .click();
   await expect.poll(count).toBe(6);
+  await closeSoundEvents(page);
   await settings.getByRole("switch", { name: "声音陪伴", exact: true }).click();
   await expect
     .poll(async () => (await state()).config.sounds.enabled)
@@ -240,9 +295,15 @@ try {
       }),
     )
     .toBeLessThan(0.0001);
+  await openSoundEvents(page);
+  await expect(events.getByRole("switch")).toHaveCount(13);
   await expect(
-    settings.getByRole("button", { name: "试听任务完成" }),
+    events.getByRole("button", { name: "试听任务完成" }),
   ).toBeDisabled();
+  await expect(
+    events.getByRole("switch", { name: "任务完成声音", exact: true }),
+  ).toBeDisabled();
+  await closeSoundEvents(page);
   turn("front");
   await quiet(6);
   await settings.getByRole("switch", { name: "声音陪伴", exact: true }).click();
@@ -250,7 +311,8 @@ try {
     .poll(async () => (await state()).config.sounds.enabled)
     .toBe(true);
   await quiet(6);
-  await settings
+  await openSoundEvents(page);
+  await events
     .getByRole("switch", { name: "任务完成声音", exact: true })
     .click();
   await expect
@@ -258,28 +320,42 @@ try {
     .toBe(false);
   turn("back");
   await quiet(6);
-  await settings
+  await openSoundEvents(page);
+  await events
     .getByRole("switch", { name: "任务完成声音", exact: true })
     .click();
   await quiet(6);
+  await closeSoundEvents(page);
   const volume = settings.getByRole("slider", { name: "音量", exact: true });
   await volume.focus();
   await volume.press("Home");
   await expect.poll(async () => (await state()).config.sounds.volume).toBe(0);
+  await openSoundEvents(page);
   await expect(
-    settings.getByRole("button", { name: "试听摸摸桌宠" }),
+    events.getByRole("button", { name: "试听摸摸桌宠" }),
   ).toBeDisabled();
+  await closeSoundEvents(page);
   turn("front");
   await quiet(6);
   await volume.press("ArrowRight");
   await expect.poll(async () => (await state()).config.sounds.volume).toBe(5);
-  await settings
+  await openSoundEvents(page);
+  await events
     .getByRole("switch", { name: "摸摸桌宠声音", exact: true })
     .click();
   await expect.poll(async () => (await state()).config.sounds.pet).toBe(false);
   await expect(
-    settings.getByRole("switch", { name: "摸摸桌宠声音", exact: true }),
+    events.getByRole("switch", { name: "摸摸桌宠声音", exact: true }),
   ).toHaveAttribute("aria-checked", "false");
+  await invoke("section", null);
+  await expect(events).not.toBeVisible();
+  await invoke("section", "settings");
+  await expect(events).not.toBeVisible();
+  await openSoundEvents(page);
+  await expect(
+    events.getByRole("switch", { name: "摸摸桌宠声音", exact: true }),
+  ).toHaveAttribute("aria-checked", "false");
+  await closeSoundEvents(page);
   await invoke("section", null);
   await pet.click();
   await quiet(6);
@@ -451,6 +527,10 @@ try {
         muteStopsPlayback: true,
         idleSuppression: true,
         settingsPersisted: true,
+        eventDialogDismissalAndFocus: true,
+        eventDialogStationaryPointerPassthrough: true,
+        eventDialogHiddenRestorePassthrough: true,
+        eventDialogScrollAndPersistence: true,
         selectableVoices: SOUND_VOICES.length,
         decodedLocalClips: decoded.length,
         voiceChoicePersisted: true,

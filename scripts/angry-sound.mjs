@@ -1,3 +1,4 @@
+import { openSoundEvents, closeSoundEvents } from "./sound-settings-dialog.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -127,7 +128,7 @@ export async function checkAngrySound() {
     await expect(pet.locator('[data-expression="idle"]')).toBeVisible();
     await invoke("soundSettings", { pet: false });
     await invoke("section", "settings");
-    const settings = page.getByRole("region", { name: "声音设置" });
+    const settings = await openSoundEvents(page);
     const preview = settings.getByRole("button", {
       name: "试听连点小脾气",
       exact: true,
@@ -137,18 +138,25 @@ export async function checkAngrySound() {
       exact: true,
     });
     await expect(preview).toBeEnabled();
+    await closeSoundEvents(page);
     await clicks(5);
     await expect.poll(starts).toEqual(["pet", "angry", "angry"]);
+    await openSoundEvents(page);
     await toggle.click();
     await expect(preview).toBeDisabled();
+    await closeSoundEvents(page);
     await rest();
     await clicks(8);
     await quiet(["pet", "angry", "angry"]);
+    await openSoundEvents(page);
     await toggle.click();
     await expect(preview).toBeEnabled();
+    await closeSoundEvents(page);
     await clicks(1);
     await quiet(["pet", "angry", "angry"]); // no replay after unmuting the same bout
+    await openSoundEvents(page);
     await preview.click();
+    await closeSoundEvents(page);
     await expect.poll(starts).toEqual(["pet", "angry", "angry", "angry"]);
     await rest();
 
@@ -163,10 +171,12 @@ export async function checkAngrySound() {
     await invoke("expression", "auto");
     await page.clock.fastForward(6500);
     await expect(pet.locator('[data-expression="idle"]')).toBeVisible();
-    await settings
+    await page
       .getByLabel("声线", { exact: true })
       .selectOption(SOUND_VOICES[1].id);
+    await openSoundEvents(page);
     await expect(preview).toBeEnabled();
+    await closeSoundEvents(page);
     await page.evaluate(() => {
       window.angryProbe.blocked = true;
     });

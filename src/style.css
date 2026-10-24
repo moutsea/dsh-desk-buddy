@@ -942,6 +942,99 @@ body,
 .sound-volume-heading output {
   font-variant-numeric: tabular-nums;
 }
+.sound-events-entry {
+  width: 100%;
+  margin-top: 13px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: #627493;
+  gap: 10px;
+  text-align: left;
+}
+.sound-events-entry > span {
+  flex: 1;
+}
+.sound-events-entry strong,
+.sound-events-entry small {
+  display: block;
+}
+.sound-events-entry strong {
+  font-size: 11px;
+  font-weight: 550;
+}
+.sound-events-entry small {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.sound-events-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow: hidden;
+}
+.sound-events-dialog::backdrop {
+  background: transparent;
+}
+.sound-dialog-shade {
+  position: absolute;
+  left: calc(var(--surface-left) + 8px);
+  top: calc(var(--surface-top) + 8px);
+  width: calc(var(--surface-width) - 16px);
+  height: calc(var(--surface-height) - 16px);
+  padding: 16px;
+  border-radius: 24px;
+  background: #30466e45;
+  display: flex;
+  align-items: center;
+}
+.sound-dialog-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 100%;
+  margin: 0;
+  box-shadow: 0 8px 30px #30466e26;
+}
+.sound-dialog-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.sound-dialog-heading > div {
+  flex: 1;
+}
+.sound-dialog-heading p {
+  margin-bottom: 12px;
+}
+.sound-dialog-close {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: #edf1f8;
+}
+.sound-dialog-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 3px;
+}
+.sound-dialog-body > .sound-group:first-child {
+  margin-top: 0;
+}
 .sound-group {
   margin-top: 22px;
 }

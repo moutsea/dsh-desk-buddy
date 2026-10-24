@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Volume2 } from "lucide-react";
+import { ChevronRight, SlidersHorizontal, Volume2, X } from "lucide-react";
 import { normalizeSoundSettings } from "../shared/sound.mjs";
 import { SOUND_VOICES } from "../shared/voices.mjs";
 import { useSounds } from "./SoundProvider";
@@ -105,6 +105,9 @@ export function SoundSettings({
   const submittedVolume = useRef(value.volume);
   const [error, setError] = useState("");
   const [pending, setPending] = useState<Partial<Settings> | null>(null);
+  const [eventsOpen, setEventsOpen] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const backdropPress = useRef(false);
   const busy = pending !== null;
   const sounds = useSounds();
   const auditionRequest = useRef<{
@@ -282,44 +285,126 @@ export function SoundSettings({
         }}
         onBlur={(event) => applyVolume(Number(event.currentTarget.value))}
       />
-      {groups.map((group) => (
-        <div className="sound-group" data-sound-group={group.id} key={group.id}>
-          <h2>{group.title}</h2>
-          {group.kinds
-            .map((kind) => events.find((item) => item.kind === kind)!)
-            .map(({ kind, label, description }) => (
-              <div className="sound-event" key={kind}>
-                <div>
-                  <h3>{label}</h3>
-                  <p>{description}</p>
-                </div>
-                <button
-                  className="secondary sound-preview"
-                  aria-label={`试听${label}`}
-                  title={`试听${label}`}
-                  disabled={
-                    busy || !value.enabled || !value[kind] || value.volume === 0
-                  }
-                  onClick={() => void audition(kind)}
-                >
-                  <Volume2 size={13} />
-                  <span>试听</span>
-                </button>
-                <button
-                  role="switch"
-                  aria-label={`${label}声音`}
-                  aria-checked={value[kind]}
-                  className={`switch ${value[kind] ? "on" : ""}`}
-                  disabled={busy || !value.enabled}
-                  onClick={() => void apply({ [kind]: !value[kind] })}
-                >
-                  <span />
-                </button>
+      <button
+        className="sound-events-entry"
+        aria-haspopup="dialog"
+        onClick={() => {
+          dialog.current?.showModal();
+          setEventsOpen(true);
+        }}
+      >
+        <SlidersHorizontal size={16} />
+        <span>
+          <strong>互动声音设置</strong>
+          <small>
+            已开启 {events.filter(({ kind }) => value[kind]).length} /{" "}
+            {events.length} 个场景
+          </small>
+        </span>
+        <ChevronRight size={16} />
+      </button>
+      <dialog
+        ref={dialog}
+        className="sound-events-dialog"
+        aria-labelledby="sound-events-title"
+        aria-describedby="sound-events-note"
+        onClose={() => setEventsOpen(dialog.current?.open ?? false)}
+        onKeyDown={(event) => {
+          // Let the native dialog handle Escape without closing the settings page.
+          if (event.key === "Escape") event.stopPropagation();
+        }}
+        onPointerDown={(event) => {
+          backdropPress.current = !(event.target as Element).closest(
+            ".sound-dialog-panel",
+          );
+        }}
+        onPointerCancel={() => {
+          backdropPress.current = false;
+        }}
+        onClick={(event) => {
+          if (
+            backdropPress.current &&
+            !(event.target as Element).closest(".sound-dialog-panel")
+          )
+            dialog.current?.close();
+          backdropPress.current = false;
+        }}
+      >
+        <div className="sound-dialog-shade">
+          <section className="settings-card sound-dialog-panel">
+            <header className="sound-dialog-heading">
+              <div>
+                <h2 id="sound-events-title">互动声音设置</h2>
+                <p id="sound-events-note">
+                  {value.enabled
+                    ? "按场景选择声音，更改自动保存。"
+                    : "声音陪伴已关闭，请先在设置页打开总开关。"}
+                </p>
               </div>
-            ))}
+              <button
+                className="sound-dialog-close"
+                aria-label="关闭互动声音设置"
+                autoFocus
+                onClick={() => dialog.current?.close()}
+              >
+                <X size={17} />
+              </button>
+            </header>
+            <div className="sound-dialog-body">
+              {groups.map((group) => (
+                <div
+                  className="sound-group"
+                  data-sound-group={group.id}
+                  key={group.id}
+                >
+                  <h2>{group.title}</h2>
+                  {group.kinds
+                    .map((kind) => events.find((item) => item.kind === kind)!)
+                    .map(({ kind, label, description }) => (
+                      <div className="sound-event" key={kind}>
+                        <div>
+                          <h3>{label}</h3>
+                          <p>{description}</p>
+                        </div>
+                        <button
+                          className="secondary sound-preview"
+                          aria-label={`试听${label}`}
+                          title={`试听${label}`}
+                          disabled={
+                            busy ||
+                            !value.enabled ||
+                            !value[kind] ||
+                            value.volume === 0
+                          }
+                          onClick={() => void audition(kind)}
+                        >
+                          <Volume2 size={13} />
+                          <span>试听</span>
+                        </button>
+                        <button
+                          role="switch"
+                          aria-label={`${label}声音`}
+                          aria-checked={value[kind]}
+                          className={`switch ${value[kind] ? "on" : ""}`}
+                          disabled={busy || !value.enabled}
+                          onClick={() => void apply({ [kind]: !value[kind] })}
+                        >
+                          <span />
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              ))}
+            </div>
+            {error && eventsOpen && (
+              <p role="alert" className="sound-error">
+                {error}
+              </p>
+            )}
+          </section>
         </div>
-      ))}
-      {error && (
+      </dialog>
+      {error && !eventsOpen && (
         <p role="alert" className="sound-error">
           {error}
         </p>

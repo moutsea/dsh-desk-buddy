@@ -9,17 +9,21 @@ const labels = {
 let busy = false;
 let current = null;
 let revision = 0;
+const restartRequired = () => current?.update?.phase === "restart-required";
 function render(state) {
   current = state;
+  const restart = restartRequired();
   const replacing = ["installing", "restoring"].includes(state.update?.phase);
-  document.querySelector("#phase").textContent =
-    labels[state.phase] || "正在读取状态…";
+  document.querySelector("#phase").textContent = restart
+    ? "更新已安装，等待重启 DSH"
+    : labels[state.phase] || "正在读取状态…";
   document.querySelector("#status-dot").className = "dot " + state.phase;
   document.querySelector("#version").textContent = state.version
     ? "v" + state.version
     : "";
-  document.querySelector("#connection").textContent =
-    state.phase === "running"
+  document.querySelector("#connection").textContent = restart
+    ? "请在任务完成后重启 DSH，启用新版桌宠"
+    : state.phase === "running"
       ? state.connection === "connected"
         ? state.hostKind === "desktop"
           ? "已连接 DSH Desktop"
@@ -27,20 +31,21 @@ function render(state) {
         : "正在连接当前 DSH…"
       : "自动连接当前 DSH";
   document.querySelector("#auto-start").checked = state.autoStart;
-  document.querySelector("#auto-start").disabled = busy || replacing;
+  document.querySelector("#auto-start").disabled = busy || replacing || restart;
   for (const button of document.querySelectorAll("[data-action]")) {
     const action = button.dataset.action;
     button.disabled =
       busy ||
       replacing ||
+      restart ||
       ["installing", "starting", "stopping"].includes(state.phase) ||
       (action === "start"
         ? state.phase === "running"
         : state.phase !== "running");
   }
   const error = document.querySelector("#error");
-  error.textContent = state.error || "";
-  error.hidden = !state.error;
+  error.textContent = restart ? "" : state.error || "";
+  error.hidden = !error.textContent;
   renderUpdate(state.update);
 }
 function renderUpdate(update) {
@@ -85,8 +90,22 @@ function renderUpdate(update) {
   link.hidden = !update?.releaseUrl;
   if (update?.releaseUrl) link.href = update.releaseUrl;
 }
+async function readResponse(response) {
+  // A removed plugin route can return an empty 404 during replacement. Keep
+  // useful server errors, but never expose a browser JSON parser exception.
+  const body = await response.json().catch(() => null);
+  if (!response.ok)
+    throw new Error(
+      typeof body?.error === "string"
+        ? body.error
+        : "桌宠管理服务暂不可用；如果刚完成更新，请在任务完成后重启 DSH。",
+    );
+  if (!body || typeof body !== "object" || Array.isArray(body))
+    throw new Error("DSH 返回的桌宠状态为空或格式不正确，请稍后重试。");
+  return body;
+}
 async function request(action, value) {
-  if (busy) return;
+  if (busy || restartRequired()) return;
   const previous = current;
   revision++;
   busy = true;
@@ -98,8 +117,7 @@ async function request(action, value) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, value }),
     });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error || "暂时无法操作桌宠");
+    const body = await readResponse(response);
     render(body);
   } catch (error) {
     if (previous) render({ ...previous, error: error.message });
@@ -126,28 +144,33 @@ document
     request("autoStart", event.target.checked),
   );
 async function refresh() {
-  if (busy || document.hidden) return;
+  // Installation success is terminal for this old page. The host may remove
+  // its routes, and the temporary update-job route expires after 15 minutes.
+  if (busy || document.hidden || restartRequired()) return;
   const expectedRevision = revision;
+  const currentRead = () =>
+    !busy && revision === expectedRevision && !restartRequired();
   try {
     const jobUrl = current?.update?.jobUrl;
     const response = await fetch(jobUrl || "/dsh-girl/status.json");
     if (jobUrl && response.status === 404) {
-      current.update.jobUrl = "";
+      if (currentRead() && current?.update?.jobUrl === jobUrl)
+        current.update.jobUrl = "";
       return;
     }
-    if (!response.ok) throw new Error("暂时无法读取桌宠状态");
-    const body = await response.json();
+    const body = await readResponse(response);
     let state = body;
     if (jobUrl) {
       let latest = current;
       try {
         const status = await fetch("/dsh-girl/status.json");
-        if (status.ok) latest = await status.json();
+        if (status.ok) latest = await readResponse(status);
       } catch {}
       state = { ...latest, update: body };
     }
-    if (!busy && revision === expectedRevision) render(state);
+    if (currentRead()) render(state);
   } catch {
+    if (!currentRead()) return;
     document.querySelector("#phase").textContent = "DSH 连接已断开";
     document
       .querySelectorAll("button, input")

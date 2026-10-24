@@ -1,3 +1,4 @@
+import { openSoundEvents } from "./sound-settings-dialog.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -305,8 +306,8 @@ export async function checkCompanionSounds() {
 
     await invoke("soundSettings", { sleep: true });
     await invoke("section", "settings");
-    const settings = page.getByRole("region", { name: "声音设置" });
-    await expect(settings.getByRole("switch")).toHaveCount(14);
+    const settings = await openSoundEvents(page);
+    await expect(settings.getByRole("switch")).toHaveCount(13);
     for (const [kind, label] of [
       ["shy", "害羞回应"],
       ["wake", "点击叫醒"],

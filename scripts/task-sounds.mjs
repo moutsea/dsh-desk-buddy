@@ -1,3 +1,4 @@
+import { openSoundEvents } from "./sound-settings-dialog.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -143,8 +144,8 @@ export async function checkTaskSounds() {
     await quiet([]);
     end();
     await invoke("section", "settings");
-    const settings = page.getByRole("region", { name: "声音设置" });
-    await expect(settings.getByRole("switch")).toHaveCount(14);
+    const settings = await openSoundEvents(page);
+    await expect(settings.getByRole("switch")).toHaveCount(13);
     const startSwitch = settings.getByRole("switch", {
       name: "开始任务声音",
       exact: true,
@@ -272,6 +273,7 @@ export async function checkTaskSounds() {
 
     // All new controls support explicit audition and persist independently.
     await invoke("section", "settings");
+    await openSoundEvents(page);
     await startSwitch.click();
     const played = await starts();
     // Separate live turns exercise start and completion variation through the

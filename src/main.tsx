@@ -1623,30 +1623,67 @@ const ContentPanel = React.memo(Panel);
 function App() {
   const { state, surface, ready } = useDesktop();
   const drag = usePetDrag();
-  const pointer = useRef<{ x: number; y: number } | null>(null);
+  const passthroughRevision = useRef(0);
   const setPassthrough = (ignore: boolean) => {
-    void invoke("passthrough", ignore).catch(() => {});
+    passthroughRevision.current++;
+    // Keep modal capture across mouse leave and window hide/restore. Those
+    // transitions do not reopen the dialog or necessarily produce a mousemove.
+    void invoke(
+      "passthrough",
+      ignore && !document.querySelector("dialog:modal"),
+    ).catch(() => {});
   };
-  useEffect(() => {
-    setPassthrough(true);
-  }, []);
+  const refreshPassthrough = () => {
+    // Layout changes can remove a modal without firing close. Keep capture
+    // until the actual cursor is hit-tested against the newly committed DOM.
+    setPassthrough(false);
+    const revision = passthroughRevision.current;
+    void invoke("cursorPosition")
+      .then((point: { x: number; y: number }) => {
+        // Mouse input, layout changes or another modal opening take priority.
+        if (revision !== passthroughRevision.current) return;
+        const target = document.elementFromPoint(point.x, point.y);
+        setPassthrough(
+          !drag.isHeld() &&
+            !target?.closest("[data-interactive], .companion-surface.open"),
+        );
+      })
+      .catch(() => {});
+  };
   useLayoutEffect(() => {
-    const target =
-      pointer.current &&
-      document.elementFromPoint(pointer.current.x, pointer.current.y);
-    setPassthrough(
-      !surface.section &&
-        !drag.held &&
-        !target?.closest("[data-interactive], .companion-surface.open"),
-    );
+    refreshPassthrough();
+    return () => {
+      passthroughRevision.current++;
+    };
   }, [surface.section, state.config.petScale, drag.held, ready]);
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !event.defaultPrevented)
         void invoke("section", null);
     };
+    const dialogOpening = (event: ToggleEvent) => {
+      // Keyboard activation can open a dialog while the pointer stays over
+      // transparent space. Capture clicks before exposing the modal.
+      if (
+        event.target instanceof HTMLDialogElement &&
+        event.newState === "open"
+      )
+        setPassthrough(false);
+    };
+    const dialogClosed = (event: Event) => {
+      if (!(event.target instanceof HTMLDialogElement)) return;
+      refreshPassthrough();
+    };
+    // The handlers read ref-backed drag/revision state. Keep them mounted so
+    // a drag change cannot cancel the layout effect's fresh cursor query.
     document.addEventListener("keydown", close);
-    return () => document.removeEventListener("keydown", close);
+    document.addEventListener("beforetoggle", dialogOpening, true);
+    document.addEventListener("close", dialogClosed, true);
+    return () => {
+      document.removeEventListener("keydown", close);
+      document.removeEventListener("beforetoggle", dialogOpening, true);
+      document.removeEventListener("close", dialogClosed, true);
+    };
   }, []);
   const size = petSize(state.config.petScale),
     scale = normalizePetScale(state.config.petScale) / 100;
@@ -1658,17 +1695,15 @@ function App() {
           data-side={surface.side}
           style={{ visibility: ready ? "visible" : "hidden" }}
           onMouseMove={(event) => {
-            pointer.current = { x: event.clientX, y: event.clientY };
             setPassthrough(
-              !drag.held &&
+              !drag.isHeld() &&
                 !(event.target as Element).closest(
                   "[data-interactive], .companion-surface.open",
                 ),
             );
           }}
           onMouseLeave={() => {
-            pointer.current = null;
-            setPassthrough(!drag.held);
+            setPassthrough(!drag.isHeld());
           }}
         >
           <div
@@ -1686,6 +1721,10 @@ function App() {
                 top: surface.contentTop,
                 width: surface.contentWidth,
                 height: surface.contentHeight,
+                "--surface-left": `${surface.side === "left" ? surface.pet.x - surface.contentWidth - 18 : surface.pet.x + size.width + 18}px`,
+                "--surface-top": `${surface.contentTop}px`,
+                "--surface-width": `${surface.contentWidth}px`,
+                "--surface-height": `${surface.contentHeight}px`,
                 "--tail-y": `${surface.pet.y + PET_CHARACTER.top + 95 * scale - surface.contentTop}px`,
               } as React.CSSProperties
             }

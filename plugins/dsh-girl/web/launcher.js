@@ -3,7 +3,7 @@ if (!document.querySelector("deepseek-girl-manager")) {
   const root = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
   style.textContent =
-    ":host{position:fixed;width:max-content;z-index:2147483000;font:12px -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}button{display:flex;align-items:center;gap:7px;white-space:nowrap;border:1px solid #cbdcf3;border-radius:15px;background:#f4f8fff5;color:#6380ae;padding:7px 12px;cursor:grab;touch-action:none;user-select:none;box-shadow:0 3px 12px #34527a12}button:active{cursor:grabbing}button img{width:24px;height:24px;border-radius:6px;pointer-events:none}iframe{position:fixed;box-sizing:border-box;border:1px solid #d5e1f3;border-radius:20px;background:#f7f9ff;box-shadow:0 8px 35px #344b7420}button:focus-visible{outline:2px solid #8aabda;outline-offset:3px}";
+    ":host{position:fixed;width:max-content;z-index:2147483000;font:12px -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}button{position:relative;z-index:1;display:flex;align-items:center;gap:7px;white-space:nowrap;border:1px solid #cbdcf3;border-radius:15px;background:#f4f8fff5;color:#6380ae;padding:7px 12px;cursor:grab;touch-action:none;user-select:none;box-shadow:0 3px 12px #34527a12}button:active{cursor:grabbing}button img{width:24px;height:24px;border-radius:6px;pointer-events:none}iframe{position:fixed;box-sizing:border-box;border:1px solid #d5e1f3;border-radius:20px;background:#f7f9ff;box-shadow:0 8px 35px #344b7420}button:focus-visible{outline:2px solid #8aabda;outline-offset:3px}";
   const button = document.createElement("button");
   button.textContent = "dsh-desk-buddy";
   const icon = document.createElement("img");
@@ -36,14 +36,40 @@ if (!document.querySelector("deepseek-girl-manager")) {
     host.style.top = `${position.y}px`;
     if (frame) {
       const width = Math.min(400, innerWidth - 24);
-      const height = Math.min(760, innerHeight - bounds.height - 42);
+      const above = Math.max(0, position.y - 20);
+      const below = Math.max(0, innerHeight - position.y - bounds.height - 20);
+      const openAbove = above >= below;
+      // Fit on one side of the launcher; clamping a full-height panel back
+      // into the viewport can otherwise place it directly over the button.
+      const height = Math.min(760, openAbove ? above : below);
       frame.style.width = `${width}px`;
       frame.style.height = `${height}px`;
       frame.style.left = `${clamp(position.x > innerWidth / 2 ? position.x + bounds.width - width : position.x, innerWidth - width - 12)}px`;
-      const above = position.y - height - 8;
-      frame.style.top = `${clamp(above >= 12 ? above : position.y + bounds.height + 8, innerHeight - height - 12)}px`;
+      frame.style.top = `${openAbove ? position.y - height - 8 : position.y + bounds.height + 8}px`;
     }
   };
+  const closePanel = () => {
+    if (!frame || frame.hidden) return false;
+    frame.hidden = true;
+    button.setAttribute("aria-expanded", "false");
+    return true;
+  };
+  const escapePanel = (event) => {
+    if (event.key !== "Escape" || event.isComposing || !closePanel()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    button.focus({ preventScroll: true });
+  };
+  document.addEventListener("keydown", escapePanel, true);
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      // composedPath keeps clicks on the shadow-root button inside. Pointer
+      // events within the iframe stay in its own document and do not dismiss it.
+      if (!event.composedPath().includes(host)) closePanel();
+    },
+    true,
+  );
   button.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
     moved = false;
@@ -100,6 +126,10 @@ if (!document.querySelector("deepseek-girl-manager")) {
       frame.id = "dsg-management";
       frame.src = "/dsh-girl/";
       frame.title = "dsh-desk-buddy 桌宠管理";
+      frame.addEventListener("load", () => {
+        // Keyboard events in an iframe do not bubble to the parent document.
+        frame.contentDocument?.addEventListener("keydown", escapePanel, true);
+      });
       root.prepend(frame);
     } else frame.hidden = !frame.hidden;
     button.setAttribute("aria-expanded", String(!frame.hidden));

@@ -148,14 +148,13 @@ try {
     ".sound-settings > .toggle-row",
     ".sound-voice-picker",
     "#sound-volume",
+    ".sound-events-entry",
   ]);
-  // Capture the interaction group at its natural position; all 13 scenes
-  // remain available by scrolling, without compressing the actual UI.
-  const group = page.locator('[data-sound-group="interaction"]');
-  await group.evaluate((node) =>
-    node.scrollIntoView({ block: "start", behavior: "instant" }),
-  );
-  await capture("sound-events.png", ['[data-sound-group="interaction"]']);
+  await page.getByRole("button", { name: /^互动声音设置/ }).click();
+  await expect(
+    page.getByRole("dialog", { name: "互动声音设置", exact: true }),
+  ).toBeVisible();
+  await capture("sound-events.png", [".sound-dialog-panel"]);
   assert.equal(
     fixture.calls.some((call) => call.path === "/api/session.prompt"),
     false,

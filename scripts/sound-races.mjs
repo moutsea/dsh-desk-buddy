@@ -1,3 +1,4 @@
+import { openSoundEvents, closeSoundEvents } from "./sound-settings-dialog.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -184,6 +185,7 @@ export async function checkSoundRaces() {
     ]) {
       await voice.selectOption(SOUND_VOICES[oldVoice].id);
       await hold(kind);
+      if (kind !== "preview") await openSoundEvents(page);
       await page.getByRole("button", { name: label, exact: true }).click();
       await page.waitForFunction(
         () => typeof window.raceProbe.release === "function",
@@ -191,6 +193,7 @@ export async function checkSoundRaces() {
       await page.evaluate(() => {
         window.raceProbe.blocked = null;
       });
+      if (kind !== "preview") await closeSoundEvents(page);
       if (newVoice !== oldVoice)
         await voice.selectOption(SOUND_VOICES[newVoice].id);
       const before = (await starts()).length;
@@ -278,6 +281,7 @@ export async function checkSoundRaces() {
       name: "试听无聊时打招呼",
       exact: true,
     });
+    await openSoundEvents(page);
     const beforeAuditions = (await starts()).length;
     await manualIdle.click();
     await expect
@@ -318,6 +322,8 @@ export async function checkSoundRaces() {
     await expect
       .poll(() => page.evaluate(() => window.raceProbe.active))
       .toBe(0);
+
+    await closeSoundEvents(page);
 
     // Cancel pending automatic cues across endpoint switches, explicit
     // reconnection to the same endpoint, and a transient stream disconnection.
@@ -439,10 +445,12 @@ export async function checkSoundRaces() {
     );
 
     await invoke("section", "settings");
+    await openSoundEvents(page);
     await page
       .getByRole("button", { name: "试听无聊时打招呼", exact: true })
       .click();
     await expect.poll(starts).toEqual([...beforeIdle, 1.28]);
+    await closeSoundEvents(page);
     // A settings IPC reply may beat its state broadcast. Audition must wait
     // for the renderer/player to apply the new voice, even under that delay.
     const beforeSettings = await starts();
