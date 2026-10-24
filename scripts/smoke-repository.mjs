@@ -108,6 +108,9 @@ try {
     .poll(() => manager.connection, { timeout: 45000 })
     .toBe("connected");
   assert.equal(manager.version, release.version);
+  // The service can connect before Electron's initial ready-to-show callback.
+  // Start visibility controls from a shown window, as the packaged smoke does.
+  await expect.poll(() => manager.visible, { timeout: 15000 }).toBe(true);
   await manager.control("hide");
   await expect.poll(() => manager.visible).toBe(false);
   await manager.control("show");
