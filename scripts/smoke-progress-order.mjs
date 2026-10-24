@@ -54,6 +54,27 @@ try {
   const stack = page.getByRole("group", { name: "会话气泡" });
   const cards = page.locator(".progress-card");
   const card = (id) => page.locator(`.progress-card[data-session-id="${id}"]`);
+  const input = await page.context().newCDPSession(page);
+  // A CI runner can take >400ms between mouse commands in a hidden window.
+  // That is a real pause to the deck's stale-pointer guard, not a continuous
+  // gesture. Timestamp the two ends explicitly while retaining Chromium's
+  // native hit testing, pointer events and :hover state. The first event also
+  // establishes a fresh origin after assertions/animations paused the pointer.
+  let inputTime = 0;
+  const gesture = async (from, to, elapsed = 16) => {
+    const timestamp = Math.max(Date.now() / 1000, inputTime + 0.016);
+    inputTime = timestamp + elapsed / 1000;
+    for (const [point, offset] of [
+      [from, 0],
+      [to, elapsed],
+    ])
+      await input.send("Input.dispatchMouseEvent", {
+        type: "mouseMoved",
+        x: point.x,
+        y: point.y,
+        timestamp: timestamp + offset / 1000,
+      });
+  };
   const settle = () =>
     stack.evaluate((node) =>
       Promise.all(
@@ -334,10 +355,8 @@ try {
       const target = page.locator(".pet-progress-bubble.is-active");
       await target.hover();
       const box = await target.boundingBox();
-      await page.mouse.move(
-        box.x + box.width / 2 - 25,
-        box.y + box.height / 2 + 25,
-      );
+      const origin = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      await gesture(origin, { x: origin.x - 25, y: origin.y + 25 });
       await expect(stack).toHaveAttribute("data-selected-index", "1");
       const selected = await stack.getAttribute("data-selected-session");
       assert.notEqual(selected, focused);
@@ -371,6 +390,25 @@ try {
       assert.equal(current.progressEntries[selected].hidden, true);
     });
   }
+
+  await test("a paused pointer establishes a new origin before continuous movement resumes rotation", async () => {
+    await reset();
+    const target = page.locator(".pet-progress-bubble.is-active");
+    await target.hover();
+    const box = await target.boundingBox();
+    const origin = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    const paused = { x: origin.x + 25, y: origin.y - 25 };
+    const resumed = { x: paused.x + 25, y: paused.y - 25 };
+    const before = Number(await stack.getAttribute("data-selected-index"));
+    await gesture(origin, paused, 500);
+    await expect(stack).toHaveAttribute("data-selected-index", String(before));
+    await gesture(paused, resumed);
+    await expect(stack).toHaveAttribute(
+      "data-selected-index",
+      String(before - 1),
+    );
+    await expect(cards).toHaveCount(5);
+  });
 
   const movePet = async (anchor) => {
     const bounds = await app.evaluate(({ BrowserWindow }) =>
@@ -461,7 +499,10 @@ try {
         if (action === "browse") {
           // Newly added work remains reachable without leaving the hover.
           for (let index = 1; index <= count; index++) {
-            await page.mouse.move(point.x - 25 * index, point.y + 25 * index);
+            await gesture(
+              { x: point.x - 25 * (index - 1), y: point.y + 25 * (index - 1) },
+              { x: point.x - 25 * index, y: point.y + 25 * index },
+            );
             await expect(stack).toHaveAttribute(
               "data-selected-index",
               String(index),
@@ -566,10 +607,14 @@ try {
             String(before),
           );
           const box = await target.boundingBox();
-          await page.mouse.move(
-            box.x + box.width / 2 + 25 * direction,
-            box.y + box.height / 2 - 25 * direction,
-          );
+          const origin = {
+            x: box.x + box.width / 2,
+            y: box.y + box.height / 2,
+          };
+          await gesture(origin, {
+            x: origin.x + 25 * direction,
+            y: origin.y - 25 * direction,
+          });
           await expect(stack).toHaveAttribute(
             "data-selected-index",
             String(before - direction),
