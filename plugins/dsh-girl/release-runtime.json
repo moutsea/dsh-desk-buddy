@@ -1,14 +1,14 @@
 {
-  "version": "0.17.0",
+  "version": "0.17.1",
   "packageName": "dsh-desk-buddy",
   "packages": {
     "darwin-arm64": {
-      "url": "https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.17.0/dsh-desk-buddy-0.17.0-darwin-arm64.tgz",
-      "sha256": "667b93d240a411f28d1d37c52eae54f07f708f069d6706c4131862087269c9dc"
+      "url": "https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.17.1/dsh-desk-buddy-0.17.1-darwin-arm64.tgz",
+      "sha256": "1cecfce7b45961580af63e5a6e9c270efc0cf3fad4d03654a5469e054359d766"
     },
     "win32-x64": {
-      "url": "https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.17.0/dsh-desk-buddy-0.17.0-win32-x64.tgz",
-      "sha256": "ed66cb026d48af3df0a401b2b5c0e840a398d5074ca3fc2791075fc580e204fb"
+      "url": "https://github.com/moutsea/dsh-desk-buddy/releases/download/v0.17.1/dsh-desk-buddy-0.17.1-win32-x64.tgz",
+      "sha256": "cc2036d668ae0f0c670bac91f8c8f2a088d564a89369bd1b6b785b01e4d90011"
     }
   }
 }
