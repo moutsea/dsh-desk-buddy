@@ -27,8 +27,8 @@ export async function settleDesktopGeometry(app) {
 }
 
 // CDP coordinates and the real Windows cursor can disagree when a transparent
-// window switches click-through. Use real cursor input there so native leave
-// events cannot immediately undo a synthetic hover at another screen position.
+// window switches click-through. Synchronize both before asserting hover, so
+// native leave events cannot undo CDP input at another screen position.
 export async function moveDesktopPointer(app, page, x, y, options = {}) {
   if (process.platform !== "win32") return page.mouse.move(x, y, options);
   const point = await app.evaluate(
@@ -69,6 +69,7 @@ export async function moveDesktopPointer(app, page, x, y, options = {}) {
       DSG_MOUSE_STEPS: String(options.steps ?? 1),
     },
   );
+  await page.mouse.move(x, y, options);
 }
 
 export async function launchDesktop(env) {
