@@ -240,7 +240,7 @@ function validDragPoint(point) {
     throw new Error("无效的拖动位置");
   return point;
 }
-function showSection(section, anchor) {
+function showSection(section, anchor, { reveal = true } = {}) {
   if (!pet || pet.isDestroyed()) return;
   anchor ||= petAnchor();
   const area = screen.getDisplayMatching({
@@ -257,11 +257,13 @@ function showSection(section, anchor) {
   applyLayout(layout, true);
   config.petPosition = petAnchor();
   save();
-  setPassthrough(false);
-  if (section) {
-    pet.show();
-    pet.focus();
-  } else pet.showInactive();
+  if (reveal) {
+    setPassthrough(false);
+    if (section) {
+      pet.show();
+      pet.focus();
+    } else pet.showInactive();
+  }
   broadcast();
 }
 function toggleContent() {
@@ -354,10 +356,12 @@ function createWindows() {
       pet.hide();
     }
   });
-  screen.on("display-removed", () => showSection(state.surface.section));
-  screen.on("display-metrics-changed", () =>
-    showSection(state.surface.section),
-  );
+  // Display changes reposition the existing surface without changing whether
+  // the user hid it or stealing focus from another application.
+  const reflow = () =>
+    showSection(state.surface.section, undefined, { reveal: false });
+  screen.on("display-removed", reflow);
+  screen.on("display-metrics-changed", reflow);
   tray = new Tray(createTrayIcon());
   tray.setToolTip("dsh-desk-buddy");
   tray.setContextMenu(

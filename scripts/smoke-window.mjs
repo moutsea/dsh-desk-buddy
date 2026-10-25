@@ -151,6 +151,32 @@ try {
     false,
   );
   await page.evaluate(() => window.desktop.invoke("alwaysOnTop", true));
+  // Reflow after a display/work-area change must preserve the user's hidden
+  // state. In particular, macOS Dock animation can emit this just after Hide.
+  for (const section of [null, "chat"]) {
+    await page.evaluate(
+      (section) => window.desktop.invoke("section", section),
+      section,
+    );
+    for (const event of ["display-metrics-changed", "display-removed"]) {
+      const result = await app.evaluate(({ BrowserWindow, screen }, event) => {
+        const window = BrowserWindow.getAllWindows()[0];
+        window.showInactive();
+        window.blur();
+        screen.emit(event, {}, screen.getPrimaryDisplay(), ["workArea"]);
+        const focused = window.isFocused();
+        window.hide();
+        screen.emit(event, {}, screen.getPrimaryDisplay(), ["workArea"]);
+        return { focused, visible: window.isVisible() };
+      }, event);
+      assert.deepEqual(
+        result,
+        { focused: false, visible: false },
+        `${event} preserves focus and hidden state (${section})`,
+      );
+    }
+  }
+  await page.evaluate(() => window.desktop.invoke("section", null));
   if (process.platform === "win32") {
     const background = await app.evaluate(async ({ BrowserWindow, screen }) => {
       const pet = BrowserWindow.getAllWindows()[0];
