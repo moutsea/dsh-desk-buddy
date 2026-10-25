@@ -97,8 +97,20 @@ try {
     "aria-label",
     /查看进度：后台检查项目，正在执行工具，.*git status --short npm test/,
   );
+  // The background update assertions above deliberately blur the window. Once
+  // they pass, restore the test's input target for the native pointer checks.
+  if (process.platform === "win32") {
+    await app.evaluate(({ BrowserWindow }) => {
+      const window = BrowserWindow.getAllWindows()[0];
+      window.show();
+      window.focus();
+    });
+    await page.bringToFront();
+  }
   const petBox = await page.locator(".pet-character").boundingBox();
-  await movePointer(petBox.x + petBox.width / 2, petBox.y + petBox.height / 2);
+  await movePointer(petBox.x + petBox.width / 2, petBox.y + petBox.height / 2, {
+    steps: 3,
+  });
   await expect(bubble()).toBeHidden();
   await movePointer(-10, -10);
   await expect(bubble()).toBeVisible();
