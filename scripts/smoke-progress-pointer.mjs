@@ -112,11 +112,16 @@ try {
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
   const base = `http://127.0.0.1:${server.httpServer.address().port}/__progress.html`;
   const withPage = async (count, provider, run) => {
-    const page = await browser.contexts()[0].newPage();
+    // The default context belongs to Chromium's startup tab. On Windows its
+    // initial navigation can cancel the first test's goto; keep each fixture
+    // in its own context, including its storage, focus and page lifecycle.
+    const context = await browser.newContext({
+      viewport: { width: 800, height: 800 },
+    });
+    const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     try {
-      await page.setViewportSize({ width: 800, height: 800 });
       await page.goto(`${base}?count=${count}&provider=${provider}`);
       await expect(page.locator(".progress-card")).toHaveCount(
         Math.min(5, count),
@@ -124,7 +129,7 @@ try {
       await run(page);
       assert.deepEqual(errors, []);
     } finally {
-      await page.close();
+      await context.close();
     }
   };
   const positions = (page) =>
