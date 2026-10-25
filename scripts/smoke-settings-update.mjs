@@ -104,10 +104,17 @@ try {
   fail = true;
   await check.click();
   await expect(card.getByRole("alert")).toContainText("插件已启用");
+  // Healthy background status reads must not erase a failed user operation.
+  const statusReads = () =>
+    requests.filter((value) => value === "/dsh-girl/status.json").length;
+  const readsAfterFailure = statusReads();
+  await expect.poll(statusReads).toBeGreaterThan(readsAfterFailure + 1);
+  await expect(card.getByRole("alert")).toContainText("插件已启用");
   fail = false;
   newer = true;
   await check.click();
   await expect(card.getByRole("status")).toHaveText("发现新版本 v0.12.5");
+  await expect(card.getByRole("alert")).toHaveCount(0);
   const install = card.getByRole("button", {
     name: "下载并更新至 v0.12.5",
     exact: true,

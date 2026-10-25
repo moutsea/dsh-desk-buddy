@@ -1,5 +1,9 @@
 import { expect } from "@playwright/test";
-import { launchDesktop } from "./electron-test.mjs";
+import {
+  launchDesktop,
+  settleDesktopGeometry,
+  moveDesktopPointer,
+} from "./electron-test.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
@@ -38,6 +42,8 @@ let app;
 try {
   app = await launchDesktop(env);
   let page = await app.firstWindow({ timeout: 15000 });
+  const movePointer = (x, y, options) =>
+    moveDesktopPointer(app, page, x, y, options);
   const state = () => page.evaluate(() => window.desktop.invoke("state"));
   const invoke = (action, payload) =>
     page.evaluate(
@@ -52,10 +58,11 @@ try {
     page.locator(`.progress-card[data-session-id="${id}"]`);
   const bubble = () =>
     page.getByRole("button", { name: "查看进度：后台检查项目" });
-  await page.mouse.move(-10, -10);
+  await movePointer(-10, -10);
   await expect.poll(async () => (await state()).connection).toBe("connected");
   assert.equal((await state()).config.progressBubbles, true);
   await expect(bubble()).toHaveCount(0);
+  await settleDesktopGeometry(app);
   const original = await bounds();
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].blur(),
@@ -87,9 +94,10 @@ try {
     "aria-label",
     /查看进度：后台检查项目，正在执行工具，.*git status --short npm test/,
   );
-  await page.locator(".pet-character").hover();
+  const petBox = await page.locator(".pet-character").boundingBox();
+  await movePointer(petBox.x + petBox.width / 2, petBox.y + petBox.height / 2);
   await expect(bubble()).toBeHidden();
-  await page.mouse.move(-10, -10);
+  await movePointer(-10, -10);
   await expect(bubble()).toBeVisible();
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({
@@ -136,13 +144,13 @@ try {
           }
         throw new Error(`the ${sessionId} card has no reachable point`);
       }, id);
-  // Synthetic mouse moves reach an initially click-through window only after a
-  // couple of events, so every entry moves in small steps and retries.
+  // Entry can race a click-through transition, so move in small steps and wait
+  // for the deck to acknowledge the pointer before testing its appearance.
   const enterDeck = async () => {
     const box = await stack.boundingBox();
     const origin = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     for (let attempt = 0; attempt < 6; attempt++) {
-      await page.mouse.move(origin.x + attempt, origin.y, { steps: 3 });
+      await movePointer(origin.x + attempt, origin.y, { steps: 3 });
       for (let poll = 0; poll < 3; poll++) {
         if (
           await stack.evaluate((node) => node.classList.contains("is-browsing"))
@@ -172,7 +180,7 @@ try {
       ),
     );
   const leaveDeck = async () => {
-    await page.mouse.move(-10, -10);
+    await movePointer(-10, -10);
     await page.evaluate(() => document.activeElement?.blur());
     await expect(stack).not.toHaveClass(/is-browsing/);
   };
@@ -195,7 +203,7 @@ try {
   const hoverCard = async (id) => {
     const point = await pointOn(id);
     for (let attempt = 0; attempt < 5; attempt++) {
-      await page.mouse.move(point.x, point.y, { steps: 3 });
+      await movePointer(point.x, point.y, { steps: 3 });
       if ((await pointedOn()) === id) return point;
       await page.waitForTimeout(60);
     }
@@ -217,17 +225,6 @@ try {
             await expect(visual(other)).toHaveCSS("opacity", "0.1");
         return;
       } catch (error) {
-        // Windows runners move the synthetic pointer over a click-through window
-        // without ever delivering `pointerenter`, so the hovered deck cannot be
-        // reproduced there. The selection, geometry, click and keyboard
-        // behaviour of the deck are asserted independently, so only the visual
-        // dimming is skipped, loudly.
-        if (process.platform === "win32" && attempt >= 1) {
-          console.warn(
-            `windows runner: hover dimming not reproducible (${kept}); skipping`,
-          );
-          return;
-        }
         if (attempt >= 2) throw error;
         await hoverCard(kept.at(-1));
       }
@@ -315,12 +312,12 @@ try {
   await expect.poll(async () => (await state()).selectedId).toBe(firstId);
   await expect(stack).toHaveCount(0);
   await invoke("section", null);
-  await page.mouse.move(-10, -10);
+  await movePointer(-10, -10);
   await expect(bubbles).toHaveCount(3);
   // The card under the pointer opens itself, not whatever was selected before.
   await clickCard("third");
   await invoke("section", null);
-  await page.mouse.move(-10, -10);
+  await movePointer(-10, -10);
 
   for (let i = 0; i < 9; i++) {
     const id = `extra-${i}`;
@@ -356,7 +353,7 @@ try {
     [48, -48],
     [0, 0],
   ]) {
-    await page.mouse.move(focusedOrigin.x + dx, focusedOrigin.y + dy, {
+    await movePointer(focusedOrigin.x + dx, focusedOrigin.y + dy, {
       steps: 4,
     });
     await expect(stack).toHaveAttribute("data-selected-index", "0");
@@ -401,12 +398,12 @@ try {
   const startedAt = await stack.getAttribute("data-selected-index");
   const gestureSelection = await stack.getAttribute("data-selected-session");
   for (let step = 1; step <= 4; step++) {
-    await page.mouse.move(
+    await movePointer(
       gestureOrigin.x - 18 * step,
       gestureOrigin.y + 18 * step,
       { steps: 3 },
     );
-    await page.mouse.move(gestureOrigin.x, gestureOrigin.y, { steps: 3 });
+    await movePointer(gestureOrigin.x, gestureOrigin.y, { steps: 3 });
     await expect(stack).toHaveAttribute("data-selected-index", startedAt);
     await expect(stack).toHaveAttribute(
       "data-selected-session",
@@ -443,7 +440,7 @@ try {
   // headless runner, which opens the hover menu and unmounts the deck. Keep the
   // pointer outside the window and let `conceal` settle before asserting.
   const parkPointer = async () => {
-    await page.mouse.move(-10, -10);
+    await movePointer(-10, -10);
     await page.waitForTimeout(300);
   };
   const dock = async (dy) => {
@@ -532,7 +529,7 @@ try {
     fixture.sessions.get(id).running = false;
     fixture.event(id, "turn/end", { reason: { kind: "cancelled" } });
   }
-  await page.mouse.move(-10, -10);
+  await movePointer(-10, -10);
   await expect(stack).toHaveAttribute("data-total", "12");
   await expect(cards).toHaveCount(5);
   // Hovering used to select a card, which restacked the deck and slid the close
@@ -552,7 +549,7 @@ try {
       x: before.x + before.width / 2,
       y: before.y + before.height / 2,
     };
-    await page.mouse.move(closePoint.x, closePoint.y, { steps: 3 });
+    await movePointer(closePoint.x, closePoint.y, { steps: 3 });
     await expect(stack).toHaveClass(/is-browsing/);
     await expect(stack).toHaveAttribute("data-selected-session", closeId);
     await settle();
@@ -593,7 +590,7 @@ try {
     x: foldedClose.x + foldedClose.width / 2,
     y: foldedClose.y + foldedClose.height / 2,
   };
-  await page.mouse.move(foldedPoint.x, foldedPoint.y, { steps: 6 });
+  await movePointer(foldedPoint.x, foldedPoint.y, { steps: 6 });
   await expect(stack).toHaveAttribute("data-selected-session", keptSelection);
   await expect(visual(foldedTarget)).toHaveClass(/is-pointed/);
   await expect(
@@ -616,7 +613,7 @@ try {
     "Tab from the selected card reaches its own close button",
   );
   await page.evaluate(() => document.activeElement?.blur());
-  await page.mouse.move(-10, -10);
+  await movePointer(-10, -10);
   for (const id of [
     "front",
     "third",
@@ -640,7 +637,7 @@ try {
     message: { content: [{ type: "tool-result", toolCallId: "check" }] },
   });
   await invoke("section", null);
-  await page.mouse.move(-10, -10);
+  await movePointer(-10, -10);
   await expect(bubble()).toBeVisible();
   await expect(visual("back")).not.toContainText("npm test");
   fixture.push("mux", {
@@ -691,14 +688,14 @@ try {
   bubbles = page.locator(".pet-progress-bubble");
   cards = page.locator(".progress-card");
   stack = page.getByRole("group", { name: "会话气泡" });
-  await page.mouse.move(-10, -10);
+  await movePointer(-10, -10);
   await expect.poll(async () => (await state()).connection).toBe("connected");
   assert.equal((await state()).config.progressBubbles, false);
   await expect(bubble()).toHaveCount(0);
   await invoke("section", "settings");
   await page.getByRole("switch", { name: "执行进度气泡", exact: true }).click();
   await invoke("section", null);
-  await page.mouse.move(-10, -10);
+  await movePointer(-10, -10);
   await expect(bubble()).toBeVisible();
   const closeBubble = () =>
     page.getByRole("button", { name: "关闭气泡：后台检查项目", exact: true });
@@ -880,6 +877,36 @@ try {
   console.log(
     "Progress bubble passed: horizontal cards stacked toward the upper right, five-card cap including transparent layers, folded middle sessions, selected card staying in the front slot across hover, pointer travel that never re-selects or restacks so every close button stays under the pointer, per-card keyboard and click navigation, closing folded bubbles from the deck and from the session list, scale bounds, background tools and streaming, click-to-chat, visible commands, product name, no focus/position changes, persisted toggle, retained terminal states, manual mouse/keyboard dismissal without cancelling, no revival on automatic reconnect, and reappearance on the next task. No model calls.",
   );
+} catch (error) {
+  if (app) {
+    try {
+      const page = await app.firstWindow();
+      const diagnostic = {
+        native: await app.evaluate(({ BrowserWindow, screen }) => ({
+          bounds: BrowserWindow.getAllWindows()[0].getBounds(),
+          cursor: screen.getCursorScreenPoint(),
+          focused: BrowserWindow.getAllWindows()[0].isFocused(),
+        })),
+        renderer: await page.evaluate(() => ({
+          focus: document.activeElement?.outerHTML,
+          stack: document.querySelector(".pet-progress-stack")?.outerHTML,
+          cards: [...document.querySelectorAll(".progress-card")].map(
+            (node) => ({
+              id: node.dataset.sessionId,
+              opacity: getComputedStyle(node).opacity,
+            }),
+          ),
+        })),
+      };
+      await mkdir("artifacts", { recursive: true });
+      await writeFile(
+        "artifacts/progress-failure.json",
+        JSON.stringify(diagnostic, null, 2),
+      );
+      await page.screenshot({ path: "artifacts/progress-failure.png" });
+    } catch {}
+  }
+  throw error;
 } finally {
   await app?.close();
   await fixture.close();

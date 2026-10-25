@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { expect } from "@playwright/test";
-import { launchDesktop } from "./electron-test.mjs";
+import { launchDesktop, settleDesktopGeometry } from "./electron-test.mjs";
 import { createFixture } from "../tests/fixture.mjs";
 
 const fixture = await createFixture();
@@ -46,6 +46,7 @@ try {
     await expect(
       page.locator(".pet-character .motion-sprite.ready"),
     ).toHaveCount(1);
+    await settleDesktopGeometry(desktop);
     const originalBounds = await desktop.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0].getBounds(),
     );

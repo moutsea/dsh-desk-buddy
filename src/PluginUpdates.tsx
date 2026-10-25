@@ -14,6 +14,7 @@ type Update = {
 export function PluginUpdates() {
   const [update, setUpdate] = useState<Update | null>(null);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
   const revision = useRef(0);
@@ -22,8 +23,10 @@ export function PluginUpdates() {
     setUpdate(value);
     setError("");
   };
-  const report = (err: unknown) => {
-    setError(
+  const report = (err: unknown, action = false) => {
+    // A successful status poll does not mean the user's failed check/install
+    // succeeded. Keep that error until the user retries the operation.
+    (action ? setActionError : setError)(
       (err as Error).message.replace(
         /^Error invoking remote method '[^']+': Error: /,
         "",
@@ -61,11 +64,12 @@ export function PluginUpdates() {
     revision.current++;
     setBusy(true);
     setError("");
+    setActionError("");
     try {
       const value = await window.desktop?.invoke(action, update?.latestVersion);
       if (live.current && value) apply(value);
     } catch (err) {
-      if (live.current) report(err);
+      if (live.current) report(err, true);
     } finally {
       pending.current = false;
       if (live.current) setBusy(false);
@@ -113,9 +117,9 @@ export function PluginUpdates() {
           value={update.downloaded || 0}
         />
       )}
-      {(error || update?.error) && (
+      {(actionError || error || update?.error) && (
         <p className="plugin-update-error" role="alert">
-          {error || update?.error}
+          {actionError || error || update?.error}
         </p>
       )}
       <div className="plugin-update-buttons">
