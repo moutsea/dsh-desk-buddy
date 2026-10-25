@@ -31,7 +31,10 @@ await writeFile(
   JSON.stringify({
     endpoint: fixture.endpoint,
     selectedId: "front",
-    alwaysOnTop: false,
+    // Windows input is sent through User32. Keep the fixture above the runner's
+    // other windows after the intentional blur below, as in smoke-window, so
+    // real mouse input reaches this window rather than an overlapping console.
+    alwaysOnTop: process.platform === "win32",
     sounds: { enabled: false },
     petPosition: { x: 500, y: 250 },
   }),
@@ -888,7 +891,7 @@ try {
           focused: BrowserWindow.getAllWindows()[0].isFocused(),
         })),
         renderer: await page.evaluate(() => ({
-          focus: document.activeElement?.outerHTML,
+          focus: document.activeElement?.tagName,
           stack: document.querySelector(".pet-progress-stack")?.outerHTML,
           cards: [...document.querySelectorAll(".progress-card")].map(
             (node) => ({
