@@ -123,7 +123,8 @@ try {
   await panel.getByRole("button", { name: "切换会话", exact: true }).click();
   const sessionPicker = panel.getByRole("region", { name: "会话列表" });
   await sessionPicker
-    .getByRole("button", { name: /测试项目任务/ })
+    .locator(".session-card")
+    .filter({ hasText: "测试项目任务" })
     .filter({ hasText: "等待你回应" })
     .waitFor();
   await panel.keyboard.press("Escape");
@@ -291,12 +292,18 @@ try {
   await panel.getByRole("textbox", { name: "消息" }).fill("留在当前会话的草稿");
   await panel.getByRole("button", { name: "切换会话", exact: true }).click();
   await panel.screenshot({ path: "artifacts/sessions.png" });
-  await sessionPicker.getByRole("button", { name: /后台验收任务/ }).click();
+  await sessionPicker
+    .locator(".session-card")
+    .filter({ hasText: "后台验收任务" })
+    .click();
   await expect(sessionPicker).toHaveCount(0);
   await expect(panel.getByRole("textbox", { name: "消息" })).toHaveValue("");
   await panel.getByRole("textbox", { name: "消息" }).fill("另一段会话的草稿");
   await panel.getByRole("button", { name: "切换会话", exact: true }).click();
-  await sessionPicker.getByRole("button", { name: /测试项目任务/ }).click();
+  await sessionPicker
+    .locator(".session-card")
+    .filter({ hasText: "测试项目任务" })
+    .click();
   await expect(panel.getByRole("textbox", { name: "消息" })).toHaveValue(
     "留在当前会话的草稿",
   );
@@ -321,7 +328,8 @@ try {
   await expect(panel.getByRole("textbox", { name: "消息" })).toHaveValue("");
   await panel.getByRole("button", { name: "切换会话", exact: true }).click();
   await sessionPicker
-    .getByRole("button", { name: /测试项目任务/ })
+    .locator(".session-card")
+    .filter({ hasText: "测试项目任务" })
     .first()
     .click();
   await panel.getByRole("textbox", { name: "消息" }).waitFor();

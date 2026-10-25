@@ -12,19 +12,12 @@ import {
   deckCapacity,
   deckLayout,
   deckTop,
-  moveDeckPointer,
   reconcileDeckOrder,
   reconcileDeckView,
 } from "../shared/progress-deck.mjs";
 
 // Derive the item shape from the projection helper so the two cannot drift.
 type ProgressItem = ReturnType<typeof activeProgressItems>[number];
-type DeckPointer = { x: number; y: number; carry: number };
-
-// A pointer that re-appears after a pause (ms), or jumps further than the deck
-// is wide (px), is a new origin rather than a continuation of the same drag.
-const STALE_POINTER = 400; // ms without pointer events
-const JUMP_LIMIT = 320; // px, wider than the deck itself
 const LABEL_DETAIL = 80; // characters of preview text kept in the aria-label
 
 export function ProgressBubbles({
@@ -43,7 +36,12 @@ export function ProgressBubbles({
   const stack = useRef<HTMLDivElement>(null);
   const incoming = items.map((item) => item.sessionId).reverse();
   const [selected, setSelected] = useState(incoming.at(-1)!);
+  // Hovering only highlights the card under the pointer. It never re-selects or
+  // re-slots the deck: doing that used to slide the close button (and every
+  // other card) out from under a pointer that was on its way to the ×, so
+  // finished bubbles piled up faster than they could be closed.
   const [hovered, setHovered] = useState(false);
+  const [pointed, setPointed] = useState<string | null>(null);
   const [keyboard, setKeyboard] = useState(false);
   const browsing = hovered || keyboard;
   const committed = useRef<{
@@ -57,7 +55,6 @@ export function ProgressBubbles({
   const next = reconcileDeckOrder(committed.current, items, browsing);
   committed.current = next;
   const ids = next.order;
-  const orderKey = JSON.stringify(ids);
   const byId = new Map(items.map((item) => [item.sessionId, item]));
   const active =
     next.promoted ?? (ids.includes(selected) ? selected : ids.at(-1)!);
@@ -72,8 +69,6 @@ export function ProgressBubbles({
   const activeIndex = ids.indexOf(active);
   const selection = useRef(active);
   selection.current = active;
-  const pointer = useRef<DeckPointer | null>(null);
-  const pointerAt = useRef(0);
   const lastPoint = useRef({ x: 0, y: 0 });
   const pendingFocus = useRef<string | null>(null);
   // Cards are clamped to the space above the pet so the deck never covers its
@@ -86,12 +81,18 @@ export function ProgressBubbles({
     ids,
     active,
     hovered,
-    browsing,
+    // Only keyboard browsing walks the deck: it is what re-windows a folded
+    // deck around the selection. Hovering must keep the resting window, or
+    // entering the deck would swap the rear cards — including the close button
+    // a pointer is already travelling towards.
+    browsing: keyboard,
     capacity,
     width,
     headroom,
   });
   const { slots, rotate: needsRotation } = display;
+  const slotKey = JSON.stringify(slots);
+  const highlighted = keyboard ? active : (pointed ?? active);
   const compactCaption = slots.length === 1 && needsRotation;
   const layout = deckLayout(slots.length, width);
   const select = (index: number, focus = false) => {
@@ -113,14 +114,31 @@ export function ProgressBubbles({
     }
     onDismiss(id);
   };
+  // The pointer's card is tracked from the hit target, never from deck geometry:
+  // gaps stay click-through, so this listener is also what releases the
+  // highlight once the pointer settles between two cards.
+  const track = (target: EventTarget | null) => {
+    const card =
+      target instanceof Element
+        ? target.closest<HTMLElement>("[data-session-id]")
+        : null;
+    setPointed(
+      card && stack.current?.contains(card)
+        ? (card.dataset.sessionId ?? null)
+        : null,
+    );
+  };
   useLayoutEffect(() => {
     view.current = display;
   });
   useLayoutEffect(() => {
-    // Drop accumulated rotation, but keep the cursor origin when membership
-    // changes under it so the next deliberate movement still browses a card.
-    pointer.current = hovered ? { ...lastPoint.current, carry: 0 } : null;
-  }, [orderKey, capacity, width]);
+    if (!hovered) return;
+    // A removed card can be replaced beneath a stationary pointer without a
+    // pointermove/enter on the stack. Refresh before paint so another click at
+    // the same coordinates still reaches the replacement's close control.
+    const { x, y } = lastPoint.current;
+    track(document.elementFromPoint(x, y));
+  }, [slotKey, hovered, keyboard, active, width, headroom]);
   useLayoutEffect(() => {
     if (pendingFocus.current === active) {
       stack.current
@@ -139,10 +157,12 @@ export function ProgressBubbles({
     if (!hovered) return;
     const leave = () => {
       setHovered(false);
-      pointer.current = null;
+      setPointed(null);
     };
     const move = (event: globalThis.PointerEvent) => {
       if (event.pointerType === "touch") return;
+      // Moves through click-through gaps do not reach pointerInside.
+      lastPoint.current = { x: event.clientX, y: event.clientY };
       const rect = stack.current?.getBoundingClientRect();
       if (
         !rect ||
@@ -150,8 +170,11 @@ export function ProgressBubbles({
         event.clientX > rect.right ||
         event.clientY < rect.top ||
         event.clientY > rect.bottom
-      )
+      ) {
         leave();
+        return;
+      }
+      track(event.target);
     };
     // Gaps are click-through. After entering one, subsequent moves no longer
     // reach the stack, so observe the rest of the exit at the document boundary.
@@ -164,54 +187,16 @@ export function ProgressBubbles({
       window.removeEventListener("blur", leave);
     };
   }, [hovered]);
-  const followPointer = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "touch") return;
-    // Window blur clears browsing without necessarily ending DOM :hover.
-    // Movement inside the deck can resume without another pointerenter.
+  const pointerInside = (
+    event: PointerEvent<HTMLDivElement> | globalThis.PointerEvent,
+  ) => {
+    // A finger crossing the deck is a scroll, not a hover.
+    if (event.type === "pointermove" && event.pointerType === "touch") return;
+    // Window blur clears browsing without necessarily ending DOM :hover, so
+    // movement inside the deck resumes browsing without another pointerenter.
     setHovered(true);
     lastPoint.current = { x: event.clientX, y: event.clientY };
-    if (
-      event.target instanceof Element &&
-      event.target.closest(".progress-dismiss")
-    ) {
-      pointer.current = { x: event.clientX, y: event.clientY, carry: 0 };
-      pointerAt.current = event.timeStamp;
-      return;
-    }
-    if (!needsRotation) {
-      const target =
-        event.target instanceof Element
-          ? event.target.closest<HTMLElement>("[data-session-id]")
-          : null;
-      if (target?.dataset.sessionId)
-        select(ids.indexOf(target.dataset.sessionId));
-      return;
-    }
-    const last = pointer.current;
-    const jump = last
-      ? Math.hypot(event.clientX - last.x, event.clientY - last.y)
-      : 0;
-    if (
-      jump > JUMP_LIMIT ||
-      event.timeStamp - pointerAt.current > STALE_POINTER
-    )
-      pointer.current = null;
-    pointerAt.current = event.timeStamp;
-    const result = moveDeckPointer(
-      pointer.current,
-      { x: event.clientX, y: event.clientY },
-      ids.indexOf(selection.current),
-      ids.length,
-    );
-    pointer.current = result.pointer;
-    if (ids[result.selected] !== selection.current) select(result.selected);
-  };
-  const enterDeck = (event: PointerEvent<HTMLDivElement>) => {
-    setHovered(true);
-    lastPoint.current = { x: event.clientX, y: event.clientY };
-    pointer.current = { x: event.clientX, y: event.clientY, carry: 0 };
-    pointerAt.current = event.timeStamp;
-    if (!needsRotation) followPointer(event);
+    track(event.target);
   };
   const leaveDeck = (event: PointerEvent<HTMLDivElement>) => {
     const rect = stack.current?.getBoundingClientRect();
@@ -230,7 +215,7 @@ export function ProgressBubbles({
     )
       return;
     setHovered(false);
-    pointer.current = null;
+    setPointed(null);
   };
   const caption = (
     <span
@@ -240,7 +225,7 @@ export function ProgressBubbles({
       {activeIndex + 1} / {ids.length}
       {needsRotation &&
         (browsing
-          ? " · 沿斜向移动切换"
+          ? " · 方向键切换"
           : ` · 已折叠 ${ids.length - slots.length} 个`)}
     </span>
   );
@@ -261,8 +246,8 @@ export function ProgressBubbles({
           top: deckTop(headroom, layout.height),
         } as CSSProperties
       }
-      onPointerEnter={enterDeck}
-      onPointerMove={followPointer}
+      onPointerEnter={pointerInside}
+      onPointerMove={pointerInside}
       onPointerLeave={leaveDeck}
       onFocus={(event) => {
         if (event.target.matches(":focus-visible")) setKeyboard(true);
@@ -278,8 +263,8 @@ export function ProgressBubbles({
           event.target.closest(".progress-dismiss")
         )
           return;
-        // Keyboard activation follows the visible selection even when pointer
-        // rotation left DOM focus on another card. Suppress Space's native click.
+        // Keyboard activation follows the visible selection. A pointer hover
+        // leaves the selection alone, so both agree on which card is openable.
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           event.stopPropagation();
@@ -299,7 +284,6 @@ export function ProgressBubbles({
         event.preventDefault();
         event.stopPropagation();
         setKeyboard(true);
-        pointer.current = null;
         select(keys[event.key], true);
       }}
     >
@@ -307,7 +291,9 @@ export function ProgressBubbles({
         if (id === null) return null;
         const index = ids.indexOf(id),
           item = byId.get(id)!,
-          isActive = id === active;
+          isActive = id === active,
+          isPointed = id === pointed,
+          isHighlighted = id === highlighted;
         const position = layout.positions[slot];
         const geometry = {
           left: position.x,
@@ -316,12 +302,12 @@ export function ProgressBubbles({
           height: layout.cardHeight,
         };
         // Hit target and painted card share one layer so the pointer always
-        // reaches the card it is actually looking at. Only the browsed card is
-        // lifted: lifting the selected card at rest covers the neighbours' text
-        // and click strips, so the resting deck keeps strict slot order (the
-        // selected card is marked by its border, and owns the front slot once
-        // the deck folds).
-        const layer = isActive && browsing ? DECK_LIMIT + 1 : slot + 1;
+        // reaches the card it is actually looking at. Pointer hover never
+        // restacks: it only brightens the card under the pointer, so the close
+        // buttons keep their positions. Keyboard browsing lifts the card it
+        // selected, which no pointer is aiming at.
+        const layer = isActive && keyboard ? DECK_LIMIT + 1 : slot + 1;
+        const closeable = isActive || isPointed;
         const detail =
           item.text && item.text !== item.label
             ? `，${
@@ -342,17 +328,21 @@ export function ProgressBubbles({
               tabIndex={isActive ? 0 : -1}
               title={
                 needsRotation
-                  ? "沿斜向移动切换会话，点击打开该会话"
+                  ? "点击打开该会话，折叠的会话可用方向键切换"
                   : "点击打开对应对话"
               }
               onFocus={() => select(index)}
               onMouseDown={(event) => {
+                // Focusing re-slots a folding deck, which would move the card
+                // out from under the press before the click lands. A deck that
+                // holds still keeps the native focus, so a click also arms
+                // Enter on the card it opened.
                 if (needsRotation) event.preventDefault();
               }}
               onClick={() => onOpen(id)}
             />
             <span
-              className={`progress-card ${item.status}${isActive ? " is-active" : ""}`}
+              className={`progress-card ${item.status}${isActive ? " is-active" : ""}${isPointed ? " is-pointed" : ""}${isHighlighted ? " is-highlighted" : ""}`}
               data-session-id={id}
               data-provider={item.provider}
               aria-hidden="true"
@@ -382,7 +372,7 @@ export function ProgressBubbles({
               data-interactive
               data-session-id={id}
               data-provider={item.provider}
-              className={`progress-dismiss${isActive ? " is-active" : ""}`}
+              className={`progress-dismiss${isActive ? " is-active" : ""}${isPointed ? " is-pointed" : ""}`}
               style={{
                 left: position.x + layout.cardWidth - 28,
                 top: position.y + 3,
@@ -391,7 +381,7 @@ export function ProgressBubbles({
               aria-label={`关闭气泡：${item.title}`}
               title="关闭气泡显示，不会停止任务"
               tabIndex={isActive ? 0 : -1}
-              disabled={!isActive}
+              disabled={!closeable}
               onMouseDown={(event) => event.preventDefault()}
               onClick={(event) => {
                 event.stopPropagation();

@@ -9,6 +9,17 @@ const latestRelease =
   "https://api.github.com/repos/moutsea/dsh-desk-buddy/releases/latest";
 const stableVersion = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
+function removalError(result) {
+  // Host diagnostics can contain paths or credentials. Only translate known
+  // pnpm error codes; never forward the raw package-manager output to the UI.
+  const diagnostic = `${result?.packageResult?.output || ""}\n${result?.error?.diagnostic || ""}`;
+  if (/ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY/.test(diagnostic))
+    return "DSH 未能卸载旧插件：依赖锁文件不完整，请先修复 DSH 插件依赖";
+  if (/ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION/.test(diagnostic))
+    return "DSH 未能卸载旧插件：其他插件尚未满足发布时间要求，请稍后重试";
+  return "DSH 未能卸载旧插件，更新已停止";
+}
+
 export function newerVersion(candidate, current) {
   if (!stableVersion.test(candidate) || !stableVersion.test(current))
     throw new Error("插件版本格式无效");
@@ -240,6 +251,7 @@ export class PluginUpdater {
           requestId: this.requestId,
         };
         let result;
+        let removedOld = false;
         try {
           if (replace) {
             this.replacing = true;
@@ -248,7 +260,8 @@ export class PluginUpdater {
               removed.error ||
               !["applied", "restart-required"].includes(removed.application)
             )
-              throw new Error("DSH 未能卸载旧插件，更新已停止");
+              throw new Error(removalError(removed));
+            removedOld = true;
           }
           result = await service.installBundle(archive, options);
           this.validateResult(result, release.version);
@@ -259,24 +272,43 @@ export class PluginUpdater {
               const installed = (await service.listBundles()).find(
                 (entry) => entry.name === "dsh-desk-buddy" && entry.installed,
               );
-              if (installed) {
-                const removed = await service.removeBundle("dsh-desk-buddy");
+              if (!removedOld && installed?.version === this.version) {
+                // DSH deselects the bundle before pnpm removes its files. If
+                // pnpm fails, the original package remains: re-enable it
+                // without repeating the same failing package operation.
+                const restored = await service.setBundleEnabled(
+                  "dsh-desk-buddy",
+                  true,
+                );
                 if (
-                  removed.error ||
-                  !["applied", "restart-required"].includes(removed.application)
+                  restored.error ||
+                  !["applied", "restart-required"].includes(
+                    restored.application,
+                  )
                 )
                   throw new Error("无法恢复旧插件");
+              } else {
+                if (installed) {
+                  const removed = await service.removeBundle("dsh-desk-buddy");
+                  if (
+                    removed.error ||
+                    !["applied", "restart-required"].includes(
+                      removed.application,
+                    )
+                  )
+                    throw new Error("无法恢复旧插件");
+                }
+                this.validateResult(
+                  await service.installBundle(rollback, {
+                    ...options,
+                    requestId: randomUUID(),
+                  }),
+                  this.version,
+                );
               }
-              this.validateResult(
-                await service.installBundle(rollback, {
-                  ...options,
-                  requestId: randomUUID(),
-                }),
-                this.version,
-              );
             } catch {
               throw new Error(
-                "更新失败，旧版自动恢复未完成。请在 DSH 插件管理中重新安装 GitHub 仓库地址；桌宠设置仍保留",
+                `${error.message}；旧版自动恢复未完成。请在 DSH 插件管理中重新安装 GitHub 仓库地址；桌宠设置仍保留`,
               );
             }
             throw new Error(

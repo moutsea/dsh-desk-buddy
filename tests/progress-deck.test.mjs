@@ -7,7 +7,6 @@ import {
   deckLayout,
   deckSlots,
   deckTop,
-  moveDeckPointer,
   reconcileDeckView,
 } from "../shared/progress-deck.mjs";
 import { PET_CHARACTER } from "../shared/desktop-layout.mjs";
@@ -177,7 +176,7 @@ test("removals keep surviving targets in place and refill only empty slots", () 
   assert.deepEqual(viewOf([], undefined, replaced).slots, []);
 });
 
-test("direct hover selection keeps every card in its existing physical slot", () => {
+test("a pointer hover keeps every card in its existing physical slot", () => {
   const ids = ["a", "b", "c", "d", "e"];
   let view = viewOf(ids, "e", undefined, { hovered: false, browsing: false });
   for (const active of ids) {
@@ -236,41 +235,41 @@ test("horizontal cards stack toward the upper right and fit inside every support
     }
 });
 
-test("upper-right motion browses backward and lower-left motion browses forward without stationary drift", () => {
-  const cursor = { x: 100, y: 100, carry: 0 };
-  // One card per card spacing: 24px along the diagonal is one card, 20px is not.
-  assert.equal(moveDeckPointer(cursor, { x: 120, y: 80 }, 6, 12).selected, 6);
-  assert.equal(moveDeckPointer(cursor, { x: 124, y: 76 }, 6, 12).selected, 5);
-  assert.equal(moveDeckPointer(cursor, { x: 76, y: 124 }, 6, 12).selected, 7);
-  // Perpendicular motion never browses.
-  assert.equal(moveDeckPointer(cursor, { x: 135, y: 135 }, 6, 12).selected, 6);
-  // A pointer that stops moving keeps the current card.
-  const stepped = moveDeckPointer(cursor, { x: 130, y: 70 }, 6, 12);
-  assert.equal(stepped.selected, 5);
-  assert.equal(
-    moveDeckPointer(stepped.pointer, { x: 130, y: 70 }, 5, 12).selected,
-    5,
-  );
-  // Drift is measured from a fresh origin so the loop does not start on the
-  // edge of the next step.
-  let result = { pointer: cursor, selected: 5 };
-  for (let i = 0; i < 30; i++) {
-    result = moveDeckPointer(result.pointer, { x: 101, y: 99 }, 5, 12);
-    result = moveDeckPointer(result.pointer, { x: 100, y: 100 }, 5, 12);
-    assert.equal(result.selected, 5);
+test("entering a folded deck keeps the resting window, so cards keep their slots", () => {
+  // Hovering reports `hovered` but not `browsing`: browsing is what re-windows a
+  // folded deck around the selection. Re-windowing on hover swapped the rear
+  // cards (and their close buttons) out from under a pointer travelling to one.
+  const ids = Array.from({ length: 12 }, (_, index) => `s${index}`);
+  for (let selected = 0; selected < ids.length; selected++) {
+    const resting = viewOf(ids, ids[selected], undefined, { hovered: false });
+    const hovering = viewOf(ids, ids[selected], resting, { hovered: true });
+    assert.deepEqual(hovering.slots, resting.slots);
+    assert.equal(hovering.rotate, true);
+    // Keyboard browsing still walks the deck around the selection.
+    const walking = viewOf(ids, ids[selected], resting, { browsing: true });
+    assert.deepEqual(
+      walking.slots,
+      deckSlots(deckIndices(12, selected, true), selected, true).map(
+        (index) => ids[index],
+      ),
+    );
   }
-  // The ends clamp the selection and clear the accumulated carry.
-  result = moveDeckPointer(
-    { x: 100, y: 100, carry: 0 },
-    { x: 200, y: 0 },
-    0,
-    12,
-  );
-  assert.equal(result.selected, 0);
-  assert.equal(result.pointer.carry, 0);
-  assert.equal(
-    moveDeckPointer(result.pointer, { x: 170, y: 30 }, 0, 12).selected,
-    1,
-  );
-  assert.equal(moveDeckPointer(null, { x: 0, y: 0 }, 7, 12).selected, 7);
+});
+
+test("pointer travel never restacks the deck, so close buttons stay put", () => {
+  // Hovering used to select a card, which re-slotted large decks and slid the
+  // close button away from a pointer on its way there. Selection now only
+  // changes from the keyboard or a click, and rotating decks always keep the
+  // selected card in the front slot regardless of pointer travel.
+  const ids = Array.from({ length: 12 }, (_, index) => `s${index}`);
+  for (let selected = 0; selected < ids.length; selected++) {
+    const view = viewOf(ids, ids[selected], undefined, {
+      hovered: true,
+      browsing: true,
+    });
+    assert.equal(view.rotate, true);
+    assert.equal(view.slots.length, DECK_LIMIT);
+    assert.equal(view.slots.at(-1), ids[selected]);
+    assert.equal(new Set(view.slots).size, DECK_LIMIT);
+  }
 });

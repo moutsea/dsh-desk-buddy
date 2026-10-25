@@ -27,6 +27,9 @@ const testUpdate = process.env.DSG_TEST_MANUAL_UPDATE === "1";
 const testRollback = testUpdate && process.env.DSG_TEST_UPDATE_ROLLBACK === "1";
 const testRemovalRestart =
   testUpdate && process.env.DSG_TEST_UPDATE_RESTART === "1";
+const testRemovalFailure =
+  testUpdate && process.env.DSG_TEST_UPDATE_REMOVE_FAILURE === "1";
+const testRecovery = testRollback || testRemovalFailure;
 if (testUpdate) {
   const seed = join(home, "seed");
   await mkdir(seed);
@@ -41,7 +44,7 @@ if (testUpdate) {
   const runtime = JSON.parse(await readFile(runtimePath, "utf8"));
   runtime.version = metadata.version;
   await writeFile(runtimePath, JSON.stringify(runtime));
-  if (testRollback || testRemovalRestart) {
+  if (testRecovery || testRemovalRestart) {
     const entry = join(seed, "package/index.mjs");
     const code = await readFile(entry, "utf8");
     const original = 'service: () => ctx.get?.("pluginManager"),';
@@ -54,7 +57,16 @@ if (testUpdate) {
       const service = ctx.get("pluginManager");
       return {
         listBundles: () => service.listBundles(),
+        setBundleEnabled: (...args) => service.setBundleEnabled(...args),
         removeBundle: async name => {
+          if (${testRemovalFailure}) {
+            // Real DSH unloads the bundle before pnpm runs. Reproduce a pnpm
+            // failure after that unload while the original files remain.
+            const disabled = await service.setBundleEnabled(name, false);
+            if (disabled.error) return disabled;
+            return { application: "failed", error: { code: "operation-error" },
+              packageResult: { output: "[ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY] test fixture" } };
+          }
           const result = await service.removeBundle(name);
           return ${testRemovalRestart} && result.application === "applied" && !result.error
             ? { ...result, application: "restart-required", restartReason: "pending-entry" }
@@ -284,25 +296,29 @@ try {
             async (path) => (await fetch(path)).json(),
             updateJob,
           );
-          if (update.phase === "error" && !testRollback)
+          if (update.phase === "error" && !testRecovery)
             throw new Error(update.error);
           if (update.phase === "error")
             assert.match(update.error, /已恢复旧版/);
+          if (update.phase === "error" && testRemovalFailure)
+            assert.match(update.error, /依赖锁文件不完整/);
           return update.phase;
         },
         { timeout: 360000 },
       )
-      .toBe(testRollback ? "error" : "restart-required");
+      .toBe(testRecovery ? "error" : "restart-required");
     await expect
       .poll(async () => (await status()).connection, { timeout: 90000 })
       .toBe("connected");
     await expect(
-      frame.locator(testRollback ? "#update-error" : "#update-status"),
+      frame.locator(testRecovery ? "#update-error" : "#update-status"),
     ).toContainText("重启 DSH");
     await page.screenshot({
-      path: testRollback
-        ? "artifacts/desktop-update-rollback.png"
-        : "artifacts/desktop-manual-update.png",
+      path: testRemovalFailure
+        ? "artifacts/desktop-update-removal-failure.png"
+        : testRollback
+          ? "artifacts/desktop-update-rollback.png"
+          : "artifacts/desktop-manual-update.png",
     });
     await app.close();
     app = null;
@@ -310,8 +326,8 @@ try {
     await expect
       .poll(async () => (await status()).connection, { timeout: 90000 })
       .toBe("connected");
-    assert.equal((await status()).version, testRollback ? pkg.version : target);
-    if (testRollback)
+    assert.equal((await status()).version, testRecovery ? "0.0.0" : target);
+    if (testRecovery)
       assert.equal((await status()).update.currentVersion, "0.0.0");
     assert.equal((await status()).autoStart, true);
     assert.equal(
@@ -321,10 +337,11 @@ try {
     pid = (await status()).pid;
     updateResult = {
       from: "0.0.0 test seed",
-      to: testRollback ? "0.0.0 restored test seed" : target,
+      to: testRecovery ? "0.0.0 restored test seed" : target,
       hostCodeAndRuntime: true,
       preferencesAndHistoryRetained: true,
-      failureRecovery: testRollback,
+      failureRecovery: testRecovery,
+      failedRemovalRecovery: testRemovalFailure,
       removalRequiresRestart: testRemovalRestart,
     };
   }

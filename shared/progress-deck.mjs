@@ -1,12 +1,9 @@
 import { PET_CHARACTER } from "./desktop-layout.mjs";
 
 export const DECK_LIMIT = 5;
-const diagonal = Math.SQRT1_2;
 // Stacked cards sit `offset` px apart in both axes: 22px leaves the rear card's
-// heading strip readable while keeping five cards compact. One step of pointer
-// travel along the diagonal is `offset * √2` long and browses one card.
+// heading strip readable while keeping five cards compact.
 const offset = 22;
-const step = Math.round(offset * Math.SQRT2);
 // Card box, the gap kept around the cards inside the stack box, the caption
 // strip under the deck, and the widest card the deck allows.
 const cardHeight = 98;
@@ -117,8 +114,9 @@ export function deckIndices(count, selected, browsing, limit = DECK_LIMIT) {
 }
 
 // Large decks keep the selected card in the front (lower-left) slot both at
-// rest and while browsing, so hover does not move its click/close targets.
-// Small decks keep list order because selection follows the pointer hit target.
+// rest and while browsing, so keyboard browsing never moves the pointer's
+// click/close targets. Small decks keep list order: every card already fits and
+// a pointer hover must not restack the deck at all.
 /**
  * @param {number[]} visible
  * @param {number} selected
@@ -220,28 +218,4 @@ export function deckLayout(count, petWidth) {
       y: padding + offset * index,
     })),
   };
-}
-
-/**
- * @param {{x: number, y: number, carry?: number} | null} previous
- * @param {{x: number, y: number}} point
- * @param {number} selected
- * @param {number} count
- * @returns {{pointer: {x: number, y: number, carry: number},
- *   selected: number}}
- */
-export function moveDeckPointer(previous, point, selected, count) {
-  const next = { x: point.x, y: point.y, carry: previous?.carry || 0 };
-  if (!previous) return { pointer: next, selected };
-  const dx = point.x - previous.x;
-  const dy = point.y - previous.y;
-  const along = (dy - dx) * diagonal;
-  const across = (dx + dy) * diagonal;
-  // Browse along the stacking diagonal, ignoring perpendicular motion.
-  if (Math.abs(across) > Math.abs(along) * 1.5) next.carry = 0;
-  else next.carry += along;
-  const steps = Math.trunc(next.carry / step);
-  const index = Math.max(0, Math.min(count - 1, selected + steps));
-  next.carry = index === selected && steps ? 0 : next.carry - steps * step;
-  return { pointer: next, selected: index };
 }

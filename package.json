@@ -1,6 +1,6 @@
 {
   "name": "dsh-desk-buddy",
-  "version": "0.17.1",
+  "version": "0.17.2",
   "private": true,
   "author": "dsh-desk-buddy contributors",
   "license": "UNLICENSED",
@@ -46,6 +46,7 @@
     "test:progress": "node scripts/smoke-progress.mjs",
     "test:progress:lifecycle": "node scripts/smoke-progress-lifecycle.mjs",
     "test:progress:order": "node scripts/smoke-progress-order.mjs",
+    "test:progress:pointer": "node scripts/smoke-progress-pointer.mjs",
     "pack:plugin": "npm run pack && node scripts/pack-plugin.mjs",
     "test:plugin": "node scripts/smoke-plugin.mjs",
     "test:desktop": "node scripts/smoke-desktop.mjs",

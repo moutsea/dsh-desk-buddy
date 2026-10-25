@@ -30,6 +30,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npx playwright install chromium
+      - run: npm run test:progress:pointer
       - run: npm run test:manager
       - run: npm run pack:plugin
       - run: npm run test:repository

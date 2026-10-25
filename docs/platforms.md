@@ -6,6 +6,8 @@
 
 工作流：[Desktop validation](https://github.com/moutsea/dsh-desk-buddy/actions/workflows/desktop.yml)。以具体提交对应的绿色任务为通过依据。
 
+两平台还运行 `npm run test:progress:pointer`，通过独立的无界面 Chromium 检查静止指针连续关闭、后层预览变暗规则、透明空隙和键盘关闭。这组测试不跳过透明度断言；它不覆盖原生透明窗口接收系统悬停事件的差异。
+
 每个平台执行 `npm ci`、`npm test`、`npm run test:manager`、`npm run pack:plugin`、`npm run test:repository` 和 `npm run test:packaged`。管理页检查使用模拟 Release 和宿主安装接口，覆盖最新版本、下载进度、校验失败、重试、刷新、重启提示、logo、入口拖动、位置保存、键盘移动与窗口边界。打包应用另验证设置内更新，使用不同端口模拟桌宠协议与管理服务，检查版本、进度、错误重试、替换期间追踪及不支持的宿主。单元检查另覆盖热加载卸载与安装、失败恢复旧版以及卸载期间更新继续完成。仓库入口检查使用含中文和空格的隔离目录，验证根包的插件导出与图标、候选包的流式下载路径、SHA-256 校验、原生启动、连接、显示/隐藏和缓存重启。默认通过测试进程内的下载替身读取本轮候选包，不依赖尚未创建的 Release；`DSG_REPOSITORY_REMOTE=1 npm run test:repository` 可单独验证已发布清单的真实下载。完整包检查将实际 `.tgz` 安装到临时目录，校验组件、解压，然后直接运行该组件，而非开发环境 Electron：
 
 - 私有管道启动、版本检查、双事件连接、显示/隐藏/对话、重复启动去重、正常退出、重启和父管道断开后退出。
@@ -40,6 +42,8 @@ npm run test:desktop
 
 再设置 `DSG_TEST_UPDATE_ROLLBACK=1` 可在测试种子中注入一次安装失败，验证官方宿主真正卸载旧插件后，能够从本地备份恢复并重新连接。产品代码不包含故障注入开关。
 
+使用 `DSG_TEST_UPDATE_REMOVE_FAILURE=1`（同时设置 `DSG_TEST_MANUAL_UPDATE=1`）可验证卸载中途失败：通过官方宿主停用插件后模拟 pnpm 锁文件错误，保留原安装文件，检查更新器直接重新启用旧版、恢复连接，并在重启后保留设置与会话。单元测试同时覆盖重新启用失败时保留原始错误原因、避免重复卸载，以及诊断内容不泄漏到页面。
+
 `DSG_PLUGIN_SPEC` 可直接指定安装框中的来源，包括 GitHub 仓库地址和 Release 下载链接；测试会在官方 Desktop 界面填写原始地址并验证安装、启用、重启及连接，避免仅测试下载后的本地文件。仓库和完整包默认名称均为 `dsh-desk-buddy`，`DSG_PLUGIN_NAME` 仅用于覆盖测试目标包名。例如 macOS：
 
 ```sh
@@ -56,6 +60,6 @@ Windows 解压使用系统 Windows PowerShell 与 .NET，支持当前 Electron �
 
 ## 发布前人工检查
 
-Windows CI 在无法合成悬停时会跳过多气泡变暗断言并打印告警。发布前仍需在真实 Windows 桌面确认：悬停选中气泡清晰、其余气泡为 10% 不透明度；沿右上堆叠方向前后翻看，含透明气泡在内始终最多 5 个。macOS 的自动测试不能替代此项验证。
+Windows 原生窗口检查在无法合成悬停时会跳过多气泡变暗断言并打印告警。发布前仍需在真实 Windows 桌面确认：悬停指向的气泡清晰、其余气泡为 10% 不透明度；卡片与关闭按钮不因悬停移动，连续关闭补位气泡不会打开会话；用方向键、Home / End 翻看折叠会话，含透明气泡在内始终最多 5 个。无界面 Chromium 和 macOS 的自动测试不能替代此项验证。
 
 候选包、清单和标签的顺序见 [发布流程](releasing.md)，标签推送本身不再创建 Release。

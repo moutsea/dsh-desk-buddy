@@ -385,3 +385,96 @@ test("failed or cancelled removal never installs the new version", async () => {
     });
   }
 });
+
+test("failed removal re-enables the intact old bundle without retrying broken pnpm operations", async () => {
+  for (const application of ["applied", "restart-required"]) {
+    await withUpdater(async ({ updater, fixture, service, installs }) => {
+      let enabled = true;
+      let removals = 0;
+      const activations = [];
+      updater.hotReload = () => true;
+      updater.backup = async () => "rollback.tgz";
+      service.listBundles = async () => [
+        {
+          name: "dsh-desk-buddy",
+          version: updater.version,
+          removable: true,
+          installed: true,
+          enabled,
+        },
+      ];
+      service.removeBundle = async () => {
+        removals++;
+        enabled = false;
+        await updater.dispose();
+        return {
+          application: "failed",
+          error: { code: "operation-error" },
+          packageResult: {
+            output: "[ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY] private diagnostic",
+          },
+        };
+      };
+      service.setBundleEnabled = async (...args) => {
+        activations.push(args);
+        enabled = args[1];
+        return { application };
+      };
+      updater.check();
+      await updater.operation;
+      updater.install(fixture.version);
+      await updater.operation;
+      assert.equal(updater.phase, "error");
+      assert.equal(enabled, true);
+      assert.equal(removals, 1);
+      assert.equal(installs.length, 0);
+      assert.deepEqual(activations, [["dsh-desk-buddy", true]]);
+      assert.match(updater.error, /依赖锁文件不完整.*已恢复旧版/);
+      assert.ok(!updater.error.includes("private"));
+    });
+  }
+});
+
+test("failed reactivation preserves the original cause without claiming restoration succeeded", async () => {
+  for (const failure of ["missing", "failed", "cancelled", "throws"]) {
+    await withUpdater(async ({ updater, fixture, service, installs }) => {
+      let removals = 0;
+      updater.hotReload = () => true;
+      updater.backup = async () => "rollback.tgz";
+      service.listBundles = async () => [
+        {
+          name: "dsh-desk-buddy",
+          version: updater.version,
+          removable: true,
+          installed: true,
+          enabled: false,
+        },
+      ];
+      service.removeBundle = async () => {
+        removals++;
+        return {
+          application: "failed",
+          error: {
+            code: "operation-error",
+            diagnostic: "[ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION] private",
+          },
+        };
+      };
+      if (failure !== "missing")
+        service.setBundleEnabled = async () => {
+          if (failure === "throws") throw new Error("private activation error");
+          return { application: failure };
+        };
+      updater.check();
+      await updater.operation;
+      updater.install(fixture.version);
+      await updater.operation;
+      assert.equal(updater.phase, "error");
+      assert.equal(removals, 1);
+      assert.equal(installs.length, 0);
+      assert.match(updater.error, /发布时间要求.*旧版自动恢复未完成/);
+      assert.ok(!updater.error.includes("已恢复旧版"));
+      assert.ok(!updater.error.includes("private"));
+    });
+  }
+});

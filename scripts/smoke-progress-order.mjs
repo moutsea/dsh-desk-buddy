@@ -54,27 +54,35 @@ try {
   const stack = page.getByRole("group", { name: "会话气泡" });
   const cards = page.locator(".progress-card");
   const card = (id) => page.locator(`.progress-card[data-session-id="${id}"]`);
-  const input = await page.context().newCDPSession(page);
-  // A CI runner can take >400ms between mouse commands in a hidden window.
-  // That is a real pause to the deck's stale-pointer guard, not a continuous
-  // gesture. Timestamp the two ends explicitly while retaining Chromium's
-  // native hit testing, pointer events and :hover state. The first event also
-  // establishes a fresh origin after assertions/animations paused the pointer.
-  let inputTime = 0;
-  const gesture = async (from, to, elapsed = 16) => {
-    const timestamp = Math.max(Date.now() / 1000, inputTime + 0.016);
-    inputTime = timestamp + elapsed / 1000;
-    for (const [point, offset] of [
-      [from, 0],
-      [to, elapsed],
-    ])
-      await input.send("Input.dispatchMouseEvent", {
-        type: "mouseMoved",
-        x: point.x,
-        y: point.y,
-        timestamp: timestamp + offset / 1000,
-      });
-  };
+  // Cards overlap each other and the close buttons, so find a point that really
+  // hits the requested card and is not one of its close buttons.
+  const pointOn = (id) =>
+    page
+      .locator(`.pet-progress-bubble[data-session-id="${id}"]`)
+      .evaluate((node, sessionId) => {
+        const rect = node.getBoundingClientRect();
+        for (let dy = 4; dy < rect.height; dy += 6)
+          for (let dx = 4; dx < rect.width; dx += 6) {
+            const x = rect.x + dx;
+            const y = rect.y + dy;
+            const hit = document
+              .elementFromPoint(x, y)
+              ?.closest("[data-session-id]");
+            if (
+              hit?.dataset.sessionId === sessionId &&
+              !hit.matches(".progress-dismiss")
+            )
+              return { x, y };
+          }
+        return null;
+      }, id);
+  const slots = () =>
+    cards.evaluateAll((nodes) =>
+      nodes.map(
+        (node) =>
+          `${node.dataset.sessionId}:${node.offsetLeft},${node.offsetTop}`,
+      ),
+    );
   const settle = () =>
     stack.evaluate((node) =>
       Promise.all(
@@ -164,7 +172,7 @@ try {
     await expect(cards).toHaveCount(5);
   });
 
-  await test("restart fallback waits for pointer browsing without moving the click target", async () => {
+  await test("a hover never moves the click target while completed work waits", async () => {
     await reset();
     finish(ids[0]);
     await expect(card(ids[0])).toContainText("已完成");
@@ -185,11 +193,12 @@ try {
     await expect(cards.last()).toHaveAttribute("data-session-id", ids[0]);
   });
 
-  await test("removing the keyboard-focused card during mouse rotation clears keyboard browsing", async () => {
+  await test("pointer movement never takes the selection away from the keyboard", async () => {
     await reset();
     await page.locator(".pet-progress-bubble.is-active").focus();
     await page.keyboard.press("Home");
     await expect(stack).toHaveAttribute("data-selected-index", "0");
+    const focused = await stack.getAttribute("data-selected-session");
     await expect(page.locator(".pet-progress-bubble.is-active")).toBeFocused();
     await enter();
     await stack.evaluate((node) => {
@@ -203,13 +212,16 @@ try {
         }),
       );
     });
-    await expect(stack).toHaveAttribute("data-selected-index", "5");
+    // The pointer is over a rear card, but the deck stays where the user put it.
+    await expect(stack).toHaveAttribute("data-selected-index", "0");
+    await expect(stack).toHaveAttribute("data-selected-session", focused);
     assert.equal(
-      await page.evaluate(() => document.activeElement.tagName),
-      "BODY",
+      await page.evaluate(() => document.activeElement.dataset.sessionId),
+      focused,
     );
-    await expect(stack).toHaveClass(/is-browsing/); // pointer is still inside
+    await expect(stack).toHaveClass(/is-browsing/);
     await leave();
+    await page.evaluate(() => document.activeElement?.blur());
     await expect(stack).not.toHaveClass(/is-browsing/);
     const selected = await stack.getAttribute("data-selected-session");
     const done = ids.find((id) => id !== selected);
@@ -346,29 +358,34 @@ try {
   });
 
   for (const key of ["Space", "Enter"]) {
-    await test(`${key} opens the current selection after the pointer leaves keyboard focus behind`, async () => {
+    await test(`${key} opens the keyboard selection while the pointer wanders over the deck`, async () => {
       await reset();
-      await page.locator(".pet-progress-bubble.is-active").focus();
+      const target = page.locator(".pet-progress-bubble.is-active");
+      await target.focus();
       await page.keyboard.press("Home");
       await expect(stack).toHaveAttribute("data-selected-index", "0");
       const focused = await stack.getAttribute("data-selected-session");
-      const target = page.locator(".pet-progress-bubble.is-active");
-      await target.hover();
       const box = await target.boundingBox();
       const origin = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-      await gesture(origin, { x: origin.x - 25, y: origin.y + 25 });
-      await expect(stack).toHaveAttribute("data-selected-index", "1");
-      const selected = await stack.getAttribute("data-selected-session");
-      assert.notEqual(selected, focused);
-      assert.equal(
-        await page.evaluate(() => document.activeElement.dataset.sessionId),
-        focused,
-      );
+      // Pointer travel highlights cards but never re-selects or blurs them.
+      for (const [dx, dy] of [
+        [-25, 25],
+        [25, -25],
+        [-50, 50],
+      ]) {
+        await page.mouse.move(origin.x + dx, origin.y + dy);
+        await expect(stack).toHaveAttribute("data-selected-index", "0");
+        await expect(stack).toHaveAttribute("data-selected-session", focused);
+        assert.equal(
+          await page.evaluate(() => document.activeElement.dataset.sessionId),
+          focused,
+        );
+      }
       await page.keyboard.press(key);
       await expect
         .poll(async () => (await state()).surface.section)
         .toBe("chat");
-      assert.equal((await state()).selectedId, selected);
+      assert.equal((await state()).selectedId, focused);
     });
 
     await test(`${key} on the close control dismisses without opening or cancelling the session`, async () => {
@@ -391,25 +408,6 @@ try {
     });
   }
 
-  await test("a paused pointer establishes a new origin before continuous movement resumes rotation", async () => {
-    await reset();
-    const target = page.locator(".pet-progress-bubble.is-active");
-    await target.hover();
-    const box = await target.boundingBox();
-    const origin = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-    const paused = { x: origin.x + 25, y: origin.y - 25 };
-    const resumed = { x: paused.x + 25, y: paused.y - 25 };
-    const before = Number(await stack.getAttribute("data-selected-index"));
-    await gesture(origin, paused, 500);
-    await expect(stack).toHaveAttribute("data-selected-index", String(before));
-    await gesture(paused, resumed);
-    await expect(stack).toHaveAttribute(
-      "data-selected-index",
-      String(before - 1),
-    );
-    await expect(cards).toHaveCount(5);
-  });
-
   const movePet = async (anchor) => {
     const bounds = await app.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0].getBounds(),
@@ -428,7 +426,7 @@ try {
   for (const [count, headroom, action] of [
     [5, null, "open"],
     [5, null, "dismiss"],
-    [2, 60, "browse"],
+    [2, 60, "stable"],
     [3, null, "open"],
   ]) {
     await test(`${action} keeps its pointer target when ${count} hovered bubbles gain a session`, async () => {
@@ -454,37 +452,45 @@ try {
         }
         await expect(cards).toHaveCount(count);
         await settle();
-        const selected = await page
+        const selection = await stack.getAttribute("data-selected-session");
+        const targetId = await page
           .locator(".pet-progress-bubble")
           .first()
           .getAttribute("data-session-id");
-        const bubble = page.locator(
-          `.pet-progress-bubble[data-session-id="${selected}"]`,
+        const target = page.locator(
+          `.pet-progress-bubble[data-session-id="${targetId}"]`,
         );
-        const before = await bubble.boundingBox();
-        // The exposed heading strip is a body hit, away from the close button.
-        let point = { x: before.x + before.width / 2, y: before.y + 10 };
+        const close = page.locator(
+          `.progress-dismiss[data-session-id="${targetId}"]`,
+        );
+        let point = await pointOn(targetId);
         await page.mouse.move(point.x, point.y);
-        await expect(stack).toHaveAttribute("data-selected-session", selected);
+        await expect(card(targetId)).toHaveClass(/is-pointed/);
+        // A hover highlights its own card without stealing the selection.
+        await expect(stack).toHaveAttribute("data-selected-session", selection);
+        const before = await target.boundingBox();
+        const slotsBefore = await slots();
         if (action === "dismiss") {
-          const close = await page
-            .locator(".progress-dismiss.is-active")
-            .boundingBox();
-          point = {
-            x: close.x + close.width / 2,
-            y: close.y + close.height / 2,
-          };
+          const box = await close.boundingBox();
+          point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
           await page.mouse.move(point.x, point.y);
+          // The pointed card exposes its own close button.
+          await expect(close).toBeEnabled();
         }
         start(ids[count]);
         await expect(stack).toHaveAttribute("data-total", String(count + 1));
         await settle();
         await expect(cards).toHaveCount(count);
-        await expect(stack).toHaveAttribute("data-selected-session", selected);
+        await expect(stack).toHaveAttribute("data-selected-session", selection);
         assert.deepEqual(
-          await bubble.boundingBox(),
+          await target.boundingBox(),
           before,
-          "the selected bubble stays at the pointer",
+          "the hovered bubble stays at the pointer",
+        );
+        assert.deepEqual(
+          await slots(),
+          slotsBefore,
+          "a joining session never restacks a hovered deck",
         );
         const hit = await page.evaluate(({ x, y }) => {
           const node = document
@@ -495,59 +501,36 @@ try {
             close: !!node?.matches(".progress-dismiss"),
           };
         }, point);
-        assert.deepEqual(hit, { id: selected, close: action === "dismiss" });
-        if (action === "browse") {
-          // Newly added work remains reachable without leaving the hover.
-          for (let index = 1; index <= count; index++) {
-            await gesture(
-              { x: point.x - 25 * (index - 1), y: point.y + 25 * (index - 1) },
-              { x: point.x - 25 * index, y: point.y + 25 * index },
-            );
-            await expect(stack).toHaveAttribute(
-              "data-selected-index",
-              String(index),
-            );
-            // Deliberate rotation animates the next card into the held slot.
-            await settle();
-            assert.deepEqual(
-              await page
-                .locator(".pet-progress-bubble.is-active")
-                .boundingBox(),
-              before,
-            );
-            await expect(cards).toHaveCount(count);
-          }
+        assert.deepEqual(hit, { id: targetId, close: action === "dismiss" });
+        if (action === "stable") {
+          // The hovered deck never reorders itself, so the target stays put…
+          await expect(stack).toHaveAttribute(
+            "data-selected-session",
+            selection,
+          );
+          await expect(cards).toHaveCount(count);
+          // …and keyboard browsing, not pointer travel, reaches the new card.
+          await page.locator(".pet-progress-bubble.is-active").focus();
+          await page.keyboard.press("End");
           await expect(stack).toHaveAttribute(
             "data-selected-session",
             ids[count],
           );
-          await page.mouse.move(
-            2,
-            (await page.evaluate(() => innerHeight)) - 2,
-          );
-          await expect(stack).not.toHaveClass(/is-browsing/);
           await settle();
           await expect(cards.last()).toHaveAttribute(
             "data-session-id",
             ids[count],
           );
-          const resting = await page
-            .locator(".pet-progress-bubble.is-active")
-            .boundingBox();
-          await page.locator(".pet-progress-bubble.is-active").hover();
-          assert.deepEqual(
-            await page.locator(".pet-progress-bubble.is-active").boundingBox(),
-            resting,
-          );
+          await expect(cards).toHaveCount(count);
         } else {
           await page.mouse.click(point.x, point.y);
           if (action === "dismiss") {
-            await expect(card(selected)).toHaveCount(0);
+            await expect(card(targetId)).toHaveCount(0);
             await expect(stack).toHaveAttribute("data-total", String(count));
             const current = await state();
-            assert.equal(current.progressEntries[selected].hidden, true);
+            assert.equal(current.progressEntries[targetId].hidden, true);
             assert.equal(
-              current.sessions.find((row) => row.sessionId === selected)
+              current.sessions.find((row) => row.sessionId === targetId)
                 .running,
               true,
             );
@@ -556,7 +539,7 @@ try {
             await expect
               .poll(async () => (await state()).surface.section)
               .toBe("chat");
-            assert.equal((await state()).selectedId, selected);
+            assert.equal((await state()).selectedId, targetId);
           }
         }
       } finally {
@@ -568,7 +551,7 @@ try {
     [0, 1],
     [60, 2],
   ]) {
-    await test(`four sessions remain browsable when only ${capacity} card(s) fit above the pet`, async () => {
+    await test(`four sessions stay reachable by keyboard when only ${capacity} card(s) fit above the pet`, async () => {
       await reset();
       for (const id of ids.slice(4)) await invoke("dismissProgress", id);
       await expect(stack).toHaveAttribute("data-total", "4");
@@ -588,37 +571,22 @@ try {
         await movePet({ x: anchor.x, y: area.y + headroom });
         await expect(cards).toHaveCount(capacity);
         await expect(stack).toHaveAttribute("data-selected-index", "3");
+        const target = page.locator(".pet-progress-bubble.is-active");
         const visited = new Set([
           await stack.getAttribute("data-selected-session"),
         ]);
-        for (const direction of [1, 1, 1, -1, -1, -1]) {
-          await page.mouse.move(
-            2,
-            (await page.evaluate(() => innerHeight)) - 2,
-          );
-          const before = Number(
-            await stack.getAttribute("data-selected-index"),
-          );
-          const target = page.locator(".pet-progress-bubble.is-active");
-          await target.hover();
-          // Entry must keep a compact deck's selection and front slot stable.
-          await expect(stack).toHaveAttribute(
-            "data-selected-index",
-            String(before),
-          );
-          const box = await target.boundingBox();
-          const origin = {
-            x: box.x + box.width / 2,
-            y: box.y + box.height / 2,
-          };
-          await gesture(origin, {
-            x: origin.x + 25 * direction,
-            y: origin.y - 25 * direction,
-          });
-          await expect(stack).toHaveAttribute(
-            "data-selected-index",
-            String(before - direction),
-          );
+        await target.focus();
+        for (const [key, index] of [
+          ["ArrowUp", "2"],
+          ["ArrowUp", "1"],
+          ["ArrowUp", "0"],
+          ["ArrowDown", "1"],
+          ["ArrowDown", "2"],
+          ["ArrowDown", "3"],
+        ]) {
+          await page.keyboard.press(key);
+          await expect(stack).toHaveAttribute("data-selected-index", index);
+          await settle();
           await expect(cards).toHaveCount(capacity);
           const selected = await stack.getAttribute("data-selected-session");
           visited.add(selected);
@@ -630,7 +598,7 @@ try {
         assert.deepEqual([...visited].sort(), ids.slice(0, 4).sort());
         const caption = page.locator(".progress-deck-caption");
         await expect(caption).toContainText("4 / 4");
-        await expect(caption).toContainText("沿斜向移动切换");
+        await expect(caption).toContainText("方向键切换");
         const label = await caption.boundingBox();
         const character = await page.locator(".pet-character").boundingBox();
         assert.ok(
@@ -647,15 +615,21 @@ try {
           );
         }
         await page.mouse.move(2, (await page.evaluate(() => innerHeight)) - 2);
+        await page.evaluate(() => document.activeElement?.blur());
+        await expect(stack).not.toHaveClass(/is-browsing/);
         await expect(caption).toContainText(`已折叠 ${4 - capacity} 个`);
       } finally {
         await movePet(anchor);
       }
-      // Once all four cards fit, direct hover selection works again.
+      // Once all four cards fit, hovering a rear card only highlights it.
       await expect(cards).toHaveCount(4);
       await settle();
       const rear = page.locator(".pet-progress-bubble").first();
       const rearId = await rear.getAttribute("data-session-id");
+      const resting = await stack.getAttribute("data-selected-session");
+      const restingSlots = await cards.evaluateAll((nodes) =>
+        nodes.map((node) => `${node.offsetLeft},${node.offsetTop}`),
+      );
       const box = await rear.boundingBox();
       assert.equal(
         await page.evaluate(
@@ -667,7 +641,21 @@ try {
         rearId,
       );
       await page.mouse.move(box.x + box.width - 6, box.y + 6);
-      await expect(stack).toHaveAttribute("data-selected-session", rearId);
+      await expect(stack).toHaveAttribute("data-selected-session", resting);
+      await expect(
+        page.locator(`.progress-card[data-session-id="${rearId}"]`),
+      ).toHaveClass(/is-pointed/);
+      // The rear card's own close button becomes usable under the pointer.
+      await expect(
+        page.locator(`.progress-dismiss[data-session-id="${rearId}"]`),
+      ).toBeEnabled();
+      assert.deepEqual(
+        await cards.evaluateAll((nodes) =>
+          nodes.map((node) => `${node.offsetLeft},${node.offsetTop}`),
+        ),
+        restingSlots,
+        "hover never restacks the deck",
+      );
       await expect(rear).toHaveAttribute("title", "点击打开对应对话");
     });
   }

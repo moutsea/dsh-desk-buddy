@@ -810,6 +810,34 @@ body,
   background: #f7f9fd;
   color: #7182a0;
 }
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 9px;
+}
+.session-row .session-card {
+  margin-bottom: 0;
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+.session-dismiss {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fafbfe;
+  color: #8b98ad;
+}
+.session-dismiss:hover:not(:disabled) {
+  background: #eef1f7;
+  color: #5c6c86;
+}
 .session-card {
   display: flex;
   text-align: left;
@@ -1417,9 +1445,11 @@ body,
     opacity 140ms ease;
   pointer-events: none;
 }
-.progress-card.is-active {
+/* Keyboard focus owns the preview while browsing by key; otherwise the pointer
+   highlights its card without changing the selection or moving any target. */
+.progress-card.is-highlighted {
   border-color: #8aabd9;
-  /* The selected card jumps to full opacity instead of fading in. */
+  /* The readable card jumps to full opacity instead of fading in. */
   transition:
     left 140ms ease,
     top 140ms ease;
@@ -1437,7 +1467,7 @@ body,
   border-right: 1px solid #d6e3f8;
   border-bottom: 1px solid #d6e3f8;
 }
-.progress-card.is-active::after {
+.progress-card.is-highlighted::after {
   display: block;
   border-color: #8aabd9;
 }
@@ -1448,11 +1478,11 @@ body,
   height: 100%;
   gap: 5px;
 }
-.is-browsing .progress-card:not(.is-active) {
+.is-browsing .progress-card:not(.is-highlighted) {
   opacity: 0.1;
 }
-.progress-card:not(.is-active) .progress-preview,
-.progress-card:not(.is-active) .progress-footer {
+.progress-card:not(.is-highlighted) .progress-preview,
+.progress-card:not(.is-highlighted) .progress-footer {
   visibility: hidden;
 }
 .progress-deck-caption {
@@ -1494,7 +1524,7 @@ body,
     left 140ms ease,
     top 140ms ease;
 }
-.progress-dismiss:not(.is-active) {
+.progress-dismiss:not(.is-active, .is-pointed) {
   visibility: hidden;
 }
 .progress-dismiss:hover:not(:disabled) {
@@ -2410,6 +2440,7 @@ body,
     .composer,
     .message.user .message-content,
     .session-card,
+    .session-dismiss,
     .interaction,
     .new-session-menu
   ) {
@@ -2448,6 +2479,10 @@ body,
 .codex-chat .session-card.current {
   background: #31343b;
   border-color: #9298a5;
+}
+.codex-chat .session-dismiss:hover:not(:disabled) {
+  background: #31343b;
+  color: #eceef1;
 }
 .codex-chat :is(.primary, .send-button) {
   background: #e2e5eb;
@@ -2491,7 +2526,7 @@ body,
   border-color: #4c5059;
   box-shadow: 0 3px 10px #0003;
 }
-.progress-card[data-provider="codex"].is-active {
+.progress-card[data-provider="codex"].is-highlighted {
   border-color: #9ca3b1;
 }
 .progress-card[data-provider="codex"]::after {

@@ -8,7 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { sessionTitle } from "../shared/projection.mjs";
-import { sessionCompletedAt } from "../shared/progress.mjs";
+import { activeProgressItems, sessionCompletedAt } from "../shared/progress.mjs";
 import { NewSession } from "./NewSession";
 import { platformConnection, providerLabel } from "./platforms";
 import type { AppState } from "./types";
@@ -28,6 +28,11 @@ export function Sessions({
 }) {
   const connected = state.connection === "connected";
   const active = state.sessions.filter((session) => session.running).length;
+  // Sessions whose progress bubble is currently on screen; only those can be
+  // closed here, so the list mirrors what the deck actually shows.
+  const bubbled = new Set(
+    activeProgressItems(state).map((item) => item.sessionId),
+  );
   const sessions = [...state.sessions].sort(
     (a, b) => sessionCompletedAt(state, b) - sessionCompletedAt(state, a),
   );
@@ -100,61 +105,75 @@ export function Sessions({
             (item) => item.sessionId === session.sessionId,
           ).length;
           const current = session.sessionId === state.selectedId;
+          const title = sessionTitle(session);
           return (
-            <button
-              className={`session-card ${current ? "current" : ""}`}
-              data-provider={session.provider || "dsh"}
-              key={session.sessionId}
-              aria-current={current ? "true" : undefined}
-              disabled={
-                busy ||
-                platformConnection(state, session.provider || "dsh").status !==
-                  "connected"
-              }
-              onClick={async () => {
-                if (await run("select", session.sessionId)) onClose();
-              }}
-            >
-              <span
-                className={`session-icon ${count ? "waiting" : session.running ? "running" : ""}`}
+            <div className="session-row" key={session.sessionId}>
+              <button
+                className={`session-card ${current ? "current" : ""}`}
+                data-provider={session.provider || "dsh"}
+                aria-current={current ? "true" : undefined}
+                disabled={
+                  busy ||
+                  platformConnection(state, session.provider || "dsh").status !==
+                    "connected"
+                }
+                onClick={async () => {
+                  if (await run("select", session.sessionId)) onClose();
+                }}
               >
-                {count ? (
-                  <CircleHelp size={18} />
-                ) : session.running ? (
-                  <LoaderCircle size={18} className="spin" />
-                ) : (
-                  <MessageCircle size={18} />
-                )}
-              </span>
-              <span className="session-card-text">
-                <strong>
-                  <span
-                    className={`provider-badge ${session.provider || "dsh"}`}
-                  >
-                    {providerLabel(session.provider || "dsh")}
-                  </span>{" "}
-                  {sessionTitle(session)}
-                </strong>
-                <span>
-                  {session.cwd?.split(/[\\/]/).filter(Boolean).pop() ||
-                    "未指定项目"}
-                  <span className="middot">·</span>
-                  {session.readOnly
-                    ? "仅查看 · 外部会话"
-                    : count
-                      ? "等待你回应"
-                      : session.running
-                        ? "正在进行"
-                        : session.blank
-                          ? "新会话"
-                          : new Date(session.updatedAt).toLocaleDateString(
-                              "zh-CN",
-                              { month: "short", day: "numeric" },
-                            )}
+                <span
+                  className={`session-icon ${count ? "waiting" : session.running ? "running" : ""}`}
+                >
+                  {count ? (
+                    <CircleHelp size={18} />
+                  ) : session.running ? (
+                    <LoaderCircle size={18} className="spin" />
+                  ) : (
+                    <MessageCircle size={18} />
+                  )}
                 </span>
-              </span>
-              {current && <Check size={15} />}
-            </button>
+                <span className="session-card-text">
+                  <strong>
+                    <span
+                      className={`provider-badge ${session.provider || "dsh"}`}
+                    >
+                      {providerLabel(session.provider || "dsh")}
+                    </span>{" "}
+                    {title}
+                  </strong>
+                  <span>
+                    {session.cwd?.split(/[\\/]/).filter(Boolean).pop() ||
+                      "未指定项目"}
+                    <span className="middot">·</span>
+                    {session.readOnly
+                      ? "仅查看 · 外部会话"
+                      : count
+                        ? "等待你回应"
+                        : session.running
+                          ? "正在进行"
+                          : session.blank
+                            ? "新会话"
+                            : new Date(session.updatedAt).toLocaleDateString(
+                                "zh-CN",
+                                { month: "short", day: "numeric" },
+                              )}
+                  </span>
+                </span>
+                {current && <Check size={15} />}
+              </button>
+              {bubbled.has(session.sessionId) && (
+                <button
+                  className="session-dismiss"
+                  data-provider={session.provider || "dsh"}
+                  disabled={busy}
+                  aria-label={`关闭气泡：${title}`}
+                  title={`关闭气泡显示：${title}（不会停止任务）`}
+                  onClick={() => run("dismissProgress", session.sessionId)}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           );
         })}
       </div>
