@@ -346,6 +346,131 @@ export class CodexClient extends EventEmitter {
     this.listing = promise;
     return promise;
   }
+  modelSelectionFrame(id, row) {
+    this.frame({
+      type: "session/projection",
+      sessionId: id,
+      key: "modelSelection",
+      value: {
+        next: {
+          provider: row.thread.modelProvider || "openai",
+          model: row.thread.model,
+          ...(row.thread.reasoningEffort
+            ? { reasoningEffort: row.thread.reasoningEffort }
+            : {}),
+        },
+      },
+      seq: ++this.clock,
+    });
+  }
+  async models(id) {
+    const transport = this.transport;    if (!transport) throw new Error("Codex 未连接");
+    const row = this.sessions.get(id);
+    if (!row) throw new Error("请先选择 Codex 会话");
+    const generation = this.generation;
+    const entries = [];
+    let cursor;
+    for (let page = 0; page < 20; page++) {
+      const result = await transport.request("model/list", {
+        includeHidden: false,
+        ...(cursor ? { cursor } : {}),
+      });
+      if (
+        this.closed ||
+        this.transport !== transport ||
+        this.generation !== generation
+      )
+        throw new Error("Codex 连接已更换，请检查状态后重新操作");
+      if (Array.isArray(result?.data)) entries.push(...result.data);
+      if (!result?.nextCursor) break;
+      cursor = result.nextCursor;
+      if (page === 19) throw new Error("Codex 模型列表过长，请稍后重试");
+    }
+    const models = [];
+    for (const model of entries) {
+      if (
+        !model ||
+        typeof model.id !== "string" ||
+        !model.id ||
+        typeof model.model !== "string" ||
+        !model.model ||
+        model.hidden ||
+        models.some((entry) => entry.id === model.id)
+      )
+        continue;
+      models.push(model);
+    }
+    const provider =
+      typeof row.thread.modelProvider === "string" && row.thread.modelProvider
+        ? row.thread.modelProvider
+        : "openai";
+    const providerName = provider === "openai" ? "OpenAI" : provider;
+    return {
+      current: {
+        provider,
+        model:
+          typeof row.thread.model === "string" && row.thread.model
+            ? row.thread.model
+            : models.find((model) => model.isDefault)?.model ||
+              models[0]?.model ||
+              "",
+        ...(typeof row.thread.reasoningEffort === "string" &&
+        row.thread.reasoningEffort
+          ? { reasoningEffort: row.thread.reasoningEffort }
+          : {}),
+      },
+      routable:
+        this.attached.has(id) && row.thread.canAcceptDirectInput !== false,
+      groups: models.length
+        ? [
+            {
+              id: provider,
+              name: providerName,
+              models: models.map((model) => {
+                const efforts = Array.isArray(model.supportedReasoningEfforts)
+                  ? model.supportedReasoningEfforts
+                      .filter(
+                        (effort) =>
+                          typeof effort?.reasoningEffort === "string" &&
+                          effort.reasoningEffort,
+                      )
+                      .map((effort) => ({
+                        id: effort.reasoningEffort,
+                        name: effort.reasoningEffort,
+                        ...(typeof effort.description === "string" &&
+                        effort.description
+                          ? { description: effort.description }
+                          : {}),
+                      }))
+                  : [];
+                return {
+                  id: model.id,
+                  name:
+                    typeof model.displayName === "string" && model.displayName
+                      ? model.displayName
+                      : model.model,
+                  ...(typeof model.description === "string" && model.description
+                    ? { description: model.description }
+                    : {}),
+                  ...(efforts.length
+                    ? {
+                        reasoning: {
+                          efforts,
+                          ...(typeof model.defaultReasoningEffort ===
+                            "string" && model.defaultReasoningEffort
+                            ? { defaultEffort: model.defaultReasoningEffort }
+                            : {}),
+                        },
+                      }
+                    : {}),
+                };
+              }),
+            },
+          ]
+        : [],
+      failures: [],
+    };
+  }
   snapshot(id, reset = false, previousTurns) {
     const row = this.sessions.get(id);
     if (row)
@@ -516,6 +641,7 @@ export class CodexClient extends EventEmitter {
       this.setAttached(result.thread.id, true);
       return { sessionId: result.thread.id };
     }
+    if (method === "session.models") return this.models(payload.sessionId);
     const id = payload.sessionId;
     const row = this.sessions.get(id);
     const followRevision = row?.followRevision;
@@ -524,7 +650,7 @@ export class CodexClient extends EventEmitter {
       checkConnection();
       if (!row || !this.attached.has(id))
         throw new Error(
-          "此会话仅支持查看，发送、取消和审批请在 Codex 原窗口处理",
+          "此会话仅支持查看，发送、切换模型、取消和审批请在 Codex 原窗口处理",
         );
       if (
         this.sessions.get(id) !== row ||
@@ -540,6 +666,42 @@ export class CodexClient extends EventEmitter {
         throw new Error("此 Codex 会话暂不接受直接操作，请在原窗口处理");
     };
     checkWritable();
+    if (method === "session.selectModel") {
+      if (typeof payload.model !== "string" || !payload.model)
+        throw new Error("请选择有效模型");
+      const effort =
+        typeof payload.reasoningEffort === "string" && payload.reasoningEffort
+          ? payload.reasoningEffort
+          : undefined;
+      const settingsRevision = row.settingsRevision || 0;
+      await transport.request("thread/settings/update", {
+        threadId: id,
+        model: payload.model,
+        ...(effort ? { effort } : {}),
+      });
+      checkWritable();
+      // A server-normalized settings notification can arrive before the RPC
+      // acknowledgement. Preserve that authoritative state instead of
+      // overwriting it with the requested alias/effort.
+      if ((row.settingsRevision || 0) === settingsRevision) {
+        row.settingsRevision = (row.settingsRevision || 0) + 1;
+        row.metadataVersion = ++this.metadataClock;
+        row.thread.model = payload.model;
+        if (effort) row.thread.reasoningEffort = effort;
+        // An omitted effort leaves the server's current value unchanged. A
+        // later authoritative notification will correct the cache if needed.
+        this.modelSelectionFrame(id, row);
+      }
+      return {
+        selected: {
+          provider: row.thread.modelProvider || "openai",
+          model: row.thread.model,
+          ...(row.thread.reasoningEffort
+            ? { reasoningEffort: row.thread.reasoningEffort }
+            : {}),
+        },
+      };
+    }
     if (method === "session.prompt") {
       // Read the active turn immediately before a write; steer includes a
       // precondition, so a completion race cannot send into a different turn.
@@ -648,6 +810,32 @@ export class CodexClient extends EventEmitter {
     }
     const row = this.sessions.get(id);
     if (!row) return;
+    if (method === "thread/settings/updated") {
+      const settings = p.threadSettings;
+      if (settings && typeof settings === "object") {
+        const effort = settings.effort;
+        const changed =
+          (typeof settings.model === "string" &&
+            settings.model !== row.thread.model) ||
+          (typeof settings.modelProvider === "string" &&
+            settings.modelProvider !== row.thread.modelProvider) ||
+          (typeof effort === "string" &&
+            effort !== row.thread.reasoningEffort) ||
+          (effort === null && row.thread.reasoningEffort !== undefined);
+        if (typeof settings.model === "string")
+          row.thread.model = settings.model;
+        if (typeof settings.modelProvider === "string")
+          row.thread.modelProvider = settings.modelProvider;
+        if (typeof effort === "string") row.thread.reasoningEffort = effort;
+        else if (effort === null) delete row.thread.reasoningEffort;
+        if (changed) {
+          row.settingsRevision = (row.settingsRevision || 0) + 1;
+          row.metadataVersion = ++this.metadataClock;
+          this.modelSelectionFrame(id, row);
+        }
+      }
+      return;
+    }
     if (method === "thread/reverted") {
       // Keep known history identities across the cache reset. An earlier head
       // can have been read from history without ever being a live task here.

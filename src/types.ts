@@ -1,6 +1,31 @@
 import type { SoundSettings } from "./sounds";
 
 export type Provider = "dsh" | "codex";
+export type ModelSelection = {
+  provider: string;
+  model: string;
+  reasoningEffort?: string;
+};
+export type ModelOption = {
+  id: string;
+  name: string;
+  description?: string;
+  reasoning?: {
+    efforts: { id: string; name: string; description?: string }[];
+    defaultEffort?: string;
+  };
+};
+export type ModelGroup = {
+  id: string;
+  name: string;
+  models: ModelOption[];
+};
+export type ModelDirectory = {
+  current: ModelSelection;
+  routable: boolean;
+  groups: ModelGroup[];
+  failures: { id: string; name: string; message: string }[];
+};
 export type Question = {
   id: string;
   question: string;
@@ -38,7 +63,13 @@ export type Session = {
   cwd?: string;
   title?: string;
   updatedAt: number;
-  projections?: { asOfSeq: number; values: Record<string, any> };
+  projections?: {
+    asOfSeq: number;
+    values: Record<string, any>;
+    // modelSelection's own authoritative sequence. Unrelated projections
+    // advance asOfSeq, so per-key invalidation needs this separate watermark.
+    modelSelectionSeq?: number;
+  };
 };
 export type AppState = {
   managed?: boolean;

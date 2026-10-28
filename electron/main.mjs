@@ -1120,6 +1120,43 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
       broadcast();
       return result.sessionId;
     }
+    case "models": {
+      const id = payload?.sessionId;
+      if (
+        typeof id !== "string" ||
+        !state.sessions.some((session) => session.sessionId === id)
+      )
+        throw new Error("请先选择会话");
+      return requireClient(id).rpc("session.models", { sessionId: id });
+    }
+    case "selectModel": {
+      const id = payload?.sessionId;
+      if (
+        typeof id !== "string" ||
+        !state.sessions.some((session) => session.sessionId === id)
+      )
+        throw new Error("请先选择会话");
+      if (typeof payload.provider !== "string" || !payload.provider.trim())
+        throw new Error("请选择模型供应商");
+      if (
+        typeof payload.model !== "string" ||
+        !payload.model.trim() ||
+        payload.model.length > 200
+      )
+        throw new Error("请选择有效模型");
+      const effort =
+        typeof payload.reasoningEffort === "string"
+          ? payload.reasoningEffort.trim()
+          : "";
+      if (effort.length > 100) throw new Error("无效的推理强度");
+      const next = requireClient(id);
+      return next.rpc("session.selectModel", {
+        sessionId: id,
+        provider: payload.provider,
+        model: payload.model,
+        ...(effort ? { reasoningEffort: effort } : {}),
+      });
+    }
     case "send": {
       const id =
         typeof payload === "string" ? state.selectedId : payload?.sessionId;

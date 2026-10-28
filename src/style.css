@@ -46,6 +46,7 @@ button:disabled {
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
+select:focus-visible,
 summary:focus-visible {
   outline: 2px solid #8a98b1;
   outline-offset: 3px;
@@ -544,17 +545,83 @@ body,
   align-items: center;
   justify-content: space-between;
   margin-top: 4px;
+  gap: 8px;
+}
+.composer-meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  flex: 1;
 }
 .permission-label {
   font-size: 9px;
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
   color: #8e9bb3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.composer-footer > div {
+.model-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  max-width: 55%;
+  color: #7386a3;
+  font-size: 9px;
+}
+.model-picker > svg {
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+.model-picker select {
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 2px 1px;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+.model-picker select:hover:not(:disabled) {
+  color: #536785;
+}
+.model-picker select:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.model-picker .model-chevron {
+  flex-shrink: 0;
+  margin-left: -2px;
+  opacity: 0.65;
+  pointer-events: none;
+}
+.model-picker.is-static {
+  max-width: 50%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.model-picker.is-static > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.model-picker.is-error {
+  color: #a07b60;
+}
+.composer-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 .send-button {
   height: 30px;
@@ -2423,6 +2490,7 @@ body,
     .mini-spark,
     .project-row,
     .project-row > button,
+    .model-picker,
     .permission-label,
     .composer-hint,
     .tool-message,
@@ -2458,6 +2526,13 @@ body,
 }
 .codex-chat .composer textarea::placeholder {
   color: #969ca8;
+}
+.codex-chat .model-picker select:hover:not(:disabled) {
+  color: #eceef1;
+}
+.codex-chat .model-picker option {
+  background: #232529;
+  color: #eceef1;
 }
 .codex-chat
   :is(

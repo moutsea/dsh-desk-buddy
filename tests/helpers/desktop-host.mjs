@@ -39,6 +39,53 @@ export function desktopHost() {
       }
       if (call.method === "page")
         return { records: [{ event: { seq: 1 } }], hasMore: true };
+      if (call.method === "modelCatalog") {
+        assert.deepEqual(call.args, {});
+        return {
+          default: { provider: "deepseek", model: "deepseek-v4.1-flash" },
+          routableProviders: ["deepseek"],
+          groups: [
+            {
+              id: "deepseek",
+              name: "DeepSeek",
+              models: [
+                { id: "deepseek-v4.1-flash", name: "DeepSeek V4.1 Flash" },
+                { id: "deepseek-v4-flash", name: "DeepSeek V4 Flash" },
+              ],
+            },
+          ],
+          failures: [],
+        };
+      }
+      if (call.method === "projections") {
+        const row = sessions.get(call.args.request.sessionId);
+        return row
+          ? {
+              kind: "sequenced",
+              asOfSeq: row.projections.asOfSeq,
+              modelSelectionSeq: row.projections.modelSelectionSeq,
+              values: row.projections.values,
+            }
+          : null;
+      }
+      if (call.method === "selectModel") {
+        const row = sessions.get(call.args.request.sessionId);
+        const selected = {
+          provider: call.args.request.provider,
+          model: call.args.request.model,
+          ...(call.args.request.reasoningEffort === undefined
+            ? {}
+            : { reasoningEffort: call.args.request.reasoningEffort }),
+        };
+        if (row) {
+          row.projections = {
+            asOfSeq: row.projections.asOfSeq + 1,
+            modelSelectionSeq: row.projections.asOfSeq + 1,
+            values: { modelSelection: { next: selected } },
+          };
+        }
+        return { selected };
+      }
       return { sessionId: "s1" };
     },
     async stream(call) {

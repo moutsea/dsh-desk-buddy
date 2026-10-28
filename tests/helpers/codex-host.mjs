@@ -116,6 +116,52 @@ export async function createCodexHost({ persistEmptyThreads = true } = {}) {
         case "thread/resume":
           result = { thread: { ...thread, turns: [] } };
           break;
+        case "model/list":
+          result = {
+            data: [
+              {
+                id: "preset-test-low",
+                model: "gpt-test-low",
+                displayName: "GPT Test Low",
+                description: "快速模型",
+                hidden: false,
+                isDefault: true,
+                defaultReasoningEffort: "low",
+                supportedReasoningEfforts: [
+                  { reasoningEffort: "low", description: "快速" },
+                  { reasoningEffort: "high", description: "深入" },
+                ],
+              },
+              {
+                id: "preset-test-high",
+                model: "gpt-test-high",
+                displayName: "GPT Test High",
+                description: "深入模型",
+                hidden: false,
+                isDefault: false,
+                defaultReasoningEffort: "high",
+                supportedReasoningEfforts: [
+                  { reasoningEffort: "high", description: "深入" },
+                ],
+              },
+            ],
+            nextCursor: null,
+          };
+          break;
+        case "thread/settings/update":
+          if (!thread) {
+            socket.send(
+              JSON.stringify({
+                id: frame.id,
+                error: { code: -32000, message: "unknown thread" },
+              }),
+            );
+            return;
+          }
+          thread.model = p.model;
+          if (p.effort) thread.reasoningEffort = p.effort;
+          result = {};
+          break;
         case "thread/start": {
           let id;
           do id = `thread-${++serial}`;

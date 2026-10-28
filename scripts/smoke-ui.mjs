@@ -115,6 +115,22 @@ try {
   );
   await panel.getByRole("button", { name: "新建会话", exact: true }).click();
   await panel.getByText("测试项目任务", { exact: true }).waitFor();
+  const model = panel.getByRole("combobox", { name: "切换模型" });
+  await expect(model).toBeEnabled();
+  await expect(model).toHaveValue(/\u0000deepseek-v4\.1-flash$/);
+  await model.selectOption({ label: "DeepSeek V4 Flash" });
+  await expect
+    .poll(() =>
+      fixture.calls.find((call) => call.path === "/api/session.selectModel"),
+    )
+    .toMatchObject({
+      payload: {
+        provider: "deepseek",
+        model: "deepseek-v4-flash",
+        reasoningEffort: "high",
+      },
+    });
+  await expect(model).toHaveValue(/\u0000deepseek-v4-flash$/);
   await panel.getByRole("textbox", { name: "消息" }).fill("检查测试项目");
   await panel.getByRole("button", { name: "发送消息", exact: true }).click();
   await panel.getByText("正在检查项目…", { exact: true }).waitFor();

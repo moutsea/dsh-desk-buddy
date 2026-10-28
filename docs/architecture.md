@@ -77,20 +77,24 @@ React 同时保留角色与内容组件，收起时隐藏并 inert，避免丢�
 
 依据本机 `@deepseek-ai/dsh-host-apiproxy`（随 DSH `0.1.1-rc.2` 安装）的声明与实现：
 
-| 操作       | 路径                         | 请求要点                                             |
-| ---------- | ---------------------------- | ---------------------------------------------------- |
-| 探测宿主   | `POST /api/host.describe`    | 空 payload                                           |
-| 会话列表   | `POST /api/session.list`     | 返回 items，含 running、cwd、projections             |
-| 创建       | `POST /api/session.create`   | cwd，可选预分配 sessionId                            |
-| 历史       | `POST /api/session.history`  | sessionId、maxMessages，可选 beforeSeq               |
-| 发送       | `POST /api/session.prompt`   | sessionId、mode: queue、text content、clientTimeZone |
-| 取消当前轮 | `POST /api/session.cancel`   | sessionId；不清空 DSH 排队消息                       |
-| 事件流     | `WS /api/events.mux`         | 会话事件、投影、审批、问题                           |
-| 宿主流     | `WS /api/events.host`        | 会话增删、running 变化、错误                         |
-| 回答交互   | `POST /api/respond`          | 回显 server-request rpcId，使用 client-response 信封 |
-| 余额       | `GET /dsh-girl/balance.json` | 配套插件提供                                         |
+| 操作       | 路径                            | 请求要点                                             |
+| ---------- | ------------------------------- | ---------------------------------------------------- |
+| 探测宿主   | `POST /api/host.describe`       | 空 payload                                           |
+| 会话列表   | `POST /api/session.list`        | 返回 items，含 running、cwd、projections             |
+| 创建       | `POST /api/session.create`      | cwd，可选预分配 sessionId                            |
+| 历史       | `POST /api/session.history`     | sessionId、maxMessages，可选 beforeSeq               |
+| 模型目录   | `POST /api/session.models`      | sessionId                                            |
+| 切换模型   | `POST /api/session.selectModel` | sessionId、provider、model、可选 reasoningEffort     |
+| 发送       | `POST /api/session.prompt`      | sessionId、mode: queue、text content、clientTimeZone |
+| 取消当前轮 | `POST /api/session.cancel`      | sessionId；不清空 DSH 排队消息                       |
+| 事件流     | `WS /api/events.mux`            | 会话事件、投影、审批、问题                           |
+| 宿主流     | `WS /api/events.host`           | 会话增删、running 变化、错误                         |
+| 回答交互   | `POST /api/respond`             | 回显 server-request rpcId，使用 client-response 信封 |
+| 余额       | `GET /dsh-girl/balance.json`    | 配套插件提供                                         |
 
 普通请求信封 `{type:'client-request', rpcId, method, payload}`；响应 `{type:'server-response', rpcId, result:{ok,value|error}}`。HTTP 成功不代表业务成功，必须检查 result。发送等写操作不自动重试，以防重复执行。
+
+模型目录返回当前选择、是否可路由、按供应商分组和分组失败信息。切换模型提交完整选择，DSH 保存在会话日志中，Codex 通过 `model/list` 读取目录并用 `thread/settings/update` 应用于后续回合。官方 Desktop 没有同名的 `session.models`，桥接用 `modelCatalog`、`projections` 中的 `modelSelection` 和 `selectModel` 组合出相同形状。界面的 `provider` 在新建会话时表示平台，在 `session.selectModel` 中表示模型供应商路由，`SessionClients` 不会把它当作平台字段移除。
 
 WebSocket 文本消息是 `{type:'server-request',rpcId,method,payload}`。两个 socket 只下行，业务请求仍使用 HTTP。支持分片 UTF-8，退出时中止连接。两个流分别重连，指数退避；两条均就绪才允许发送。重连不能依赖 since（本机版本未实现），须重新读取列表和历史。待审批/提问在 mux 订阅时由宿主重放。
 

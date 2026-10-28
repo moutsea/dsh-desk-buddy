@@ -63,12 +63,19 @@ import { activeCompletion } from "../shared/completion.mjs";
 import { activeProgressItems } from "../shared/progress.mjs";
 import { ProgressBubbles } from "./ProgressBubbles";
 import { NewSession } from "./NewSession";
+import { ModelPicker } from "./ModelPicker";
 import {
   platformConnection,
   selectedProvider,
   providerLabel,
 } from "./platforms";
-import type { AppState, StateUpdate, Pending, Provider } from "./types";
+import type {
+  AppState,
+  StateUpdate,
+  Pending,
+  Provider,
+  ModelSelection,
+} from "./types";
 import "./style.css";
 
 const initial: AppState = {
@@ -1187,6 +1194,20 @@ function Panel({
     if (olderRequest.current === request && !result)
       olderRequest.current = null;
   }
+  async function selectModel(value: ModelSelection & { sessionId: string }) {
+    if (busyRef.current) throw new Error("请等待当前操作完成后再切换模型");
+    // Share the synchronous send lock: Enter can arrive before React commits
+    // the busy state after the model change event.
+    busyRef.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      return await invoke("selectModel", value);
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }
   async function send() {
     if (!draft.trim() || busyRef.current || composerDisabled || !connected)
       return;
@@ -1627,13 +1648,24 @@ function Panel({
                   }}
                 />
                 <div className="composer-footer">
-                  <span className="permission-label">
-                    <ShieldCheck size={12} />
-                    {selected?.readOnly
-                      ? "仅查看会话内容"
-                      : `使用 ${providerName} 当前权限`}
-                  </span>
-                  <div>
+                  <div className="composer-meta">
+                    <ModelPicker
+                      state={state}
+                      session={selected}
+                      connected={connected}
+                      active={tab === "chat"}
+                      busy={busy}
+                      onSelect={selectModel}
+                      onError={setError}
+                    />
+                    <span className="permission-label">
+                      <ShieldCheck size={12} />
+                      {selected?.readOnly
+                        ? "仅查看会话内容"
+                        : `使用 ${providerName} 当前权限`}
+                    </span>
+                  </div>
+                  <div className="composer-actions">
                     {selected?.running && !selected.readOnly && (
                       <button
                         type="button"

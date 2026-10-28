@@ -2,6 +2,83 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { SessionProjections } from "../shared/session-projections.mjs";
 
+test("snapshot exposes a live model revision without unrelated watermark churn", () => {
+  const store = new SessionProjections();
+  store.apply("modelSelection", { next: { provider: "deepseek", model: "a" } }, 10);
+  store.apply("tokenUsage", { outputTokens: 3 }, 11);
+  assert.equal(store.snapshot().asOfSeq, 11);
+  assert.equal(store.snapshot().modelSelectionSeq, 1);
+});
+
+test("a late history snapshot never revokes or rewrites the live model revision", () => {
+  const store = new SessionProjections();
+  store.seed({
+    asOfSeq: 10,
+    values: { modelSelection: { next: { provider: "dsh", model: "a" } } },
+  });
+  store.apply(
+    "modelSelection",
+    { next: { provider: "dsh", model: "b" } },
+    11,
+  );
+  const stale = store.beginSeed();
+  stale({
+    asOfSeq: 12,
+    values: { modelSelection: { next: { provider: "dsh", model: "a" } } },
+  });
+  const snap = store.snapshot();
+  assert.equal(snap.asOfSeq, 12);
+  assert.equal(snap.modelSelectionSeq, 1);
+});
+
+test("a snapshot cut that arrives before live model events cannot swallow them", () => {
+  const store = new SessionProjections();
+  store.apply(
+    "modelSelection",
+    { next: { provider: "dsh", model: "a" } },
+    10,
+  );
+  const marker = store.snapshot().modelSelectionSeq;
+  store.seed({
+    asOfSeq: 13,
+    values: { modelSelection: { next: { provider: "dsh", model: "a" } } },
+  });
+  store.apply(
+    "modelSelection",
+    { next: { provider: "dsh", model: "b" } },
+    11,
+  );
+  store.apply(
+    "modelSelection",
+    { next: { provider: "dsh", model: "a" } },
+    12,
+  );
+  assert.equal(store.snapshot().values.modelSelection.next.model, "a");
+  assert.ok(store.snapshot().modelSelectionSeq > marker);
+});
+
+test("duplicate live model events do not churn the model watermark", () => {
+  const store = new SessionProjections();
+  store.apply(
+    "modelSelection",
+    { next: { provider: "dsh", model: "a" } },
+    10,
+  );
+  assert.equal(store.snapshot().modelSelectionSeq, 1);
+  store.apply(
+    "modelSelection",
+    { next: { provider: "dsh", model: "a" } },
+    10,
+  );
+  assert.equal(store.snapshot().modelSelectionSeq, 1);
+  store.apply(
+    "modelSelection",
+    { next: { provider: "dsh", model: "b" } },
+    11,
+  );
+  assert.equal(store.snapshot().modelSelectionSeq, 2);
+});
+
 test("cached checkpoints yield to lower-sequence authoritative history and live updates", () => {
   const store = new SessionProjections();
   store.list({

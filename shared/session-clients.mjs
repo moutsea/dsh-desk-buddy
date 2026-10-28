@@ -568,7 +568,12 @@ export class SessionClients extends EventEmitter {
     const row = this.require(provider),
       epoch = row.epoch;
     const { provider: _provider, ...input } = payload;
-    const result = await row.client.rpc(method, { ...input, sessionId: id });
+    // `provider` selects the platform only while creating. Session-scoped
+    // methods use it as the model provider route and must receive it intact.
+    const result = await row.client.rpc(method, {
+      ...(creating ? input : payload),
+      sessionId: id,
+    });
     this.check(row, epoch);
     if (creating) {
       const sessionId = sessionKey(provider, result.sessionId);

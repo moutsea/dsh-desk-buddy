@@ -10,6 +10,9 @@ export class SessionProjections {
   asOfSeq = -1;
   seedRevision = 0;
   appliedSeedRevision = 0;
+  // A full snapshot's session cut cannot tell whether this key changed.
+  modelSelectionRevision = 0;
+  modelSelectionEventSeq = -Infinity;
 
   // A caller can share one request clock across history and control streams,
   // including sessions whose stores did not exist when the stream opened.
@@ -20,6 +23,11 @@ export class SessionProjections {
 
   apply(key, value, seq) {
     if (typeof key !== "string" || !validSeq(seq)) return;
+    if (key === "modelSelection") {
+      if (seq <= this.modelSelectionEventSeq) return;
+      this.modelSelectionEventSeq = seq;
+      this.modelSelectionRevision++;
+    }
     const previous = this.rows.get(key);
     if (seq <= Math.max(this.baselineSeq, previous?.seq ?? -Infinity)) return;
     this.rows.set(key, { seq, value });
@@ -28,6 +36,7 @@ export class SessionProjections {
 
   list(block) {
     if (!validValues(block?.values)) return;
+    if (block.kind !== "cached" && !validSeq(block.asOfSeq)) return;
     if (block.kind === "cached") {
       // Once a full baseline has answered, omitted keys are absent capabilities.
       if (this.baselineSeq !== -Infinity) return;
@@ -35,9 +44,18 @@ export class SessionProjections {
         if (this.rows.get(key)?.seq === undefined)
           this.rows.set(key, { value });
     } else {
-      // Legacy hosts omit kind; their list watermarks are session sequences.
-      for (const [key, value] of Object.entries(block.values))
-        this.apply(key, value, block.asOfSeq);
+      // Legacy hosts omit kind; list watermarks can merge values but are not
+      // evidence that a live model-selection event occurred.
+      for (const [key, value] of Object.entries(block.values)) {
+        const previous = this.rows.get(key);
+        if (
+          block.asOfSeq <=
+          Math.max(this.baselineSeq, previous?.seq ?? -Infinity)
+        )
+          continue;
+        this.rows.set(key, { seq: block.asOfSeq, value });
+        this.asOfSeq = Math.max(this.asOfSeq, block.asOfSeq);
+      }
     }
   }
 
@@ -50,6 +68,10 @@ export class SessionProjections {
         revision < this.appliedSeedRevision)
     )
       return;
+    // A full snapshot cannot tell which keys actually changed at its cut, so
+    // it never advances the model watermark: only live events may revoke a
+    // local receipt, otherwise a stale history read would undo a switch the
+    // host already confirmed.
     for (const [key, row] of this.rows)
       if (row.seq === undefined) this.rows.delete(key);
     for (const [key, value] of Object.entries(block.values)) {
@@ -73,6 +95,9 @@ export class SessionProjections {
   snapshot() {
     return {
       asOfSeq: this.asOfSeq,
+      ...(this.modelSelectionRevision
+        ? { modelSelectionSeq: this.modelSelectionRevision }
+        : {}),
       values: Object.fromEntries(
         [...this.rows].map(([key, row]) => [key, row.value]),
       ),

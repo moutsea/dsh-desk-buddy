@@ -8,6 +8,27 @@ export async function createFixture({ historyPageSize, beforeRpcReply } = {}) {
     pending = new Map(),
     calls = [],
     timers = new Set();
+  const modelCatalog = [
+    {
+      id: "deepseek-v4.1-flash",
+      name: "DeepSeek V4.1 Flash",
+      reasoning: {
+        efforts: [
+          { id: "low", name: "Low" },
+          { id: "high", name: "High" },
+        ],
+        defaultEffort: "low",
+      },
+    },
+    {
+      id: "deepseek-v4-flash",
+      name: "DeepSeek V4 Flash",
+      reasoning: {
+        efforts: [{ id: "high", name: "High" }],
+        defaultEffort: "high",
+      },
+    },
+  ];
   let disconnected = false;
   let streamsAvailable = true;
   const later = (fn, ms) => {
@@ -136,6 +157,48 @@ export async function createFixture({ historyPageSize, beforeRpcReply } = {}) {
         hasMore: historyPageSize ? matching.length > historyPageSize : false,
         ...(row.projections ? { projections: row.projections } : {}),
       };
+    } else if (path === "/api/session.models") {
+      const row = sessions.get(body.payload.sessionId);
+      if (!row) error = { code: "not-found", message: "未知会话" };
+      else
+        value = {
+          current: row.model || {
+            provider: "deepseek",
+            model: "deepseek-v4.1-flash",
+          },
+          routable: true,
+          groups: [{ id: "deepseek", name: "DeepSeek", models: modelCatalog }],
+          failures: [],
+        };
+    } else if (path === "/api/session.selectModel") {
+      const row = sessions.get(body.payload.sessionId);
+      if (!row) error = { code: "not-found", message: "未知会话" };
+      else {
+        row.model = {
+          provider: body.payload.provider,
+          model: body.payload.model,
+          ...(body.payload.reasoningEffort
+            ? { reasoningEffort: body.payload.reasoningEffort }
+            : {}),
+        };
+        row.projections = row.projections || { asOfSeq: -1, values: {} };
+        row.projections = {
+          asOfSeq: row.projections.asOfSeq + 1,
+          modelSelectionSeq: row.projections.asOfSeq + 1,
+          values: {
+            ...row.projections.values,
+            modelSelection: { next: row.model },
+          },
+        };
+        push("mux", {
+          type: "session/projection",
+          sessionId: body.payload.sessionId,
+          key: "modelSelection",
+          value: { next: row.model },
+          seq: row.projections.modelSelectionSeq,
+        });
+        value = { selected: row.model };
+      }
     } else if (path === "/api/session.prompt") {
       const id = body.payload.sessionId,
         row = sessions.get(id),

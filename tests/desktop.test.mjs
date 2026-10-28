@@ -119,6 +119,89 @@ for (const historyFirst of [false, true])
     },
   );
 
+test("Desktop bridge exposes the host model catalog and forwards session selections", async () => {
+  const host = desktopHost(),
+    bridge = await desktopBridge(host.ctx);
+  const client = new DshClient(bridge.endpoint, { token: bridge.token });
+  try {
+    await client.connect();
+    host.sessions.get("s1").projections = {
+      asOfSeq: 9,
+      values: {
+        modelSelection: {
+          lastUsed: { provider: "deepseek", model: "deepseek-v4.1-flash" },
+          next: {
+            provider: "deepseek",
+            model: "deepseek-v4-flash",
+            reasoningEffort: "high",
+          },
+        },
+      },
+    };
+    assert.deepEqual(await client.rpc("session.models", { sessionId: "s1" }), {
+      current: {
+        provider: "deepseek",
+        model: "deepseek-v4-flash",
+        reasoningEffort: "high",
+      },
+      routable: true,
+      groups: [
+        {
+          id: "deepseek",
+          name: "DeepSeek",
+          models: [
+            { id: "deepseek-v4.1-flash", name: "DeepSeek V4.1 Flash" },
+            { id: "deepseek-v4-flash", name: "DeepSeek V4 Flash" },
+          ],
+        },
+      ],
+      failures: [],
+    });
+    const selection = {
+      sessionId: "s1",
+      provider: "deepseek",
+      model: "deepseek-v4-flash",
+      reasoningEffort: "high",
+    };
+    assert.deepEqual(await client.rpc("session.selectModel", selection), {
+      selected: {
+        provider: "deepseek",
+        model: "deepseek-v4-flash",
+        reasoningEffort: "high",
+      },
+    });
+    const call = host.calls.at(-1);
+    assert.equal(call.namespace, "session");
+    assert.equal(call.method, "selectModel");
+    assert.deepEqual(call.args, { request: selection });
+    assert.equal(call.peer, host.peer);
+  } finally {
+    client.close();
+    await bridge.dispose();
+  }
+});
+
+test("Desktop model lookup surfaces projection failures for retry", async () => {
+  const host = desktopHost();
+  const originalInvoke = host.gateway.invoke.bind(host.gateway);
+  host.gateway.invoke = async (call) => {
+    if (call.method === "projections") throw new Error("projection temporarily unavailable");
+    return originalInvoke(call);
+  };
+  const bridge = await desktopBridge(host.ctx);
+  const client = new DshClient(bridge.endpoint, { token: bridge.token });
+  try {
+    await client.connect();
+    await assert.rejects(
+      client.rpc("session.models", { sessionId: "s1" }),
+      /projection temporarily unavailable/,
+    );
+  } finally {
+    client.close();
+    await bridge.dispose();
+  }
+});
+
 test("Desktop bridge authenticates HTTP and sockets, translates history and keeps the same owner Peer for human decisions", async () => {
   const host = desktopHost(),
     bridge = await desktopBridge(host.ctx);
@@ -293,6 +376,96 @@ test(
     assert.equal(host.controls.size, 0);
   },
 );
+
+test(
+  "Desktop events EOF closes mux and reconnects before forwarding human requests",
+  { timeout: 10000 },
+  async () => {
+    const host = desktopHost();
+    const originalOpen = host.gateway.wireStream.open.bind(host.gateway.wireStream);
+    let opens = 0;
+    let release;
+    host.gateway.wireStream.open = async (...args) => {
+      opens++;
+      if (opens !== 1) return originalOpen(...args);
+      const signal = args[4];
+      return (async function* () {
+        yield { type: "ready", clientId: "first-client" };
+        await new Promise((resolve) => {
+          release = resolve;
+          signal.addEventListener("abort", resolve, { once: true });
+        });
+      })();
+    };
+    const bridge = await desktopBridge(host.ctx);
+    const client = new DshClient(bridge.endpoint, { token: bridge.token });
+    const connected = () =>
+      new Promise((resolve) => {
+        const onStream = () => {
+          if (client.streams.size === 2) {
+            client.off("stream", onStream);
+            resolve();
+          }
+        };
+        client.on("stream", onStream);
+      });
+    try {
+      const initial = connected();
+      await client.connect();
+      await initial;
+      const disconnected = new Promise((resolve) => {
+        const onStream = ({ kind, connected: value }) => {
+          if (kind === "mux" && value === false) {
+            client.off("stream", onStream);
+            resolve();
+          }
+        };
+        client.on("stream", onStream);
+      });
+      release();
+      await disconnected;
+      const reconnected = connected();
+      await reconnected;
+      assert.equal(opens, 2);
+      const approval = once(client, "frame");
+      host.publish({
+        type: "waterfall",
+        event: "approval/request",
+        eventId: "after-eof",
+        agentId: "s1",
+        request: { toolName: "bash", reason: "after reconnect" },
+      });
+      assert.equal((await approval)[0].payload.approvalId, "after-eof");
+    } finally {
+      client.close();
+      await bridge.dispose();
+    }
+  },
+);
+
+test("Desktop bridge disposal aborts active event streams without reporting an error", async () => {
+  const host = desktopHost();
+  host.gateway.wireStream.open = async (...args) => {
+    const signal = args[4];
+    return (async function* () {
+      yield { type: "ready", clientId: "dispose-client" };
+      await new Promise((resolve) =>
+        signal.addEventListener("abort", resolve, { once: true }),
+      );
+    })();
+  };
+  const bridge = await desktopBridge(host.ctx);
+  const client = new DshClient(bridge.endpoint, { token: bridge.token });
+  try {
+    await client.connect();
+    await new Promise((resolve) => setImmediate(resolve));
+    await bridge.dispose();
+    assert.equal(bridge.error, "");
+    assert.equal(host.peer.disposed, true);
+  } finally {
+    client.close();
+  }
+});
 
 test("Desktop cursorless streaming drops duplicates and gaps without changing durable event cursors", () => {
   let stream = reduceAssistantStream(null, {

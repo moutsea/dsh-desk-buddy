@@ -44,6 +44,40 @@ export async function desktopBridge(ctx) {
       peer,
       signal: lifetime.signal,
     });
+  async function models(request) {
+    const [catalog, block] = await Promise.all([
+      gateway.invoke({
+        namespace: "session",
+        method: "modelCatalog",
+        args: {},
+        peer,
+        signal: lifetime.signal,
+      }),
+      invoke("projections", { sessionId: request.sessionId }),
+    ]);
+    if (
+      !catalog ||
+      !Array.isArray(catalog.groups) ||
+      !Array.isArray(catalog.failures)
+    )
+      throw new Error("Desktop 模型目录不兼容");
+    const selection = block?.values?.modelSelection;
+    const current = selection?.next || selection?.lastUsed || catalog.default;
+    if (
+      !current ||
+      typeof current.provider !== "string" ||
+      typeof current.model !== "string"
+    )
+      throw new Error("Desktop 未返回会话模型");
+    return {
+      current,
+      routable:
+        Array.isArray(catalog.routableProviders) &&
+        catalog.routableProviders.includes(current.provider),
+      groups: catalog.groups,
+      failures: catalog.failures,
+    };
+  }
   async function history(request) {
     const address = { kind: "session", sessionId: request.sessionId };
     const control = new AbortController();
@@ -149,11 +183,13 @@ export async function desktopBridge(ctx) {
       let value;
       if (method === "host.describe")
         value = { version: "desktop-0.2", cwd: process.cwd() };
+      else if (method === "session.models") value = await models(payload);
       else if (method === "session.history") value = await history(payload);
       else if (
         [
           "session.list",
           "session.create",
+          "session.selectModel",
           "session.prompt",
           "session.cancel",
         ].includes(method)
@@ -240,6 +276,7 @@ export async function desktopBridge(ctx) {
   async function events(socket) {
     const control = new AbortController();
     socket.once("close", () => control.abort());
+    const signal = AbortSignal.any([lifetime.signal, control.signal]);
     let clientId;
     try {
       const source = await gateway.wireStream.open(
@@ -247,7 +284,7 @@ export async function desktopBridge(ctx) {
         { args: {} },
         undefined,
         peer,
-        AbortSignal.any([lifetime.signal, control.signal]),
+        signal,
       );
       for await (const frame of source) {
         if (frame.type === "ready") clientId = frame.clientId;
@@ -305,11 +342,14 @@ export async function desktopBridge(ctx) {
             });
         }
       }
+      if (!signal.aborted) throw new Error("Desktop event stream ended");
     } catch (error) {
-      lastError = error.message;
-      if (!control.signal.aborted && !lifetime.signal.aborted)
+      if (!signal.aborted) {
+        lastError = error.message;
         socket.close(1011, "Desktop event stream unavailable");
+      }
     } finally {
+      control.abort();
       for (const [id, entry] of pending)
         if (entry.clientId === clientId) pending.delete(id);
     }
