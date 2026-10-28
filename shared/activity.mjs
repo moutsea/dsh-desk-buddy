@@ -12,7 +12,7 @@ export const REACTION_TIMES = {
 
 /** Classify names only, never infer tool success or intent from model prose. */
 export function toolActivity(name = "") {
-  const leaf = name.toLowerCase().split(/[.:/]/).pop();
+  const leaf = name.toLowerCase().split(/[.:/]/).pop() || "";
   return /^(read|read_file|read_image|search|web_search|web_fetch|fetch|grep|glob|ls|list|list_files|find|lookup)$/.test(
     leaf,
   )
@@ -48,11 +48,12 @@ export function reduceActivity(previous, event, now = Date.now()) {
     const status = entries.some((tool) => toolActivity(tool) === "working")
       ? "working"
       : "learning";
+    const lastTool = Object.keys(tools).at(-1);
     set(entries.length ? status : "thinking", {
       tools,
       toolDetails,
       tool: entries.at(-1),
-      toolSummary: toolDetails[Object.keys(tools).at(-1)],
+      toolSummary: lastTool ? toolDetails[lastTool] : undefined,
       preview: "",
     });
   };

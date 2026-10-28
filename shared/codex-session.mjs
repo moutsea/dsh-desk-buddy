@@ -64,12 +64,16 @@ export function itemEvents(item, turn) {
         type: "assistant/message",
         data: {
           ...data,
+          // Codex's live stream uses the item ID as its attempt ID. Keep the
+          // association when the completed item replaces the temporary reply.
+          attemptId: item.id,
           message: { content: [{ type: "text", text: item.text }] },
         },
       },
     ];
   const tool = codexTool(item);
   if (!tool) return [];
+  /** @type {{type: string, data: Record<string, unknown>}[]} */
   const events = [
     { type: "tool/call", data: { ...data, ...tool, callId: item.id } },
   ];
@@ -231,7 +235,13 @@ export class CodexSession {
           data: { turn: id, reason: { kind: turn.status, error: turn.error } },
         });
     }
-    return result.map((event, seq) => ({ ...event, seq }));
+    return result.map((event, seq) => ({
+      ...event,
+      seq,
+      // seq is a display index and changes when an older page is prepended.
+      // Preserve item identity for renderer keys and viewport anchors.
+      id: JSON.stringify([event.type, event.data.turn, event.data.step]),
+    }));
   }
   get activeTurn() {
     return [...this.order]

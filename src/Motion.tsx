@@ -13,12 +13,19 @@ import {
 } from "../shared/motions.mjs";
 import registration from "../public/characters/deepseek-girl/animations/registration.json";
 import { CHARACTER_LAYOUT } from "../shared/character-layout.mjs";
+import { smallRegistration } from "./character-registration";
 import { observeWindowVisibility } from "../shared/window-visibility.mjs";
 
 export const MotionContext = createContext(true);
 const characterRoot = `${import.meta.env.BASE_URL}characters/deepseek-girl/`;
 
-export function MotionSprite({ expression }: { expression: string }) {
+export function MotionSprite({
+  expression,
+  small = false,
+}: {
+  expression: string;
+  small?: boolean;
+}) {
   const clipId = useId().replace(/:/g, "");
   const enabled = useContext(MotionContext);
   const root = useRef<SVGSVGElement>(null);
@@ -33,6 +40,7 @@ export function MotionSprite({ expression }: { expression: string }) {
     id: string;
     width: number;
     height: number;
+    small: boolean;
   } | null>(null);
   const [animation, setAnimation] = useState<Animation | null>(null);
   // Keep painting the last decoded sheet while the next expression loads.
@@ -71,13 +79,13 @@ export function MotionSprite({ expression }: { expression: string }) {
   useEffect(() => {
     if (
       !visible ||
-      sheet?.id === expression ||
+      (sheet?.id === expression && sheet.small === small) ||
       !Object.hasOwn(MOTIONS, expression)
     )
       return;
     let live = true;
     const image = new Image();
-    image.src = `${characterRoot}animations/${expression}.png`;
+    image.src = `${characterRoot}animations/${small ? "thumbs/" : ""}${expression}.png`;
     image
       .decode()
       .then(() => {
@@ -86,6 +94,7 @@ export function MotionSprite({ expression }: { expression: string }) {
             id: expression,
             width: image.naturalWidth,
             height: image.naturalHeight,
+            small,
           });
       })
       .catch(() => {
@@ -94,7 +103,7 @@ export function MotionSprite({ expression }: { expression: string }) {
     return () => {
       live = false;
     };
-  }, [expression, visible, sheet?.id]);
+  }, [expression, visible, sheet?.id, sheet?.small, small]);
 
   useEffect(() => {
     if (!sheet || !picture.current) return;
@@ -103,7 +112,9 @@ export function MotionSprite({ expression }: { expression: string }) {
         sheet.id,
         sheet.width,
         sheet.height,
-        registration[sheet.id as keyof typeof registration],
+        (sheet.small ? smallRegistration : registration)[
+          sheet.id as keyof typeof registration
+        ],
       ),
       {
         duration: motionDuration(sheet.id),
@@ -149,7 +160,7 @@ export function MotionSprite({ expression }: { expression: string }) {
           <g clipPath={`url(#${clipId})`}>
             <image
               ref={picture}
-              href={`${characterRoot}animations/${sheet.id}.png`}
+              href={`${characterRoot}animations/${sheet.small ? "thumbs/" : ""}${sheet.id}.png`}
               width={sheet.width}
               height={sheet.height}
             />

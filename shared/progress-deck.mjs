@@ -34,7 +34,7 @@ export function reconcileDeckOrder(previous, items, browsing) {
     };
   const completed = Object.fromEntries(
     items
-      .filter((item) => item.completedAt > 0)
+      .filter((item) => (item.completedAt ?? 0) > 0)
       .map((item) => [item.sessionId, item.completedAt || 0]),
   );
   // The last slot is the front of the stack.
@@ -165,8 +165,8 @@ export function reconcileDeckView(previous, current) {
     // Passive membership updates cannot replace cards under a stationary
     // pointer. Rotation deliberately chooses a new window of neighbours.
     if (active === previous.active) {
-      const survivors = previous.slots.filter(
-        (id) => id !== null && ids.includes(id),
+      const survivors = /** @type {string[]} */ (
+        previous.slots.filter((id) => id !== null && ids.includes(id))
       );
       desired = [...new Set([...survivors, ...desired])].slice(0, size);
     }

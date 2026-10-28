@@ -48,6 +48,8 @@ dsh plugin --profile web add https://github.com/moutsea/dsh-desk-buddy
 
 0.17.0 增加 Codex 实验接入，可在设置中同时连接本机共享 App Server，保留所属 DSH 连接。新建对话可选择平台，Codex 使用深色界面；外部历史仅查看，完整操作需使用同一服务内的会话。任务气泡完成后保留并优先显示，手动关闭后，下次新任务重新出现。见 [Codex 接入说明](https://github.com/moutsea/dsh-desk-buddy/blob/main/docs/codex.md)。
 
+0.17.3 改善历史分页、流式回复和断线恢复：加载旧消息时保留阅读位置，DSH 重连后补齐消息缺口，失败后继续重试；创建会话或发送遇到错误时保留未发送草稿。表情预览使用缩略图，语音缓存设置上限，降低内存占用。
+
 ## 从项目构建
 
 在目标系统的项目根目录执行 `npm ci` 和 `npm run pack:plugin`，输出 `release/dsh-desk-buddy-<version>-<platform>-<arch>.tgz` 和带版本、平台、架构名的插件目录。完整包包含桌面组件，源码子目录和 GitHub Source code 压缩包都不能代替构建产物。Windows 使用原生 `.exe` 及其完整依赖目录，macOS 使用 `.app`。

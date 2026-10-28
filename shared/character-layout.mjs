@@ -30,3 +30,18 @@ export function characterPose(box, sourceX = 0, sourceY = 0) {
     transform: `matrix(${scale}, 0, 0, ${scale}, ${x}, ${y})`,
   };
 }
+
+/** Scale every measurement in a registration tree to a resized source image.
+ * @param {any} value @param {number} scale @returns {any} */
+export function scaleRegistration(value, scale) {
+  if (Array.isArray(value))
+    return value.map((item) => scaleRegistration(item, scale));
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        scaleRegistration(item, scale),
+      ]),
+    );
+  return typeof value === "number" ? value * scale : value;
+}

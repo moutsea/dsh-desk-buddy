@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import { clearTimeout as clearNodeTimeout } from "node:timers";
 import { CodexTransport, normalizeCodexEndpoint } from "./codex-transport.mjs";
 import { CodexSession, codexUsage, itemEvents } from "./codex-session.mjs";
 import { compareCodexTurns } from "./codex-turn-order.mjs";
@@ -17,6 +18,10 @@ const decisionLabel = (decision) => {
 
 /** DSH-compatible boundary; Codex-specific state never enters the DSH client. */
 export class CodexClient extends EventEmitter {
+  /** @type {CodexTransport | undefined} */
+  transport;
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  retryTimer;
   streams = new Set();
   sessions = new Map();
   attached = new Set();
@@ -132,7 +137,7 @@ export class CodexClient extends EventEmitter {
     );
     this.emit("retry", { delay, attempt: this.retryAttempt });
     this.retryTimer = setTimeout(async () => {
-      this.retryTimer = null;
+      this.retryTimer = undefined;
       try {
         await this.connect();
       } catch {
@@ -170,6 +175,7 @@ export class CodexClient extends EventEmitter {
     if (this.attached.has(id)) return;
     if (this.attaching.has(id)) return this.attaching.get(id);
     const transport = this.transport;
+    if (!transport) throw new Error("Codex 未连接");
     const readVersion = this.metadataClock;
     const promise = transport
       .request("thread/resume", { threadId: id, excludeTurns: true })
@@ -200,6 +206,7 @@ export class CodexClient extends EventEmitter {
   async list({ poll = false } = {}) {
     if (this.listing) return this.listing;
     const transport = this.transport;
+    if (!transport) throw new Error("Codex 未连接");
     const listVersion = this.metadataClock;
     const promise = (async () => {
       const check = () => {
@@ -484,6 +491,7 @@ export class CodexClient extends EventEmitter {
   }
   async rpc(method, payload = {}) {
     const transport = this.transport;
+    if (!transport) throw new Error("Codex 未连接");
     const checkConnection = () => {
       if (
         this.closed ||
@@ -761,14 +769,19 @@ export class CodexClient extends EventEmitter {
     const p = frame.params,
       key = `${this.generation}:${requestKey(frame.id)}`;
     if (!p?.threadId || this.pending.has(key)) return;
-    const request = { ...frame, choices: [] };
+    const request = {
+      ...frame,
+      choices:
+        /** @type {{decision: string | Record<string, unknown>}[]} */ ([]),
+    };
     const payload = {
       sessionId: p.threadId,
       type: "approval/requested",
       approvalId: key,
       toolName: p.command || p.itemId || frame.method,
       reason: p.reason || "",
-      choices: [],
+      choices:
+        /** @type {{value: string, label: string | null, detail?: string}[]} */ ([]),
     };
     if (
       ["item/tool/requestUserInput", "tool/requestUserInput"].includes(
@@ -859,12 +872,14 @@ export class CodexClient extends EventEmitter {
       result = match && request.choices[Number(match[1])];
       if (!result) throw new Error("无效的 Codex 审批决定");
     }
-    await this.transport.send({ id: request.id, result });
+    const transport = this.transport;
+    if (!transport) throw new Error("Codex 未连接");
+    await transport.send({ id: request.id, result });
     this.resolve(key);
   }
   close() {
     this.closed = true;
-    clearTimeout(this.retryTimer);
+    if (this.retryTimer) clearNodeTimeout(this.retryTimer);
     this.transport?.close();
     this.removeAllListeners();
   }

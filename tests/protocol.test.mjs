@@ -88,6 +88,102 @@ test("final messages replace streamed partials; snapshots do not erase new event
     resumed.messages.length,
   );
 });
+test("completed DSH replies keep their canonical identity when streamed prefixes are backfilled", () => {
+  const chunk = (seq, text) => ({
+    seq,
+    type: "assistant/chunk",
+    data: { turn: 1, step: 0, chunk: { type: "text-delta", text } },
+  });
+  for (const id of [undefined, "host-message-id"]) {
+    const final = {
+      seq: 3,
+      id,
+      type: "assistant/message",
+      data: {
+        turn: 1,
+        step: 0,
+        message: { content: [{ type: "text", text: "Hello" }] },
+      },
+    };
+    const original = projectSession([final]).messages[0];
+    const tail = projectSession([chunk(2, "lo")], true).messages[0];
+    const prefix = projectSession([chunk(1, "Hel"), chunk(2, "lo")], true)
+      .messages[0];
+    const completed = projectSession([chunk(1, "Hel"), chunk(2, "lo"), final])
+      .messages[0];
+    assert.equal(completed.id, original.id);
+    assert.equal(completed.seq, original.seq);
+    assert.equal(completed.text, original.text);
+    assert.equal(completed.streaming, false);
+    assert.ok(
+      prefix.anchorIds.includes(tail.id),
+      "locate a stream whose first chunk was backfilled",
+    );
+    assert.ok(
+      completed.anchorIds.includes(tail.id),
+      "locate the stream after finalization",
+    );
+    assert.ok(completed.anchorIds.includes(prefix.id));
+  }
+});
+
+test("resumed DSH streams do not reuse the completed reply's anchor aliases", () => {
+  const chunk = (seq) => ({
+    seq,
+    type: "assistant/chunk",
+    data: { turn: 1, step: 0, chunk: { type: "text-delta", text: "reply" } },
+  });
+  const final = {
+    seq: 2,
+    type: "assistant/message",
+    data: {
+      turn: 1,
+      step: 0,
+      message: { content: [{ type: "text", text: "done" }] },
+    },
+  };
+  const messages = projectSession([chunk(1), final, chunk(3)], true).messages;
+  assert.equal(messages.length, 2);
+  assert.notEqual(messages[0].id, messages[1].id);
+  assert.ok(
+    messages[0].anchorIds.every((id) => !messages[1].anchorIds.includes(id)),
+  );
+});
+
+test("repeated DSH text keeps per-chunk source offsets through backfill and completion", () => {
+  const chunk = (seq, text) => ({
+    seq,
+    type: "assistant/chunk",
+    data: { turn: 1, step: 0, chunk: { type: "text-delta", text } },
+  });
+  const suffix = chunk(2, "Repeated **text**"),
+    prefix = chunk(1, "Repeated **text**\n\n");
+  const before = projectSession([suffix], true).messages[0];
+  const full = prefix.data.chunk.text + suffix.data.chunk.text;
+  const final = {
+    seq: 3,
+    type: "assistant/message",
+    data: {
+      turn: 1,
+      step: 0,
+      message: { content: [{ type: "text", text: full }] },
+    },
+  };
+  for (const events of [
+    [prefix, suffix],
+    [prefix, suffix, final],
+    [suffix, final],
+  ]) {
+    const after = projectSession(events, true).messages[0];
+    const anchor = after.textAnchors.find(({ id }) => id === before.id);
+    assert.equal(anchor.start, prefix.data.chunk.text.length);
+    assert.equal(
+      after.text.slice(anchor.start, anchor.end),
+      suffix.data.chunk.text,
+    );
+  }
+});
+
 test("internal injections and model surface replacements are not chat messages", () => {
   const events = [
     {

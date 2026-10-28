@@ -60,6 +60,7 @@ export class CodexTransport extends EventEmitter {
           this.pending.delete(frame.id);
           clearTimeout(pending.timer);
           if (frame.error) {
+            /** @type {Error & {code?: number, method?: string, data?: unknown}} */
             const error = new Error(frame.error.message || "Codex 请求失败");
             error.code = frame.error.code;
             error.method = pending.method;
@@ -88,7 +89,7 @@ export class CodexTransport extends EventEmitter {
           socket.off("open", opened);
           socket.off("error", failed);
           socket.off("close", failed);
-          error ? reject(error) : resolve();
+          error ? reject(error) : resolve(undefined);
         };
         const opened = () => finish();
         const failed = () =>
@@ -113,7 +114,7 @@ export class CodexTransport extends EventEmitter {
       if (this.closed || this.socket?.readyState !== WebSocket.OPEN)
         return reject(new Error("Codex 未连接"));
       this.socket.send(JSON.stringify(frame), (error) =>
-        error ? reject(error) : resolve(),
+        error ? reject(error) : resolve(undefined),
       );
     });
   }

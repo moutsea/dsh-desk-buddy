@@ -767,3 +767,265 @@ test("a delayed first list cannot overwrite newer live runtime or resurrect a re
     false,
   );
 });
+
+for (const boundary of ["turn/start", "turn/end"])
+  test(`removal survives delayed mux frames until a fresh list confirms reattachment; boundary = ${boundary}`, async (t) => {
+    let release,
+      hold = true;
+    const dsh = await createFixture({
+      beforeRpcReply: ({ method }) =>
+        method === "session.list" && hold
+          ? new Promise((resolve) => {
+              release = resolve;
+            })
+          : undefined,
+    });
+    const client = new SessionClients(),
+      frames = [];
+    client.on("frame", (frame) => frames.push(frame));
+    t.after(async () => {
+      release?.();
+      client.close();
+      await dsh.close();
+    });
+    for (const sessionId of ["removed", "alive"])
+      dsh.sessions.set(sessionId, { sessionId, running: false, events: [] });
+    await client.connect("dsh", dsh.endpoint);
+    const listing = client.rpc("session.list");
+    await until(() => release);
+    dsh.push(
+      "mux",
+      { type: "approval/requested", sessionId: "removed", approvalId: "old" },
+      "old-approval",
+    );
+    await until(() => client.pending.size === 1);
+    dsh.sessions.delete("removed");
+    dsh.push("host", { type: "host/session-removed", sessionId: "removed" });
+    await until(() =>
+      frames.some((frame) => frame.payload.type === "host/session-removed"),
+    );
+    const afterRemoval = frames.length;
+    for (const payload of [
+      {
+        type: "session/event",
+        event: {
+          seq: 12,
+          type: boundary,
+          data: { turn: 1, reason: { kind: "completed" } },
+        },
+      },
+      {
+        type: "session/assistant-stream",
+        frame: { type: "start", attemptId: "old", revision: 1 },
+      },
+      { type: "approval/requested", approvalId: "late" },
+    ])
+      dsh.push("mux", { ...payload, sessionId: "removed" });
+    dsh.push("mux", {
+      type: "session/projections",
+      projections: { removed: { asOfSeq: 12, values: { title: "Deleted" } } },
+    });
+    // A later frame on the same socket proves all preceding frames arrived,
+    // including those which should have been suppressed by the client.
+    dsh.event("alive", "turn/end", { turn: 1, reason: { kind: "completed" } });
+    await until(() =>
+      frames.some((frame) => frame.payload.sessionId === "alive"),
+    );
+    release();
+    assert.equal(
+      (await listing).items.some((row) => row.sessionId === "removed"),
+      false,
+    );
+    assert.equal(
+      client.entries.get("dsh").runtime.get("removed")?.removed,
+      true,
+    );
+    assert.equal(client.pending.size, 0);
+    assert.ok(
+      !frames
+        .slice(afterRemoval)
+        .some(
+          (frame) =>
+            frame.payload.sessionId === "removed" ||
+            frame.payload.projections?.removed,
+        ),
+    );
+
+    hold = false;
+    dsh.sessions.set("removed", {
+      sessionId: "removed",
+      running: true,
+      events: [{ seq: 0, type: "turn/start", data: { turn: 2 } }],
+    });
+    dsh.push("host", { type: "host/session-added", sessionId: "removed" });
+    await until(() =>
+      frames.some((frame) => frame.payload.type === "host/session-added"),
+    );
+    const restored = (await client.rpc("session.list")).items.find(
+      (row) => row.sessionId === "removed",
+    );
+    assert.equal(restored?.running, true);
+    assert.equal(restored?.lastTurn?.key, "2");
+    assert.ok(!client.entries.get("dsh").runtime.get("removed")?.removed);
+    dsh.event("removed", "turn/end", {
+      turn: 2,
+      reason: { kind: "completed" },
+    });
+    await until(() => restored.running === false);
+    assert.equal(restored.lastTurn.status, "done");
+  });
+
+for (const oldList of [false, true])
+  test(`reattachment admits new requests without reviving an older list; old list = ${oldList}`, async (t) => {
+    let hold = false,
+      release;
+    const dsh = await createFixture({
+      beforeRpcReply: ({ method }) =>
+        method === "session.list" && hold
+          ? new Promise((resolve) => {
+              release = resolve;
+            })
+          : undefined,
+    });
+    const client = new SessionClients(),
+      frames = [];
+    client.on("frame", (frame) => frames.push(frame));
+    t.after(async () => {
+      release?.();
+      client.close();
+      await dsh.close();
+    });
+    for (const sessionId of ["reattached", "sentinel"])
+      dsh.sessions.set(sessionId, { sessionId, running: false, events: [] });
+    await client.connect("dsh", dsh.endpoint);
+    await client.rpc("session.list");
+    hold = true;
+    let listing;
+    if (oldList) {
+      listing = client.rpc("session.list");
+      await until(() => release);
+    }
+    dsh.sessions.delete("reattached");
+    dsh.push("host", { type: "host/session-removed", sessionId: "reattached" });
+    await until(
+      () => client.entries.get("dsh").runtime.get("reattached")?.removed,
+    );
+    dsh.sessions.set("reattached", {
+      sessionId: "reattached",
+      running: false,
+      events: [],
+    });
+    dsh.push("host", { type: "host/session-added", sessionId: "reattached" });
+    await until(() =>
+      frames.some((frame) => frame.payload.type === "host/session-added"),
+    );
+    if (!oldList) {
+      listing = client.rpc("session.list");
+      await until(() => release);
+    }
+    dsh.sessions.get("reattached").running = true;
+    dsh.event("reattached", "turn/start", { turn: 2 });
+    const approval = {
+      type: "approval/requested",
+      sessionId: "reattached",
+      approvalId: "new-approval",
+    };
+    const question = {
+      type: "question/requested",
+      sessionId: "reattached",
+      questions: [],
+    };
+    dsh.pending.set("new-approval-rpc", approval);
+    dsh.pending.set("new-question-rpc", question);
+    dsh.push("host", approval, "new-approval-rpc");
+    dsh.push("host", question, "new-question-rpc");
+    // Requests can also resolve while the list is pending.
+    dsh.push("host", { ...approval, approvalId: "settled" }, "settled-rpc");
+    dsh.push("host", {
+      type: "approval/resolved",
+      sessionId: "reattached",
+      approvalId: "settled",
+    });
+    dsh.push("mux", {
+      type: "session/assistant-stream",
+      sessionId: "reattached",
+      frame: { type: "start", attemptId: "new", revision: 1 },
+    });
+    dsh.push("mux", {
+      type: "session/projections",
+      projections: {
+        reattached: { asOfSeq: 0, values: { title: "Reattached" } },
+      },
+    });
+    dsh.push("host", { type: "host/session-added", sessionId: "sentinel" });
+    dsh.event("sentinel", "turn/end", {
+      turn: 1,
+      reason: { kind: "completed" },
+    });
+    await until(
+      () =>
+        frames.some(
+          (f) =>
+            f.payload.sessionId === "sentinel" &&
+            f.payload.type === "host/session-added",
+        ) &&
+        frames.some(
+          (f) =>
+            f.payload.sessionId === "sentinel" &&
+            f.payload.type === "session/event",
+        ),
+    );
+    release();
+    const first = (await listing).items.find(
+      (row) => row.sessionId === "reattached",
+    );
+    assert.equal(
+      !!first,
+      !oldList,
+      "a pre-removal list must still be rejected after reattachment",
+    );
+    if (first)
+      assert.equal(
+        first.running,
+        true,
+        "new live state takes precedence over the list snapshot",
+      );
+    hold = false;
+    const restored = (await client.rpc("session.list")).items.find(
+      (row) => row.sessionId === "reattached",
+    );
+    assert.equal(restored.running, true);
+    assert.equal(restored.lastTurn.key, "2");
+    assert.equal(
+      client.pending.size,
+      2,
+      "new requests survive the reattachment window; resolved ones stay resolved",
+    );
+    assert.ok(
+      frames.some(
+        (frame) =>
+          frame.payload.type === "session/assistant-stream" &&
+          frame.payload.sessionId === "reattached",
+      ),
+    );
+    assert.ok(frames.some((frame) => frame.payload.projections?.reattached));
+    const requested = frames.filter(
+      (frame) =>
+        ["approval/requested", "question/requested"].includes(
+          frame.payload.type,
+        ) && frame.rpcId.includes("new-"),
+    );
+    assert.equal(requested.length, 2);
+    for (const frame of requested)
+      await client.respond(frame.rpcId, {
+        sessionId: "reattached",
+        outcome: "rejected",
+        answers: [],
+      });
+    assert.equal(client.pending.size, 0);
+    assert.equal(
+      dsh.pending.size,
+      0,
+      "both reattached requests remain answerable through their original RPC IDs",
+    );
+  });

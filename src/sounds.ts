@@ -68,6 +68,10 @@ const cooldowns: Record<SoundKind, number> = {
   reconnected: 60000,
 };
 const loadDeadline = 1000;
+// Decoded PCM is several times larger than the compressed clip. Keep the
+// current voice plus a little headroom instead of retaining every auditioned
+// voice for the life of the window.
+const maxCachedClips = 48;
 
 function priority(playback: Playback) {
   if (playback.audition) return 1;
@@ -155,7 +159,11 @@ export class PetAudio {
   private buffer(context: AudioContext, voice: string, kind: string) {
     const key = `${voice}/${kind}`;
     let load = this.buffers.get(key);
-    if (!load) {
+    if (load) {
+      // Refresh insertion order so the active voice stays cached.
+      this.buffers.delete(key);
+      this.buffers.set(key, load);
+    } else {
       const controller = new AbortController();
       let settled = false;
       let cancel!: () => void;
@@ -198,6 +206,8 @@ export class PetAudio {
       };
       load = pending;
       this.buffers.set(key, load);
+      for (const cached of this.buffers.keys())
+        if (this.buffers.size > maxCachedClips) this.buffers.delete(cached);
     }
     return load;
   }

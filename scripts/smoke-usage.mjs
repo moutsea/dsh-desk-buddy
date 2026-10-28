@@ -289,18 +289,48 @@ try {
     [{}, "—", 6],
   ]) {
     const held = await holdResponse(app, "/api/session.history");
+    const request =
+      count === 4
+        ? { sessionId: "overlap", requestId: "usage-pagination" }
+        : undefined;
     const older = page
-      .evaluate(() => window.desktop.invoke("older"))
+      .evaluate((request) => window.desktop.invoke("older", request), request)
       .catch((error) => ({ error: error.message }));
     await held.wait();
     racing.projections = { asOfSeq: 10, values: nextValues };
     await page.evaluate(() => window.desktop.invoke("refresh"));
     await expect(total).toHaveText(text);
     await held.release();
-    assert.equal(await older, undefined);
+    const receipt = await older;
+    if (request) {
+      assert.equal(receipt.sessionId, request.sessionId);
+      assert.ok(Number.isSafeInteger(receipt.eventsRevision));
+      assert.deepEqual((await state()).historyPage, request);
+    } else assert.equal(receipt, undefined);
     await expect(total).toHaveText(text);
     await expect.poll(async () => (await state()).events.length).toBe(count);
   }
+  const historyReads = fixture.calls.filter(
+    (call) =>
+      call.path === "/api/session.history" && call.payload.sessionId === "a",
+  ).length;
+  assert.ok(historyReads > 0);
+  assert.equal(
+    await page.evaluate(() =>
+      window.desktop.invoke("older", {
+        sessionId: "a",
+        requestId: "stale-session-pagination",
+      }),
+    ),
+    undefined,
+  );
+  assert.equal(
+    fixture.calls.filter(
+      (call) =>
+        call.path === "/api/session.history" && call.payload.sessionId === "a",
+    ).length,
+    historyReads,
+  );
   await expect(
     page.getByRole("button", { name: "加载更早的消息" }),
   ).toHaveCount(0);

@@ -47,6 +47,9 @@ export class ProgressTracker {
   remember(id, turn) {
     if (turn === undefined || turn === null) return;
     if (!this.knownTurns.has(id)) this.knownTurns.set(id, new Set());
+    // DSH recovery has no ancestry marker: any previously observed turn can
+    // become the head after rollback. Keep identities until prune/forget,
+    // otherwise an old head would reopen dismissed work as a new completion.
     this.knownTurns.get(id).add(turn);
   }
   // New or resumed threads can finish before their metadata arrives. Keep

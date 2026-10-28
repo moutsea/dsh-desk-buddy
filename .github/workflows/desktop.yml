@@ -33,7 +33,10 @@ jobs:
       - run: npx playwright install chromium
       - run: npm run test:progress:pointer
       - run: npm run build
+      - run: npm run test:history
       - run: npm run test:progress
+      - run: npm run test:completion
+      - run: npm run test:ui
       - run: npm run test:manager
       - run: npm run pack:plugin
       - run: npm run test:repository

@@ -21,6 +21,11 @@ import {
   PROVIDERS,
 } from "../shared/session-clients.mjs";
 import { mergeEvents } from "../shared/projection.mjs";
+import {
+  MAX_HISTORY_EVENTS,
+  setAssistantStream,
+  setHistoryEvents,
+} from "./history-state.mjs";
 import { SessionProjections } from "../shared/session-projections.mjs";
 import { EXPRESSIONS, isExpressionId } from "../shared/expressions.mjs";
 import {
@@ -35,7 +40,6 @@ import {
   normalizeSoundSettings,
   patchSoundSettings,
 } from "../shared/sound.mjs";
-import { reduceAssistantStream } from "../shared/assistant-stream.mjs";
 import { managedLaunch, managedControl } from "./managed.mjs";
 import { PluginUpdates } from "./plugin-updates.mjs";
 import { createTrayIcon } from "./tray-icon.mjs";
@@ -80,6 +84,16 @@ let historyRevision = 0,
   snapshotRevision = 0;
 const controlSnapshots = new Map();
 const projections = new Map();
+const hostRefreshes = new Map();
+function scheduleHostRefresh(provider) {
+  if (hostRefreshes.has(provider)) return;
+  const timer = setTimeout(() => {
+    hostRefreshes.delete(provider);
+    refreshSessions(client, false, provider).catch(() => {});
+  }, 500);
+  timer.unref?.();
+  hostRefreshes.set(provider, timer);
+}
 const taskSoundRecorders = new Map(
   PROVIDERS.map((provider) => [provider, new TaskSoundRecorder()]),
 );
@@ -113,6 +127,7 @@ let state = {
   sessions: [],
   selectedId: "",
   events: [],
+  eventsRevision: 0,
   liveAssistant: {},
   hasMore: false,
   pending: [],
@@ -133,6 +148,9 @@ let state = {
   config,
 };
 const configPath = () => join(app.getPath("userData"), "settings.json");
+function setEvents(events, hasMore = state.hasMore) {
+  setHistoryEvents(state, events, hasMore);
+}
 const windows = () => [pet].filter((window) => window && !window.isDestroyed());
 function broadcast() {
   state.historyReload = historyReloads.snapshot(state.selectedId);
@@ -147,8 +165,13 @@ function broadcast() {
   if (broadcastTimer) return;
   broadcastTimer = setTimeout(() => {
     broadcastTimer = undefined;
+    // History is the largest part of the snapshot. Send it only when it
+    // changed; the renderer keeps the last copy across status-only updates.
+    const payload = { ...state };
+    if (state.eventsRevision === sentEventsRevision) delete payload.events;
+    sentEventsRevision = state.eventsRevision;
     windows().forEach((window) =>
-      window.webContents.send("desktop:state", state),
+      window.webContents.send("desktop:state", payload),
     );
   }, 35);
 }
@@ -181,6 +204,7 @@ let arranging = false;
 let petDrag = null;
 let layoutBounds;
 let ignoringMouse = false;
+let sentEventsRevision = -1;
 function setPassthrough(ignore) {
   if (ignoringMouse === ignore) return;
   ignoringMouse = ignore;
@@ -209,8 +233,10 @@ function applyLayout(layout, fullState = false) {
     JSON.stringify(state.surface) !== JSON.stringify(layout.surface);
   state.surface = layout.surface;
   arranging = true;
-  if (fullState) pet.webContents.send("desktop:state", state);
-  else if (changed) pet.webContents.send("desktop:surface", state.surface);
+  if (fullState) {
+    sentEventsRevision = state.eventsRevision;
+    pet.webContents.send("desktop:state", state);
+  } else if (changed) pet.webContents.send("desktop:surface", state.surface);
   if (
     !layoutBounds ||
     Object.keys(layout.bounds).some(
@@ -390,6 +416,9 @@ async function refreshSessions(
   if (client !== expectedClient) return;
   if (!Array.isArray(result?.items))
     throw new Error("无法识别服务返回的会话列表");
+  // Publish list readiness with its rows; a connected stream can still be
+  // waiting for its first successful refresh after a connection reset.
+  state.connections = expectedClient.connections();
   // Ordinary forks remain writable; only agent-owned subagents use another API.
   state.sessions = result.items
     .filter((item) => item.origin !== "subagent")
@@ -411,19 +440,27 @@ async function refreshSessions(
   if (
     !state.selectedId &&
     state.sessions.some((item) => item.sessionId === config.selectedId)
-  )
+  ) {
     state.selectedId = config.selectedId;
+    setEvents([]);
+    state.hasMore = false;
+    historyRevision++;
+    // A background list can recover after the startup reads already failed.
+    // Keep the restored chat pending until its history loads, including retries.
+    historyReloads.invalidate(state.selectedId);
+  }
   if (
     state.selectedId &&
     !state.sessions.some((item) => item.sessionId === state.selectedId)
   ) {
     state.selectedId = "";
-    state.events = [];
+    setEvents([]);
     state.hasMore = false;
+    historyRevision++;
   }
   broadcast();
 }
-async function history(older = false, expectedClient = client) {
+async function history(older = false, expectedClient = client, requestId) {
   const id = state.selectedId;
   if (
     !id ||
@@ -432,7 +469,9 @@ async function history(older = false, expectedClient = client) {
   )
     return;
   const revision = historyRevision;
-  const reload = historyReloads.begin(id);
+  // Paging backwards does not recover missing messages at the newest end.
+  const reload = older ? undefined : historyReloads.begin(id);
+  const afterSeq = reload?.afterSeq ?? state.events.at(-1)?.seq;
   let committed = false,
     failure = "";
   const current = () =>
@@ -443,7 +482,7 @@ async function history(older = false, expectedClient = client) {
     const beforeSeq = older ? state.events[0]?.seq : undefined;
     const store = projectionFor(id);
     const seedProjections = store.beginSeed(++snapshotRevision);
-    const result = await expectedClient.rpc("session.history", {
+    let result = await expectedClient.rpc("session.history", {
       sessionId: id,
       maxMessages: 40,
       ...(beforeSeq !== undefined ? { beforeSeq } : {}),
@@ -451,23 +490,66 @@ async function history(older = false, expectedClient = client) {
     if (!current()) return;
     if (!Array.isArray(result?.events))
       throw new Error("无法识别服务返回的会话历史");
-    const incoming = result.events.map((entry) => entry.event);
+    const replace = result.replace;
+    const pages = [result.events];
+    const snapshots = result.projections ? [result.projections] : [];
+    let firstSeq = result.events[0]?.event?.seq;
+    // DSH returns only the newest page. Walk backwards to the retained tail
+    // before publishing anything, so a failed intermediate page remains
+    // retryable and cannot leave an inaccessible hole in the rendered history.
+    while (
+      !older &&
+      !replace &&
+      afterSeq !== undefined &&
+      result.hasMore &&
+      (firstSeq ?? Infinity) > afterSeq
+    ) {
+      if (!Number.isSafeInteger(firstSeq))
+        throw new Error("会话历史分页未能推进，请重试");
+      const cursor = firstSeq;
+      result = await expectedClient.rpc("session.history", {
+        sessionId: id,
+        maxMessages: 40,
+        beforeSeq: cursor,
+      });
+      if (!current()) return;
+      if (!Array.isArray(result?.events))
+        throw new Error("无法识别服务返回的会话历史");
+      firstSeq = result.events[0]?.event?.seq;
+      if (
+        result.replace ||
+        (result.events.length
+          ? !Number.isSafeInteger(firstSeq) || firstSeq >= cursor
+          : result.hasMore)
+      )
+        throw new Error("会话历史分页未能推进，请重试");
+      pages.push(result.events);
+      if (result.projections) snapshots.push(result.projections);
+    }
+    const incoming = pages
+      .reverse()
+      .flatMap((page) => page.map((entry) => entry.event));
     const previousHead = state.events[0]?.seq ?? Infinity;
-    state.events = result.replace
-      ? incoming
-      : mergeEvents(state.events, incoming);
-    if (
-      result.replace ||
-      older ||
-      (incoming[0]?.seq ?? Infinity) <= previousHead
-    )
-      state.hasMore = result.hasMore;
-    if (result.projections) {
+    const hasMore =
+      replace ||
+      (incoming[0]?.seq ?? Infinity) <= previousHead ||
+      (older && beforeSeq === state.events[0]?.seq)
+        ? result.hasMore
+        : state.hasMore;
+    setEvents(
+      replace ? incoming : mergeEvents(state.events, incoming),
+      hasMore,
+    );
+    if (snapshots.length) {
       const row = state.sessions.find((item) => item.sessionId === id);
-      seedProjections(result.projections);
+      for (const snapshot of snapshots) seedProjections(snapshot);
       if (row) row.projections = store.snapshot();
     }
     committed = true;
+    if (older && requestId) {
+      state.historyPage = { requestId, sessionId: id };
+      return { sessionId: id, eventsRevision: state.eventsRevision };
+    }
   } catch (error) {
     // Revert/selection already replaced this read. Its failure must not leak
     // into the current chat or turn a successful replacement into an error.
@@ -492,8 +574,7 @@ function handleFrame(frame) {
         progressTracker.remember(id, turn);
     }
     if (id === state.selectedId) {
-      state.events = payload.events;
-      state.hasMore = payload.hasMore;
+      setEvents(payload.events, payload.hasMore);
       if (payload.reset) {
         historyRevision++;
         void history().catch(() => {});
@@ -502,10 +583,7 @@ function handleFrame(frame) {
   }
   if (payload.type === "session/assistant-stream") {
     const previousStream = state.liveAssistant[id];
-    state.liveAssistant[id] = reduceAssistantStream(
-      previousStream,
-      payload.frame,
-    );
+    setAssistantStream(state, id, payload.frame);
     if (
       state.liveAssistant[id] &&
       state.liveAssistant[id] !== previousStream &&
@@ -521,7 +599,7 @@ function handleFrame(frame) {
   if (payload.type === "session/event") {
     const event = payload.event;
     if (id === state.selectedId && !payload.activityOnly)
-      state.events = mergeEvents(state.events, [event]);
+      setEvents(mergeEvents(state.events, [event]));
     const previous = state.activity[id];
     const activity = reduceActivity(previous, event);
     state.activity[id] = activity;
@@ -623,12 +701,28 @@ function handleFrame(frame) {
     payload.type === "host/session-removed" ||
     payload.type === "host/session-invalidated"
   )
-    refreshSessions(client, false, payload.provider).catch(() => {});
+    scheduleHostRefresh(payload.provider);
   if (payload.type === "host/session-removed") {
     historyReloads.forget((sessionId) => sessionId === id);
     projections.delete(id);
     state.sessions = state.sessions.filter((row) => row.sessionId !== id);
     progressTracker.forget((sessionId) => sessionId === id);
+    delete state.activity[id];
+    delete state.liveAssistant[id];
+    state.pending = state.pending.filter((item) => item.sessionId !== id);
+    state.completions = state.completions.filter(
+      (item) => item.sessionId !== id,
+    );
+    state.taskSounds = state.taskSounds.filter((item) => item.sessionId !== id);
+    if (state.selectedId === id) {
+      state.selectedId = "";
+      config.selectedId = "";
+      setEvents([]);
+      state.hasMore = false;
+      historyRevision++;
+      save();
+    }
+    broadcast();
   }
   if (payload.type === "session/projections") {
     for (const [sessionId, block] of Object.entries(
@@ -725,8 +819,12 @@ client.on("reset", ({ provider, removeSessions }) => {
     historyRevision++;
     if (removeSessions) {
       state.selectedId = "";
-      state.events = [];
+      setEvents([]);
       state.hasMore = false;
+    } else {
+      // Keep the displayed history during automatic reconnect, but require a
+      // current read to fill the gap. A failed ready-time read must retry.
+      historyReloads.invalidate(state.selectedId, state.events.at(-1)?.seq);
     }
   }
   if (provider === "dsh" && removeSessions) {
@@ -929,7 +1027,7 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
         state.selectedId = payload;
         config.selectedId = payload;
         config.provider = sessionSource(payload).provider;
-        state.events = [];
+        setEvents([]);
         state.hasMore = false;
         historyRevision++;
       }
@@ -940,8 +1038,19 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
       return payload;
     }
     case "older":
+      if (payload?.sessionId && payload.sessionId !== state.selectedId) return;
+      if (
+        payload?.requestId !== undefined &&
+        typeof payload.requestId !== "string"
+      )
+        throw new Error("无效的历史请求");
       requireClient();
-      return history(true);
+      if (state.events.length >= MAX_HISTORY_EVENTS) {
+        state.hasMore = false;
+        broadcast();
+        return;
+      }
+      return history(true, client, payload?.requestId);
     case "pickDirectory": {
       const result = await dialog.showOpenDialog(pet, {
         title: "选择会话使用的项目",
@@ -965,6 +1074,11 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
     case "create": {
       const provider = payload?.provider || config.provider;
       if (!PROVIDERS.includes(provider)) throw new Error("请选择会话平台");
+      if (
+        payload?.requestId !== undefined &&
+        typeof payload.requestId !== "string"
+      )
+        throw new Error("无效的创建请求");
       const next = requireClient("", provider),
         cwd = config.cwd;
       if (!cwd || !isAbsolute(cwd)) throw new Error("请先选择项目目录");
@@ -977,12 +1091,32 @@ ipcMain.handle("desktop:action", async (event, action, payload) => {
       config.provider = provider;
       state.selectedId = result.sessionId;
       config.selectedId = result.sessionId;
-      state.events = [];
+      if (!state.sessions.some((row) => row.sessionId === result.sessionId))
+        state.sessions.push({
+          sessionId: result.sessionId,
+          provider,
+          cwd,
+          running: false,
+          runningKnown: false,
+          blank: true,
+          updatedAt: Date.now(),
+        });
+      state.sessionCreation = payload?.requestId
+        ? { requestId: payload.requestId, sessionId: result.sessionId }
+        : null;
+      setEvents([]);
       state.hasMore = false;
       historyRevision++;
+      historyReloads.invalidate(result.sessionId);
       save();
-      await refreshSessions(next, false, provider);
-      await history(false, next);
+      broadcast();
+      // The write already succeeded. Auxiliary reads must not erase its
+      // receipt; history failures remain visible and use the normal retry path.
+      await refreshSessions(next, false, provider).catch(() =>
+        scheduleHostRefresh(provider),
+      );
+      if (state.selectedId === result.sessionId)
+        await history(false, next).catch(() => {});
       broadcast();
       return result.sessionId;
     }

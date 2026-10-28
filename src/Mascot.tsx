@@ -5,6 +5,7 @@ import {
   CHARACTER_LAYOUT,
   characterPose,
 } from "../shared/character-layout.mjs";
+import { smallRegistration } from "./character-registration";
 import {
   EXPRESSIONS,
   expressionForMood,
@@ -29,7 +30,7 @@ export function Mascot({
   useEffect(() => {
     let live = true;
     const image = new Image();
-    image.src = `${characterRoot}${desired}.png`;
+    image.src = `${characterRoot}${small ? "thumbs/" : ""}${desired}.png`;
     image
       .decode()
       .then(() => {
@@ -39,9 +40,10 @@ export function Mascot({
     return () => {
       live = false;
     };
-  }, [desired]);
+  }, [desired, small]);
   const label = EXPRESSIONS.find((item) => item.id === frame)?.label || "待机";
-  const still = registration[frame as keyof typeof registration].static;
+  const registry = small ? smallRegistration : registration;
+  const still = registry[frame as keyof typeof registration].static;
   return (
     <div
       className={`mascot mood-${mood} expression-${frame} ${small ? "small" : ""} ${enabled ? "" : "motion-disabled"}`}
@@ -57,13 +59,13 @@ export function Mascot({
           preserveAspectRatio="xMidYMid meet"
         >
           <image
-            href={`${characterRoot}${frame}.png`}
+            href={`${characterRoot}${small ? "thumbs/" : ""}${frame}.png`}
             width={still.width}
             height={still.height}
             style={{ transform: characterPose(still).transform }}
           />
         </svg>
-        <MotionSprite expression={frame} />
+        <MotionSprite expression={frame} small={small} />
       </div>
       {mood === "waiting" && (
         <span className="character-notice" aria-hidden="true">

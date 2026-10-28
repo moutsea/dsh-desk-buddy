@@ -1,4 +1,10 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createRoot } from "react-dom/client";
 import {
   ArrowUp,
@@ -33,6 +39,12 @@ import { normalizeSoundSettings } from "../shared/sound.mjs";
 import { GreetingCues } from "../shared/companion-sounds.mjs";
 import { usePetDrag, type PetDrag } from "./usePetDrag";
 import {
+  captureHistoryAnchor,
+  isHistoryVisible,
+  restoreHistoryAnchor,
+  type HistoryAnchor,
+} from "./history-scroll";
+import {
   PET_CHARACTER,
   petSize,
   normalizePetScale,
@@ -44,6 +56,8 @@ import { MotionContext } from "./Motion";
 import { chooseExpression } from "../shared/expressions.mjs";
 import { overallMood, sessionMood } from "../shared/activity.mjs";
 import { projectSession, sessionTitle } from "../shared/projection.mjs";
+import { liveMessageId } from "../shared/assistant-stream.mjs";
+import { rehypeSourceAnchors, remarkSourceAnchors } from "./markdown-source";
 import { deepseekPricingPeriod } from "../shared/pricing-period.mjs";
 import { activeCompletion } from "../shared/completion.mjs";
 import { activeProgressItems } from "../shared/progress.mjs";
@@ -54,7 +68,7 @@ import {
   selectedProvider,
   providerLabel,
 } from "./platforms";
-import type { AppState, Pending } from "./types";
+import type { AppState, StateUpdate, Pending, Provider } from "./types";
 import "./style.css";
 
 const initial: AppState = {
@@ -109,24 +123,52 @@ function useDesktop() {
   const [ready, setReady] = useState(!window.desktop);
   const [state, setState] = useState(initial);
   const [surface, setSurface] = useState(initial.surface);
+  const appliedRevision = useRef(-1);
   useEffect(() => {
     if (!window.desktop) return;
     let live = true;
+    let receivedBroadcast = false;
+    let receivedSurface = false;
+    const apply = (value: StateUpdate, initialReply = false) => {
+      const revision = value.eventsRevision ?? 0;
+      if (initialReply && receivedBroadcast) {
+        // History revisions do not order approvals, connections, or layout.
+        // Only hydrate the matching history; newer broadcasts own the rest.
+        setState((previous) =>
+          value.events !== undefined &&
+          revision === (previous.eventsRevision ?? 0) &&
+          value.selectedId === previous.selectedId
+            ? { ...previous, events: value.events }
+            : previous,
+        );
+        return;
+      }
+      if (revision < appliedRevision.current) return;
+      appliedRevision.current = revision;
+      setState((previous) =>
+        value.events !== undefined
+          ? { ...value, events: value.events }
+          : { ...value, events: previous.events },
+      );
+      if (!initialReply || !receivedSurface) setSurface(value.surface);
+    };
     const unsubscribe = window.desktop.subscribe((value) => {
       if (live) {
+        receivedBroadcast = true;
         setReady(true);
-        setState(value);
-        setSurface(value.surface);
+        apply(value);
       }
     });
     const unsubscribeSurface = window.desktop.subscribeSurface?.((value) => {
-      if (live) setSurface(value);
+      if (live) {
+        receivedSurface = true;
+        setSurface(value);
+      }
     });
     window.desktop.invoke("state").then((value) => {
       if (live) {
         setReady(true);
-        setState(value);
-        setSurface(value.surface);
+        apply(value, true);
       }
     });
     return () => {
@@ -575,7 +617,8 @@ function Pet({
 function Markdown({ text }: { text: string }) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkSourceAnchors]}
+      rehypePlugins={[rehypeSourceAnchors]}
       components={{
         a: ({ children, href }) => (
           <span className="text-link" title={href}>
@@ -739,7 +782,34 @@ function Interaction({
     </div>
   );
 }
-function Panel({ state }: { state: AppState }) {
+type PendingCreation = {
+  requestId: string;
+  sessionId: string;
+  draftKey: string;
+  provider: Provider;
+  epoch?: number;
+};
+type CreationDraft = PendingCreation & {
+  sourceKey: string;
+  confirmed: boolean;
+  sending: boolean;
+};
+function remainingDraft(current: string | undefined, submitted: string) {
+  if (!current || current === submitted) return "";
+  // Recovery appends with a blank line while RPCs are pending. Consume only
+  // the captured submission, retaining that suffix or an independently edited draft.
+  const prefix = `${submitted}\n\n`;
+  return current.startsWith(prefix) ? current.slice(prefix.length) : current;
+}
+function Panel({
+  state,
+  surfaceWidth,
+  surfaceHeight,
+}: {
+  state: AppState;
+  surfaceWidth: number;
+  surfaceHeight: number;
+}) {
   const activeProvider = selectedProvider(state);
   const isCodex = activeProvider === "codex";
   const activeConnection = platformConnection(state, activeProvider);
@@ -763,36 +833,146 @@ function Panel({ state }: { state: AppState }) {
         ? state.config.codexEndpoint || "ws://127.0.0.1:4500"
         : state.config.endpoint,
     ),
-    [awaitingSession, setAwaitingSession] = useState<string | null>(null),
+    [awaitingSession, setAwaitingSession] = useState<PendingCreation | null>(
+      null,
+    ),
+    [creationDrafts, setCreationDrafts] = useState<
+      Record<string, CreationDraft>
+    >({}),
     [busy, setBusy] = useState(false),
+    [followRequest, setFollowRequest] = useState(0),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const latestState = useRef(state);
+  useLayoutEffect(() => {
+    latestState.current = state;
+  }, [state]);
+  const creationConfirmed =
+    !!awaitingSession &&
+    state.sessionCreation?.requestId === awaitingSession.requestId;
   const changingSession =
-    awaitingSession !== null && state.selectedId !== awaitingSession;
+    awaitingSession !== null &&
+    !creationConfirmed &&
+    state.selectedId !== awaitingSession.sessionId;
   useEffect(() => {
-    if (awaitingSession === state.selectedId) setAwaitingSession(null);
-  }, [awaitingSession, state.selectedId]);
+    if (!awaitingSession) return;
+    if (creationConfirmed || awaitingSession.sessionId === state.selectedId)
+      setAwaitingSession(null);
+  }, [awaitingSession, creationConfirmed, state.selectedId, state.sessions]);
+  useEffect(() => {
+    const confirmed: { key: string; epoch?: number }[] = [],
+      removed: CreationDraft[] = [];
+    for (const draft of Object.values(creationDrafts)) {
+      const exists = state.sessions.some(
+        (row) => row.sessionId === draft.sessionId,
+      );
+      const observed =
+        exists || state.sessionCreation?.requestId === draft.requestId;
+      const connection = platformConnection(state, draft.provider);
+      const epoch = state.connections?.[draft.provider]?.epoch;
+      if ((observed && !draft.confirmed) || (exists && epoch !== draft.epoch))
+        confirmed.push({
+          key: draft.draftKey,
+          epoch: exists ? epoch : draft.epoch,
+        });
+      // Resetting a connection temporarily removes its cached rows. Only
+      // recover a missing draft in its known epoch, or after the new epoch's
+      // list has verified the absence. Reappearance preserves its ownership.
+      const absenceConfirmed =
+        connection.status === "connected" &&
+        (epoch === draft.epoch ||
+          state.connections?.[draft.provider]?.sessionsReady === true);
+      if (
+        !draft.sending &&
+        !exists &&
+        (observed || draft.confirmed) &&
+        absenceConfirmed
+      )
+        removed.push(draft);
+    }
+    if (!confirmed.length && !removed.length) return;
+    // Selection can be confirmed long before a send or a removal broadcast.
+    // Keep unsent drafts recoverable, but wait for any pending send to settle.
+    if (removed.length)
+      setDrafts((prev) => {
+        const next = { ...prev };
+        for (const { sourceKey, draftKey } of removed) {
+          const recovered = next[draftKey] || "";
+          next[sourceKey] = next[sourceKey]
+            ? recovered
+              ? `${next[sourceKey]}\n\n${recovered}`
+              : next[sourceKey]
+            : recovered;
+          next[draftKey] = "";
+        }
+        return next;
+      });
+    setCreationDrafts((prev) => {
+      const next = { ...prev };
+      for (const { key, epoch } of confirmed)
+        if (next[key]) next[key] = { ...next[key], confirmed: true, epoch };
+      for (const { draftKey } of removed) delete next[draftKey];
+      return next;
+    });
+  }, [
+    creationDrafts,
+    state.sessions,
+    state.sessionCreation,
+    state.connections,
+    state.connection,
+  ]);
   const scroll = useRef<HTMLDivElement>(null),
     follow = useRef(true),
     previous = useRef(""),
+    readingAnchor = useRef<HistoryAnchor | null>(null),
+    historyHidden = useRef(false),
+    historySize = useRef<{ width: number; height: number } | null>(null),
     busyRef = useRef(false),
-    olderHeight = useRef(0);
+    programmaticScroll = useRef<{
+      element: HTMLElement;
+      top: number;
+    } | null>(null),
+    olderRequest = useRef<{
+      requestId: string;
+      sessionId: string;
+    } | null>(null);
   const connected = activeConnection.status === "connected",
+    // Reconnect fills a gap in the retained cache. Its pending/error state
+    // does not invalidate reading anchors or independently loaded older pages.
+    canAnchor =
+      connected &&
+      (!state.historyReload || state.historyReload.retainsHistory === true),
     selected = state.sessions.find(
       (item) => item.sessionId === state.selectedId,
     ),
     pending = state.pending.filter(
       (item) => item.sessionId === state.selectedId,
     );
-  const projection = projectSession(state.events, !!selected?.running);
+  const composerDisabled = busy || changingSession || !!selected?.readOnly;
+  // Status-only updates retain the same array. A delayed initial snapshot can
+  // supply history at an already-seen revision, so depend on the array too.
+  const projection = useMemo(
+    () => projectSession(state.events, !!selected?.running),
+    [state.events, state.eventsRevision, state.selectedId, selected?.running],
+  );
   const live = state.liveAssistant?.[state.selectedId];
-  if (live?.text && selected?.running)
-    projection.messages.push({
-      id: `live-${live.attemptId}`,
-      role: "assistant",
-      text: live.text,
-      streaming: true,
-    });
+  const messages = useMemo(() => {
+    const list = projection.messages.slice();
+    if (live?.text && selected?.running)
+      list.push({
+        id: liveMessageId(live.attemptId, live.streamId),
+        role: "assistant",
+        text: live.text,
+        streaming: true,
+      });
+    return list;
+  }, [
+    projection,
+    live?.attemptId,
+    live?.streamId,
+    live?.text,
+    selected?.running,
+  ]);
   const status = pending.length
     ? "waiting"
     : state.activity[state.selectedId]?.status || projection.status;
@@ -806,7 +986,7 @@ function Panel({ state }: { state: AppState }) {
     taskMood: mood,
     now,
   });
-  const draftKey = `${activeProvider}:${state.selectedId || "new"}`,
+  const draftKey = `${activeProvider}:${state.selectedId || awaitingSession?.sessionId || "new"}`,
     draft = drafts[draftKey] || "";
   const active = state.sessions.filter((item) => item.running).length;
   const setDraft = (value: string) =>
@@ -825,41 +1005,150 @@ function Panel({ state }: { state: AppState }) {
     return () => clearTimeout(id);
   }, [notice]);
   useLayoutEffect(() => {
-    if (!scroll.current) return;
-    if (!projection.messages.length) {
-      scroll.current.scrollTop = 0;
+    if (previous.current !== state.selectedId) {
       previous.current = state.selectedId;
+      follow.current = true;
+      readingAnchor.current = null;
+      programmaticScroll.current = null;
+    }
+    const request = olderRequest.current;
+    if (request && (request.sessionId !== state.selectedId || !canAnchor))
+      olderRequest.current = null;
+    if (!canAnchor) readingAnchor.current = null;
+    // Hidden/unmounted history has no usable coordinates. Keep the last
+    // visible anchor independently of paging, and invalidate it on resets.
+    const container = scroll.current;
+    if (!isHistoryVisible(container)) {
+      historyHidden.current = true;
       return;
     }
-    if (olderHeight.current) {
-      scroll.current.scrollTop +=
-        scroll.current.scrollHeight - olderHeight.current;
-      olderHeight.current = 0;
-      return;
+    const size = {
+      width: container.clientWidth,
+      height: container.clientHeight,
+    };
+    const resized =
+      historyHidden.current ||
+      historySize.current?.width !== size.width ||
+      historySize.current?.height !== size.height;
+    historyHidden.current = false;
+    historySize.current = size;
+    const adjustScroll = (update: () => void) => {
+      const before = container.scrollTop;
+      update();
+      if (resized || container.scrollTop !== before)
+        // Store the actual, clamped position. The resulting scroll event is
+        // a layout correction, not a new choice to follow incoming output.
+        // Native resize clamping can have already reached this position.
+        programmaticScroll.current = {
+          element: container,
+          top: container.scrollTop,
+        };
+    };
+    if (!messages.length) {
+      adjustScroll(() => {
+        container.scrollTop = 0;
+      });
+    } else if (follow.current) {
+      adjustScroll(() => {
+        container.scrollTop = container.scrollHeight;
+      });
+    } else if (canAnchor) {
+      // A final can supply missing text above the reader before any older
+      // page arrives, or without paging at all. Restore before recapturing.
+      adjustScroll(() =>
+        restoreHistoryAnchor(container, readingAnchor.current),
+      );
     }
-    if (previous.current !== state.selectedId || follow.current)
-      scroll.current.scrollTop = scroll.current.scrollHeight;
-    previous.current = state.selectedId;
+    if (
+      request &&
+      olderRequest.current === request &&
+      state.historyPage?.requestId === request.requestId &&
+      state.historyPage.sessionId === request.sessionId
+    )
+      olderRequest.current = null;
+    readingAnchor.current =
+      !follow.current && canAnchor ? captureHistoryAnchor(container) : null;
   }, [
-    state.events,
+    messages,
+    state.historyPage,
+    state.historyReload,
+    canAnchor,
     state.selectedId,
     tab,
     state.surface.section,
     state.pending,
     sessionsOpen,
+    followRequest,
+    surfaceWidth,
+    surfaceHeight,
   ]);
+  function transferCreationDraft(
+    creation: PendingCreation,
+    sourceKey: string,
+    submitted?: string,
+  ) {
+    // Manual creation carries the current unbound draft without sending it.
+    // Automatic creation moves only the already-captured first submission.
+    setDrafts((prev) => ({
+      ...prev,
+      [sourceKey]:
+        submitted === undefined
+          ? ""
+          : remainingDraft(prev[sourceKey], submitted),
+      [creation.draftKey]: submitted ?? prev[sourceKey] ?? "",
+    }));
+    const recovery: CreationDraft = {
+      ...creation,
+      sourceKey,
+      confirmed: false,
+      sending: submitted !== undefined,
+    };
+    setCreationDrafts((prev) => ({ ...prev, [creation.draftKey]: recovery }));
+  }
+  async function createSession(payload: { provider?: Provider } = {}) {
+    const provider = payload.provider || activeProvider;
+    const epoch = state.connections?.[provider]?.epoch;
+    const requestId = crypto.randomUUID();
+    const sessionId = await invoke("create", { ...payload, requestId });
+    if (typeof sessionId !== "string" || !sessionId)
+      throw new Error("会话创建未完成，请重试");
+    const current = latestState.current;
+    if (
+      current.sessionCreation?.requestId === requestId &&
+      !current.sessions.some((row) => row.sessionId === sessionId)
+    )
+      throw new Error("新建会话已失效，请重新创建");
+    const receipt = {
+      requestId,
+      sessionId,
+      provider,
+      epoch,
+      draftKey: `${provider}:${sessionId}`,
+    };
+    setAwaitingSession(receipt);
+    return receipt;
+  }
   async function run(action: string, payload?: any) {
     if (busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
     setError("");
+    if (action === "create" || action === "select" || action === "openSession")
+      setAwaitingSession(null);
     try {
-      const result = await invoke(action, payload);
-      if (action === "create" && typeof result === "string")
-        setAwaitingSession(result);
-      return result;
+      if (action === "create") {
+        const provider = payload?.provider || activeProvider;
+        const creation = await createSession({ ...payload, provider });
+        transferCreationDraft(creation, `${provider}:new`);
+        return creation.sessionId;
+      }
+      return await invoke(action, payload);
     } catch (err) {
-      olderHeight.current = 0;
+      if (
+        action === "older" &&
+        olderRequest.current?.requestId === payload?.requestId
+      )
+        olderRequest.current = null;
       setError(
         (err as Error).message.replace(
           /^Error invoking remote method '[^']+': Error: /,
@@ -872,24 +1161,78 @@ function Panel({ state }: { state: AppState }) {
       setBusy(false);
     }
   }
+  async function loadOlder() {
+    if (
+      busyRef.current ||
+      olderRequest.current ||
+      !isHistoryVisible(scroll.current) ||
+      !state.selectedId
+    )
+      return;
+    // Loading older history is an explicit reading action, including when
+    // the current page is empty and has never emitted a scroll event.
+    follow.current = false;
+    readingAnchor.current = captureHistoryAnchor(scroll.current);
+    const request = {
+      requestId: crypto.randomUUID(),
+      sessionId: state.selectedId,
+    };
+    olderRequest.current = request;
+    const result = await run("older", {
+      requestId: request.requestId,
+      sessionId: request.sessionId,
+    });
+    // A receipt can precede its state broadcast. Keep the request pending
+    // until that broadcast; no-op/stale/failed reads must release it.
+    if (olderRequest.current === request && !result)
+      olderRequest.current = null;
+  }
   async function send() {
-    if (!draft.trim() || busyRef.current || !connected || selected?.readOnly)
+    if (!draft.trim() || busyRef.current || composerDisabled || !connected)
       return;
     busyRef.current = true;
     setBusy(true);
     setError("");
-    const key = draftKey,
-      text = draft.trim();
+    let key = draftKey;
+    let creation: PendingCreation | undefined;
+    const text = draft.trim();
     try {
-      const sessionId =
-        state.selectedId ||
-        (await invoke("create", { provider: activeProvider }));
+      if (!state.selectedId)
+        creation = await createSession({ provider: activeProvider });
+      const sessionId = state.selectedId || creation!.sessionId;
+      if (creation) {
+        transferCreationDraft(creation, key, draft);
+        key = creation.draftKey;
+      } else
+        setCreationDrafts((prev) =>
+          prev[key]
+            ? { ...prev, [key]: { ...prev[key], sending: true } }
+            : prev,
+        );
       const result = await invoke("send", { sessionId, text });
-      setDrafts((prev) => ({ ...prev, [key]: "" }));
+      setDrafts((prev) => ({
+        ...prev,
+        [key]: remainingDraft(prev[key], draft),
+      }));
+      setCreationDrafts((prev) => {
+        if (!prev[key]) return prev;
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
       if (result) setNotice(result);
       else if (selected?.running && !isCodex) setNotice("消息已加入 DSH 队列");
-      follow.current = true;
+      if (previous.current === sessionId) {
+        follow.current = true;
+        readingAnchor.current = null;
+        // History may arrive before the receipt, or not change at all. Request
+        // a layout pass now, without letting a late receipt move another chat.
+        setFollowRequest((value) => value + 1);
+      }
     } catch (err) {
+      setCreationDrafts((prev) =>
+        prev[key] ? { ...prev, [key]: { ...prev[key], sending: false } } : prev,
+      );
       setError(
         (err as Error).message.replace(
           /^Error invoking remote method '[^']+': Error: /,
@@ -1079,19 +1422,32 @@ function Panel({ state }: { state: AppState }) {
               ref={scroll}
               onScroll={() => {
                 const el = scroll.current;
-                if (el)
-                  follow.current =
-                    el.scrollHeight - el.scrollTop - el.clientHeight < 75;
+                if (!isHistoryVisible(el) || historyHidden.current) return;
+                const programmed = programmaticScroll.current;
+                programmaticScroll.current = null;
+                if (
+                  programmed?.element === el &&
+                  Math.abs(programmed.top - el.scrollTop) < 1
+                )
+                  return;
+                follow.current =
+                  el.scrollHeight - el.scrollTop - el.clientHeight < 75;
+                readingAnchor.current =
+                  !follow.current && canAnchor
+                    ? captureHistoryAnchor(el)
+                    : null;
               }}
             >
               {state.hasMore && (
                 <button
                   className="load-older"
-                  disabled={busy}
-                  onClick={() => {
-                    olderHeight.current = scroll.current?.scrollHeight || 0;
-                    run("older");
-                  }}
+                  disabled={
+                    busy ||
+                    (olderRequest.current?.sessionId === state.selectedId &&
+                      olderRequest.current.requestId !==
+                        state.historyPage?.requestId)
+                  }
+                  onClick={loadOlder}
                 >
                   加载更早的消息
                 </button>
@@ -1116,7 +1472,7 @@ function Panel({ state }: { state: AppState }) {
                   )}
                 </div>
               )}
-              {!projection.messages.length && !state.historyReload && (
+              {!messages.length && !state.historyReload && (
                 <div className="welcome">
                   <div className="welcome-mascot">
                     <Mascot small />
@@ -1129,7 +1485,11 @@ function Panel({ state }: { state: AppState }) {
                   <div className="suggestions">
                     {["先看看这个项目", "梳理一下接下来要做什么"].map(
                       (text) => (
-                        <button key={text} onClick={() => setDraft(text)}>
+                        <button
+                          key={text}
+                          disabled={composerDisabled}
+                          onClick={() => setDraft(text)}
+                        >
                           {text}
                           <ChevronRight size={13} />
                         </button>
@@ -1138,9 +1498,13 @@ function Panel({ state }: { state: AppState }) {
                   </div>
                 </div>
               )}
-              {projection.messages.map((message: any) =>
+              {messages.map((message) =>
                 message.role === "tool" ? (
-                  <details className="tool-message" key={message.id}>
+                  <details
+                    className="tool-message"
+                    key={message.id}
+                    data-message-id={message.id}
+                  >
                     <summary>
                       <span className="tool-dot" />
                       <span className="tool-copy">
@@ -1154,6 +1518,18 @@ function Panel({ state }: { state: AppState }) {
                 ) : (
                   <article
                     key={message.id}
+                    data-message-id={message.id}
+                    data-message-partial={message.partial || undefined}
+                    data-message-aliases={
+                      message.anchorIds
+                        ? JSON.stringify(message.anchorIds)
+                        : undefined
+                    }
+                    data-message-text-anchors={
+                      message.textAnchors
+                        ? JSON.stringify(message.textAnchors)
+                        : undefined
+                    }
                     className={`message ${message.role}`}
                   >
                     <div className="message-label">
@@ -1224,7 +1600,7 @@ function Panel({ state }: { state: AppState }) {
               >
                 <textarea
                   aria-label="消息"
-                  disabled={busy || changingSession || selected?.readOnly}
+                  disabled={composerDisabled}
                   placeholder={
                     selected?.readOnly
                       ? "此会话仅支持查看，请在 Codex 原窗口继续…"
@@ -1279,13 +1655,7 @@ function Panel({ state }: { state: AppState }) {
                     <button
                       className="send-button"
                       aria-label="发送消息"
-                      disabled={
-                        busy ||
-                        changingSession ||
-                        !connected ||
-                        selected?.readOnly ||
-                        !draft.trim()
-                      }
+                      disabled={composerDisabled || !connected || !draft.trim()}
                     >
                       {busy ? (
                         <LoaderCircle size={17} className="spin" />
@@ -1729,7 +2099,11 @@ function App() {
               } as React.CSSProperties
             }
           >
-            <ContentPanel state={state} />
+            <ContentPanel
+              state={state}
+              surfaceWidth={surface.contentWidth}
+              surfaceHeight={surface.contentHeight}
+            />
           </div>
           <div
             className="pet-position"

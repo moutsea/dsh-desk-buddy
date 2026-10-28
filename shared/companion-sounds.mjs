@@ -29,8 +29,8 @@ export class GreetingCues {
     const original = this.prepared;
     this.engage(now);
     if (!eligible || !sounds.enabled || sounds.volume <= 0) return null;
-    if (original.away && sounds.welcome) return "welcome";
-    if (original.sleeping && sounds.wake) return "wake";
+    if (original?.away && sounds.welcome) return "welcome";
+    if (original?.sleeping && sounds.wake) return "wake";
     return null;
   }
 }

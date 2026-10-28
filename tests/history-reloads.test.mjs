@@ -8,7 +8,10 @@ test("failed reset reads remain retryable until a successful current read commit
   const first = reloads.begin("codex:a");
   assert.equal(reloads.needsRetry("codex:a"), false);
   reloads.finish("codex:a", first, { error: "temporary failure" });
-  assert.deepEqual(reloads.snapshot("codex:a"), { error: "temporary failure" });
+  assert.deepEqual(reloads.snapshot("codex:a"), {
+    error: "temporary failure",
+    retainsHistory: false,
+  });
   assert.equal(reloads.needsRetry("codex:a"), true);
   const retry = reloads.begin("codex:a");
   reloads.finish("codex:a", retry, { success: true });
@@ -23,7 +26,10 @@ test("an old read cannot clear a new reset or publish its error into it", () => 
     const stale = reloads.begin("codex:a");
     reloads.invalidate("codex:a");
     reloads.finish("codex:a", stale, result);
-    assert.deepEqual(reloads.snapshot("codex:a"), { error: "" });
+    assert.deepEqual(reloads.snapshot("codex:a"), {
+      error: "",
+      retainsHistory: false,
+    });
     assert.equal(reloads.needsRetry("codex:a"), true);
   }
 });
@@ -57,4 +63,43 @@ test("navigation and provider cleanup keep reloads isolated", () => {
   assert.equal(reloads.snapshot("codex:a"), null);
   assert.equal(reloads.snapshot("codex:b"), null);
   assert.equal(reloads.needsRetry("dsh-session"), true);
+});
+
+test("reconnect retries keep their original boundary until success", () => {
+  const reloads = new HistoryReloads();
+  reloads.invalidate("saved", 0);
+  const stale = reloads.begin("saved");
+  reloads.invalidate("saved", 100);
+  reloads.finish("saved", stale, { success: true });
+  const retry = reloads.begin("saved");
+  assert.equal(retry.afterSeq, 0);
+  reloads.finish("saved", retry, { error: "page unavailable" });
+  assert.deepEqual(reloads.snapshot("saved"), {
+    error: "page unavailable",
+    retainsHistory: true,
+  });
+  reloads.finish("saved", reloads.begin("saved"), { success: true });
+  reloads.invalidate("saved", 200);
+  assert.equal(reloads.begin("saved").afterSeq, 200);
+});
+
+test("an explicit history replacement discards a reconnect boundary", () => {
+  const reloads = new HistoryReloads();
+  reloads.invalidate("saved", 40);
+  reloads.invalidate("saved");
+  assert.equal(reloads.begin("saved").afterSeq, undefined);
+});
+
+test("published reloads distinguish retained history from replacements throughout retries", () => {
+  const reloads = new HistoryReloads();
+  reloads.invalidate("saved", 0);
+  assert.equal(reloads.snapshot("saved").retainsHistory, true);
+  reloads.finish("saved", reloads.begin("saved"), { error: "unavailable" });
+  assert.equal(reloads.snapshot("saved").retainsHistory, true);
+  reloads.invalidate("saved", 100);
+  assert.equal(reloads.snapshot("saved").retainsHistory, true);
+  reloads.invalidate("saved");
+  assert.equal(reloads.snapshot("saved").retainsHistory, false);
+  reloads.finish("saved", reloads.begin("saved"), { success: true });
+  assert.equal(reloads.snapshot("saved"), null);
 });

@@ -5,8 +5,119 @@ import { once } from "node:events";
 import { desktopBridge } from "../plugins/dsh-girl/desktop-bridge.mjs";
 import { DshClient } from "../shared/dsh-client.mjs";
 import { reduceAssistantStream } from "../shared/assistant-stream.mjs";
+import {
+  setAssistantStream,
+  setHistoryEvents,
+} from "../electron/history-state.mjs";
+import { mergeEvents } from "../shared/projection.mjs";
 
 import { desktopHost } from "./helpers/desktop-host.mjs";
+
+for (const historyFirst of [false, true])
+  test(
+    `Desktop mid-turn connections keep a stream received before any durable event; history first = ${historyFirst}`,
+    { timeout: 5000 },
+    async (t) => {
+      const host = desktopHost();
+      const events = [
+        { seq: 20, type: "turn/start", data: { turn: 2 } },
+        { seq: 21, type: "step/start", data: { turn: 2, step: 0 } },
+      ];
+      const original = host.gateway.stream.bind(host.gateway);
+      host.gateway.stream = async (call) =>
+        call.method === "follow"
+          ? (async function* () {
+              yield {
+                type: "snapshot",
+                cursor: 21,
+                records: events.map((event) => ({ event })),
+                hasMore: false,
+              };
+            })()
+          : original(call);
+      const bridge = await desktopBridge(host.ctx);
+      const client = new DshClient(bridge.endpoint, { token: bridge.token });
+      t.after(async () => {
+        client.close();
+        await bridge.dispose();
+      });
+      const state = {
+        selectedId: "s1",
+        events: [],
+        eventsRevision: 0,
+        liveAssistant: {},
+        hasMore: false,
+      };
+      client.on("frame", ({ payload }) => {
+        if (payload.type === "session/event")
+          setHistoryEvents(state, mergeEvents(state.events, [payload.event]));
+        if (payload.type === "session/assistant-stream")
+          setAssistantStream(state, payload.sessionId, payload.frame);
+      });
+      const deliver = async (event, ...args) => {
+        const delivered = new Promise((resolve) => {
+          const listener = ({ payload }) => {
+            if (payload.sessionId !== "s1") return;
+            client.off("frame", listener);
+            resolve();
+          };
+          client.on("frame", listener);
+        });
+        host.emit(event, ...args);
+        await delivered;
+      };
+      const connected = new Promise((resolve) =>
+        client.on("stream", () => {
+          if (client.streams.size === 2) resolve();
+        }),
+      );
+      await client.connect();
+      await connected;
+      const snapshot = async () =>
+        setHistoryEvents(
+          state,
+          (await client.rpc("session.history", { sessionId: "s1" })).events.map(
+            ({ event }) => event,
+          ),
+        );
+      if (historyFirst) await snapshot();
+      // The private bridge does not replay the already-persisted turn/step
+      // events on a new mux socket. Its first frame may be an assistant start.
+      for (const frame of [
+        { type: "start", attemptId: "s1:2", revision: 8, turn: 2, step: 0 },
+        {
+          type: "chunk",
+          attemptId: "s1:2",
+          revision: 9,
+          index: 0,
+          chunk: { type: "text-delta", index: 0, text: "Still running" },
+        },
+      ])
+        await deliver("agent/assistant-stream", {
+          agent: { session: { id: "s1" } },
+          frame,
+        });
+      if (!historyFirst) await snapshot();
+      assert.equal(state.liveAssistant.s1?.text, "Still running");
+      await snapshot();
+      assert.equal(state.liveAssistant.s1?.text, "Still running");
+      await deliver(
+        "session/event",
+        { id: "s1" },
+        {
+          seq: 22,
+          type: "assistant/message",
+          data: {
+            turn: 2,
+            step: 0,
+            message: { content: [{ type: "text", text: "Still running" }] },
+          },
+        },
+      );
+      assert.equal(state.liveAssistant.s1, null);
+      assert.equal(state.events.at(-1).data.attemptId, "s1:2");
+    },
+  );
 
 test("Desktop bridge authenticates HTTP and sockets, translates history and keeps the same owner Peer for human decisions", async () => {
   const host = desktopHost(),

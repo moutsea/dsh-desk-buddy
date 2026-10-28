@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import { randomUUID } from "node:crypto";
 import WebSocket from "ws";
+import { AssistantStreamLinks } from "./assistant-stream-links.mjs";
 
 export function normalizeEndpoint(value) {
   const url = new URL(value);
@@ -19,6 +20,11 @@ export function normalizeEndpoint(value) {
 }
 
 export class DshClient extends EventEmitter {
+  assistantLinks = new AssistantStreamLinks();
+  /**
+   * @param {string} endpoint
+   * @param {{ token?: string }} [options]
+   */
   constructor(endpoint, { token } = {}) {
     super();
     this.endpoint = normalizeEndpoint(endpoint);
@@ -46,6 +52,7 @@ export class DshClient extends EventEmitter {
   }
   async rpc(method, payload = {}) {
     const rpcId = randomUUID();
+    const generation = this.assistantLinks.generation;
     const reply = await this.request("/api/" + method, {
       method: "POST",
       body: JSON.stringify({ type: "client-request", rpcId, method, payload }),
@@ -62,7 +69,25 @@ export class DshClient extends EventEmitter {
           reply.result.error?.code ||
           "DSH 请求失败",
       );
-    return reply.result.value;
+    const value = reply.result.value;
+    if (
+      method === "session.history" &&
+      Array.isArray(value?.events) &&
+      generation === this.assistantLinks.generation
+    ) {
+      const events = this.assistantLinks.history(
+        payload.sessionId,
+        value.events.map((entry) => entry.event),
+      );
+      return {
+        ...value,
+        events: value.events.map((entry, i) => ({
+          ...entry,
+          event: events[i],
+        })),
+      };
+    }
+    return value;
   }
   async connect() {
     const host = await this.rpc("host.describe");
@@ -110,9 +135,10 @@ export class DshClient extends EventEmitter {
       const finish = (error) => {
         if (settled) return;
         settled = true;
+        if (kind === "mux") this.assistantLinks.reset();
         signal.removeEventListener("abort", abort);
         socket.terminate();
-        error ? reject(error) : resolve();
+        error ? reject(error) : resolve(undefined);
       };
       const abort = () => finish();
       signal.addEventListener("abort", abort, { once: true });
@@ -132,7 +158,10 @@ export class DshClient extends EventEmitter {
             throw new Error("无法识别 DSH 事件格式");
           if (frame.payload.type === "stream/error")
             throw new Error("DSH 事件流报告错误");
-          this.emit("frame", frame);
+          this.emit("frame", {
+            ...frame,
+            payload: this.assistantLinks.observe(frame.payload),
+          });
         } catch (error) {
           finish(error);
         }
@@ -154,13 +183,17 @@ export class DshClient extends EventEmitter {
       } catch (error) {
         this.streams.delete(kind);
         if (this.controller.signal.aborted) return;
-        this.emit("stream", { kind, connected: false, message: error.message });
+        this.emit("stream", {
+          kind,
+          connected: false,
+          message: error instanceof Error ? error.message : String(error),
+        });
         await new Promise((resolve) => {
           const signal = this.controller.signal;
           const done = () => {
             clearTimeout(timer);
             signal.removeEventListener("abort", done);
-            resolve();
+            resolve(undefined);
           };
           const timer = setTimeout(done, delay);
           signal.addEventListener("abort", done, { once: true });
@@ -170,6 +203,7 @@ export class DshClient extends EventEmitter {
     }
   }
   close() {
+    this.assistantLinks.reset();
     this.controller.abort();
     this.removeAllListeners();
   }

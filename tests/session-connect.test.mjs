@@ -257,3 +257,58 @@ test("history seeding stays bounded across overlapping refreshes and skips super
   await client.list();
   assert.equal(calls.length, 12, "seeded revisions are cached");
 });
+
+for (const provider of ["dsh", "codex"])
+  test(`${provider} reports session availability only after a current successful list`, async (t) => {
+    const { client, adapters } = setup(t);
+    const first = client.connect(provider, "old");
+    adapters[0].ready();
+    await first;
+    assert.equal(client.connections()[provider].sessionsReady, false);
+    adapters[0].rpc = async () => ({ items: [] });
+    await client.list();
+    assert.equal(
+      client.connections()[provider].sessionsReady,
+      true,
+      "an empty verified list still establishes availability",
+    );
+    const replacement = client.connect(provider, "replacement");
+    assert.equal(
+      client.connections()[provider].sessionsReady,
+      true,
+      "an uncommitted candidate must not reset the current connection",
+    );
+    adapters[1].ready();
+    await replacement;
+    assert.equal(client.connections()[provider].sessionsReady, false);
+    adapters[1].rpc = async () => {
+      throw new Error("Initial list failed");
+    };
+    await client.list();
+    assert.equal(
+      client.connections()[provider].sessionsReady,
+      false,
+      "returning an empty cache does not confirm absence",
+    );
+    let release;
+    adapters[1].rpc = () =>
+      new Promise((resolve) => {
+        release = resolve;
+      });
+    const stale = client.list();
+    adapters[1].streams.delete("mux");
+    adapters[1].emit("stream", { kind: "mux", connected: false });
+    release({ items: [] });
+    await stale;
+    assert.equal(
+      client.connections()[provider].sessionsReady,
+      false,
+      "a previous epoch's response cannot mark the new epoch ready",
+    );
+    adapters[1].open("mux");
+    adapters[1].rpc = async () => ({ items: [] });
+    await client.list();
+    assert.equal(client.connections()[provider].sessionsReady, true);
+    client.disconnect(provider);
+    assert.equal(client.connections()[provider].sessionsReady, false);
+  });

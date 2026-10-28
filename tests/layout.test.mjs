@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import {
   desktopLayout,
   PET_SIZE,
@@ -13,6 +13,7 @@ import {
 import {
   CHARACTER_LAYOUT,
   characterPose,
+  scaleRegistration,
 } from "../shared/character-layout.mjs";
 import { EXPRESSIONS } from "../shared/expressions.mjs";
 import { motionKeyframes, MOTIONS } from "../shared/motions.mjs";
@@ -56,6 +57,69 @@ test("all 19 static figures and 76 animation frames share visible height and fee
       );
     }
   }
+});
+
+test("scaled registration keeps thumbnail poses aligned with the source", () => {
+  const near = (a, b) =>
+    assert.ok(Math.abs(a - b) < 0.00001, `${a} should equal ${b}`);
+  const scale = 0.3;
+  const small = scaleRegistration(registration, scale);
+  for (const { id } of EXPRESSIONS) {
+    const full = registration[id],
+      thumb = small[id];
+    near(thumb.width, full.width * scale);
+    near(thumb.height, full.height * scale);
+    for (const [index, box] of [full.static, ...full.frames].entries()) {
+      const frame = index - 1;
+      const thumbBox = index === 0 ? thumb.static : thumb.frames[frame];
+      const fullX = index === 0 ? 0 : ((frame % 2) * full.width) / 2;
+      const fullY = index === 0 ? 0 : (Math.floor(frame / 2) * full.height) / 2;
+      const thumbX = index === 0 ? 0 : ((frame % 2) * thumb.width) / 2;
+      const thumbY =
+        index === 0 ? 0 : (Math.floor(frame / 2) * thumb.height) / 2;
+      const pose = characterPose(box, fullX, fullY);
+      const thumbPose = characterPose(thumbBox, thumbX, thumbY);
+      near(
+        (fullX + box.footX) * pose.scale + pose.x,
+        (thumbX + thumbBox.footX) * thumbPose.scale + thumbPose.x,
+      );
+      near(
+        (fullY + box.footY) * pose.scale + pose.y,
+        (thumbY + thumbBox.footY) * thumbPose.scale + thumbPose.y,
+      );
+      near(
+        (box.footY - box.bodyTop) * pose.scale,
+        (thumbBox.footY - thumbBox.bodyTop) * thumbPose.scale,
+      );
+    }
+  }
+  assert.deepEqual(scaleRegistration({ label: "idle", value: 2 }, 0.5), {
+    label: "idle",
+    value: 1,
+  });
+});
+
+test("preview thumbnails exist for every expression and motion", () => {
+  for (const { id } of EXPRESSIONS)
+    assert.ok(
+      existsSync(
+        new URL(
+          `../public/characters/deepseek-girl/thumbs/${id}.png`,
+          import.meta.url,
+        ),
+      ),
+      `missing still thumbnail for ${id}`,
+    );
+  for (const id of Object.keys(MOTIONS))
+    assert.ok(
+      existsSync(
+        new URL(
+          `../public/characters/deepseek-girl/animations/thumbs/${id}.png`,
+          import.meta.url,
+        ),
+      ),
+      `missing motion thumbnail for ${id}`,
+    );
 });
 
 test("attached content fits the work area, chooses roomier side and preserves DSG anchor", () => {

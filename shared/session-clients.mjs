@@ -78,6 +78,7 @@ export class SessionClients extends EventEmitter {
             message: row?.message || "",
             host: row?.host || null,
             epoch: row?.epoch || 0,
+            sessionsReady: row?.sessionsReady || false,
           },
         ];
       }),
@@ -99,8 +100,10 @@ export class SessionClients extends EventEmitter {
   invalidate(row, removeSessions) {
     row.epoch = ++this.serial;
     row.refreshRevision++;
+    row.sessionsReady = false;
     row.eventSeq.clear();
     row.runtime.clear();
+    row.createdSessions.clear();
     row.turns.clear();
     row.turnRevisions.clear();
     if (removeSessions) {
@@ -133,6 +136,7 @@ export class SessionClients extends EventEmitter {
       message: "",
       host: null,
       sessions: [],
+      sessionsReady: false,
       epoch: ++this.serial,
       refreshRevision: 0,
       lastRefresh: 0,
@@ -140,6 +144,7 @@ export class SessionClients extends EventEmitter {
       seed: limiter(this.historyConcurrency),
       eventSeq: new Map(),
       runtime: new Map(),
+      createdSessions: new Map(),
       runtimeRevision: 0,
       turns: new Map(),
       // The latest verified history head survives automatic reconnect. It is
@@ -238,10 +243,11 @@ export class SessionClients extends EventEmitter {
     } catch (error) {
       adapter.close();
       if (this.attempts.get(provider) !== attempt) return;
-      if (previous) previous.message = `切换失败：${error.message}`;
+      const message = error instanceof Error ? error.message : String(error);
+      if (previous) previous.message = `切换失败：${message}`;
       else {
         row.status = "offline";
-        row.message = error.message;
+        row.message = message;
         this.invalidate(row, true);
       }
       this.emit("status");
@@ -269,7 +275,11 @@ export class SessionClients extends EventEmitter {
     this.emit("status");
   }
   setRunning(row, id, running, turn) {
-    row.runtime.set(id, { running, revision: ++row.runtimeRevision });
+    row.runtime.set(id, {
+      ...row.runtime.get(id),
+      running,
+      revision: ++row.runtimeRevision,
+    });
     const session = row.sessions.find((s) => s.sessionId === id);
     if (session) {
       session.running = running;
@@ -281,14 +291,28 @@ export class SessionClients extends EventEmitter {
     const original = frame.payload,
       payload = { ...original, provider: row.provider };
     const scoped = (value) => JSON.stringify([row.provider, row.epoch, value]);
-    if (typeof payload.sessionId === "string")
+    if (typeof payload.sessionId === "string") {
       payload.sessionId = sessionKey(row.provider, payload.sessionId);
+      // Host removal and mux events have no shared arrival order. A late
+      // task/approval/stream frame cannot revive a deleted session's state.
+      // Only an explicit added notification starts a new attachment. Keep
+      // the removal revision independently so older lists still cannot win.
+      const runtime = row.runtime.get(payload.sessionId);
+      if (runtime?.removed && payload.type === "host/session-added")
+        row.runtime.set(payload.sessionId, { ...runtime, removed: false });
+      if (
+        row.runtime.get(payload.sessionId)?.removed &&
+        !["host/session-removed", "host/session-added"].includes(payload.type)
+      )
+        return;
+    }
     if (payload.projections && payload.type === "session/projections")
       payload.projections = Object.fromEntries(
-        Object.entries(payload.projections).map(([id, block]) => [
-          sessionKey(row.provider, id),
-          block,
-        ]),
+        Object.entries(payload.projections)
+          .filter(
+            ([id]) => !row.runtime.get(sessionKey(row.provider, id))?.removed,
+          )
+          .map(([id, block]) => [sessionKey(row.provider, id), block]),
       );
     if (payload.approvalId !== undefined)
       payload.approvalId = scoped(payload.approvalId);
@@ -352,16 +376,29 @@ export class SessionClients extends EventEmitter {
       }
     }
     if (payload.type === "host/session-removed") {
+      row.createdSessions.delete(id);
       row.sessions = row.sessions.filter((session) => session.sessionId !== id);
       row.eventSeq.delete(id);
       row.turns.delete(id);
       row.turnAnchors.delete(id);
       row.turnRevisions.delete(id);
       row.observedTurns.delete(id);
-      row.runtime.set(id, { removed: true, revision: ++row.runtimeRevision });
+      const revision = ++row.runtimeRevision;
+      row.runtime.set(id, {
+        removed: true,
+        revision,
+        removedRevision: revision,
+      });
+      for (const [key, request] of this.pending)
+        if (
+          request.provider === row.provider &&
+          sessionKey(row.provider, request.sessionId) === id
+        )
+          this.pending.delete(key);
     }
     this.emit("frame", { ...frame, rpcId, payload, epoch: row.epoch });
   }
+  /** @param {{ poll?: boolean, provider?: string }} [options] */
   async list({ poll = false, provider } = {}) {
     await Promise.all(
       [...this.entries.values()].map(async (row) => {
@@ -377,6 +414,10 @@ export class SessionClients extends EventEmitter {
         const epoch = row.epoch,
           revision = ++row.refreshRevision,
           runtimeRevision = row.runtimeRevision;
+        const removedSinceRead = (id) => {
+          const runtime = row.runtime.get(id);
+          return runtime?.removedRevision > runtimeRevision;
+        };
         row.refreshes++;
         row.lastRefresh = Date.now();
         try {
@@ -407,8 +448,7 @@ export class SessionClients extends EventEmitter {
                 )
                   return;
                 const id = sessionKey(row.provider, item.sessionId);
-                if (item.origin === "subagent" || row.runtime.get(id)?.removed)
-                  return;
+                if (item.origin === "subagent" || removedSinceRead(id)) return;
                 if (item.running && !item.readOnly) row.observedTurns.add(id);
                 const previous = row.turns.get(id);
                 if (
@@ -440,7 +480,7 @@ export class SessionClients extends EventEmitter {
                   !this.current(row) ||
                   row.epoch !== epoch ||
                   row.refreshRevision !== revision ||
-                  row.runtime.get(id)?.removed
+                  removedSinceRead(id)
                 )
                   return;
                 // A boundary received during the read is fresher than history,
@@ -466,15 +506,19 @@ export class SessionClients extends EventEmitter {
           )
             return;
           row.sessions = result.items
-            .filter((item) => {
-              const runtime = row.runtime.get(
-                sessionKey(row.provider, item.sessionId),
-              );
-              return !(runtime?.removed && runtime.revision > runtimeRevision);
-            })
+            .filter(
+              (item) =>
+                !removedSinceRead(sessionKey(row.provider, item.sessionId)),
+            )
             .map((item) => {
-              const sessionId = sessionKey(row.provider, item.sessionId),
-                runtime = row.runtime.get(sessionId);
+              const sessionId = sessionKey(row.provider, item.sessionId);
+              let runtime = row.runtime.get(sessionId);
+              // Without an added notification, a successful list begun after
+              // removal can also verify reattachment. Keep the removal floor.
+              if (runtime?.removed) {
+                runtime = { ...runtime, removed: false };
+                row.runtime.set(sessionId, runtime);
+              }
               return {
                 ...item,
                 sessionId,
@@ -495,9 +539,17 @@ export class SessionClients extends EventEmitter {
                 runningKnown: true,
               };
             });
+          for (const [id, created] of row.createdSessions) {
+            if (created.revision <= runtimeRevision)
+              row.createdSessions.delete(id);
+            else if (!row.sessions.some((session) => session.sessionId === id))
+              row.sessions.push(created.session);
+          }
+          row.sessionsReady = true;
         } catch (error) {
           if (this.current(row) && row.epoch === epoch) {
-            row.message = error.message;
+            row.message =
+              error instanceof Error ? error.message : String(error);
             this.emit("status");
           }
         } finally {
@@ -518,6 +570,29 @@ export class SessionClients extends EventEmitter {
     const { provider: _provider, ...input } = payload;
     const result = await row.client.rpc(method, { ...input, sessionId: id });
     this.check(row, epoch);
+    if (creating) {
+      const sessionId = sessionKey(provider, result.sessionId);
+      if (row.runtime.get(sessionId)?.removed)
+        throw new Error("新建会话已被移除，请重新创建");
+      const session = row.sessions.find(
+        (item) => item.sessionId === sessionId,
+      ) || {
+        sessionId,
+        provider,
+        cwd: payload.cwd,
+        running: false,
+        runningKnown: false,
+        blank: true,
+        updatedAt: Date.now(),
+      };
+      if (!row.sessions.includes(session)) row.sessions.push(session);
+      // A failed list returns the cache; a list begun before this confirmed
+      // write also cannot remove it. A subsequent successful list is authoritative.
+      row.createdSessions.set(sessionId, {
+        session,
+        revision: ++row.runtimeRevision,
+      });
+    }
     return creating
       ? {
           ...result,

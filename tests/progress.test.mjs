@@ -522,6 +522,45 @@ test("a reverted history head preserves dismissal and completion time through un
   }
 });
 
+test("rollback beyond 64 observed turns preserves dismissal and completion order", () => {
+  for (const provider of ["dsh", "codex"]) {
+    for (const hidden of [false, true]) {
+      const tracker = new ProgressTracker(),
+        state = stateFor(),
+        row = state.sessions[1];
+      row.provider = provider;
+      for (let turn = 0; turn < 66; turn++) {
+        const key = JSON.stringify(`turn-${turn}`);
+        tracker.start(row.sessionId, key);
+        row.running = false;
+        row.lastTurn = { key, status: "done" };
+        tracker.sync(state, turn + 1);
+      }
+      if (hidden) tracker.dismiss(row.sessionId);
+      const before = { ...tracker.sync(state, 100).back };
+      // A reconnect to old history need not provide ancestry or timestamps.
+      row.runningKnown = false;
+      delete row.lastTurn;
+      tracker.sync(state, 200);
+      row.runningKnown = true;
+      row.readOnly = provider === "codex";
+      row.lastTurn = { key: JSON.stringify("turn-0"), status: "done" };
+      for (const now of [300, 400]) {
+        state.progressEntries = tracker.sync(state, now);
+        assert.deepEqual(state.progressEntries.back, before);
+        assert.equal(activeProgressItems(state).length, hidden ? 0 : 1);
+      }
+      // Keeping old identities must still allow genuinely new completed work.
+      row.lastTurn = { key: JSON.stringify("new-turn"), status: "done" };
+      state.progressEntries = tracker.sync(state, 500);
+      assert.equal(state.progressEntries.back.hidden, false);
+      assert.equal(state.progressEntries.back.completedAt, 500);
+      tracker.forget((id) => id === row.sessionId);
+      assert.equal(tracker.knownTurns.has(row.sessionId), false);
+    }
+  }
+});
+
 test("rolling back an active task clears running without treating old completion as new work", () => {
   const tracker = new ProgressTracker(),
     state = stateFor(),

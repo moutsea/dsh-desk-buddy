@@ -1,3 +1,5 @@
+import type { SoundSettings } from "./sounds";
+
 export type Provider = "dsh" | "codex";
 export type Question = {
   id: string;
@@ -50,7 +52,13 @@ export type AppState = {
   };
   connections?: Record<
     Provider,
-    { status: string; message: string; host: AppState["host"]; epoch?: number }
+    {
+      status: string;
+      message: string;
+      host: AppState["host"];
+      epoch?: number;
+      sessionsReady?: boolean;
+    }
   >;
   connection: string;
   connectionEpoch: number;
@@ -59,12 +67,23 @@ export type AppState = {
   sessions: Session[];
   selectedId: string;
   events: any[];
+  eventsRevision?: number;
   liveAssistant?: Record<
     string,
-    { attemptId: string; revision: number; text: string } | null
+    {
+      attemptId: string;
+      streamId?: string;
+      revision: number;
+      text: string;
+      turn?: number;
+      step?: number;
+      afterSeq?: number;
+    } | null
   >;
   hasMore: boolean;
-  historyReload?: { error: string } | null;
+  historyPage?: { requestId: string; sessionId: string };
+  sessionCreation?: { requestId: string; sessionId: string } | null;
+  historyReload?: { error: string; retainsHistory?: boolean } | null;
   pending: Pending[];
   progressEntries?: Record<
     string,
@@ -121,14 +140,18 @@ export type AppState = {
     petScale?: number;
     chatSize?: "small" | "medium" | "large";
     progressBubbles?: boolean;
-    sounds?: import("./sounds").SoundSettings;
+    sounds?: SoundSettings;
   };
+};
+export type StateUpdate = Omit<AppState, "events"> & {
+  events?: AppState["events"];
 };
 declare global {
   interface Window {
     desktop?: {
       invoke: (action: string, payload?: any) => Promise<any>;
-      subscribe: (callback: (state: AppState) => void) => () => void;
+      // Broadcasts may omit history that did not change since the last frame.
+      subscribe: (callback: (state: StateUpdate) => void) => () => void;
       subscribeSurface?: (
         callback: (surface: AppState["surface"]) => void,
       ) => () => void;

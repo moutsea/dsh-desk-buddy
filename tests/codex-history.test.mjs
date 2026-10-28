@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { CodexClient } from "../shared/codex-client.mjs";
 import { CodexSession } from "../shared/codex-session.mjs";
 import { projectSession } from "../shared/projection.mjs";
+import { liveMessageId } from "../shared/assistant-stream.mjs";
 import { createCodexHost } from "./helpers/codex-host.mjs";
 
 const turn = (id, text, status = "completed") => ({
@@ -14,6 +15,98 @@ const messages = (result) =>
   projectSession(result.events.map(({ event }) => event)).messages.map(
     (message) => message.text,
   );
+
+test("completed Codex history retains the identity of its actual live stream", (t) => {
+  const client = new CodexClient("ws://127.0.0.1:4500");
+  t.after(() => client.close());
+  const row = client.session({ id: "thread", status: { type: "active" } });
+  const frames = [];
+  client.on("frame", ({ payload }) => frames.push(payload));
+  const item = { id: "stream-item", type: "agentMessage", text: "Same reply" };
+  client.receive({
+    method: "item/started",
+    params: { threadId: "thread", turnId: "current", item },
+  });
+  const stream = frames.find(
+    (frame) =>
+      frame.type === "session/assistant-stream" && frame.frame.type === "start",
+  );
+  assert.ok(stream);
+  assert.equal(
+    projectSession(row.events(item.id)).messages.length,
+    0,
+    "the active item is rendered through the live stream",
+  );
+  client.receive({
+    method: "item/completed",
+    params: { threadId: "thread", turnId: "current", item },
+  });
+  const snapshot = frames
+    .filter((frame) => frame.type === "session/history")
+    .at(-1);
+  const completed = projectSession(snapshot.events).messages[0];
+  const liveId = liveMessageId(stream.frame.attemptId);
+  assert.ok(completed.anchorIds.includes(liveId));
+  row.mergePage([turn("older", "Same reply")], ++row.revision, true);
+  const history = projectSession(row.events()).messages;
+  assert.equal(history.at(-1).id, completed.id);
+  assert.ok(
+    history.at(-1).anchorIds.includes(liveId),
+    "retain the alias across pagination",
+  );
+  assert.ok(
+    !history[0].anchorIds.includes(liveId),
+    "identical text in another item cannot steal the alias",
+  );
+});
+
+test("message identity survives prepended Codex turns and live item updates", () => {
+  const row = new CodexSession({ id: "anchor" });
+  const content = (id) => ({
+    id,
+    status: "completed",
+    items: [
+      {
+        id: "user",
+        type: "userMessage",
+        content: [{ type: "text", text: "Same prompt" }],
+      },
+      { id: "assistant", type: "agentMessage", text: "Same reply" },
+      {
+        id: "tool",
+        type: "commandExecution",
+        command: "pwd",
+        status: "completed",
+      },
+    ],
+  });
+  row.updateTurn(content("current"));
+  const before = projectSession(row.events()).messages;
+  row.mergePage([content("older")], ++row.revision, true);
+  const after = projectSession(row.events()).messages;
+  assert.equal(after.length, 6);
+  assert.notEqual(after[3].seq, before[0].seq, "pagination reindexes events");
+  assert.deepEqual(
+    after.slice(3).map((m) => m.id),
+    before.map((m) => m.id),
+  );
+  assert.equal(
+    new Set(after.map((m) => m.id)).size,
+    6,
+    "same text/item IDs in different turns stay distinct",
+  );
+  row.updateItem("current", {
+    id: "assistant",
+    type: "agentMessage",
+    text: "Updated reply",
+  });
+  const updated = projectSession(row.events()).messages;
+  assert.deepEqual(
+    updated.map((m) => m.id),
+    after.map((m) => m.id),
+  );
+  assert.equal(updated[4].text, "Updated reply");
+});
 const page = (socket, frame, data, nextCursor = null) =>
   socket.send(JSON.stringify({ id: frame.id, result: { data, nextCursor } }));
 
